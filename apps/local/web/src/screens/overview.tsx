@@ -29,8 +29,6 @@ type Props = {
 	filter?: ReactNode;
 };
 
-const MIN_BARS = 5;
-
 const moved = (
 	label: string,
 	now: number,
@@ -60,20 +58,66 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 	const hasData = m.answers > 0;
 	const previous = trend.length > 1 ? trend[trend.length - 2] : undefined;
 	const labels = trend.map((t) => day(t.startedAt));
-	const bars = (values: number[], label: string) =>
-		values.length < MIN_BARS ? (
-			<span />
-		) : (
+	const spark = (label: string, values: number[]) => {
+		const points = values.length > 1 ? values : [values[0] ?? 0, values[0] ?? 0];
+		return (
 			<TrendChart
-				variant="bar"
-				axis={false}
+				variant="sparkline"
+				height={36}
 				tooltip={false}
-				height={22}
 				label={`${label} by run`}
-				labels={labels}
-				series={[{ label, values, color: "var(--faint)" }]}
+				labels={points.map((_, index) => labels[index] ?? "")}
+				series={[{ label, values: points }]}
 			/>
 		);
+	};
+	const stats = [
+		{
+			label: "Visibility score",
+			value: overall.visibility,
+			format: (n: number) => n.toFixed(1),
+			change: previous ? overall.visibility - previous.visibility : undefined,
+			changeFormat: (n: number) => n.toFixed(1),
+			series: trend.map((t) => t.visibility),
+		},
+		{
+			label: "Mentioned in",
+			value: m.mentionRate * 100,
+			format: (n: number) => `${Math.round(n)}%`,
+			change: previous ? (m.mentionRate - previous.mentionRate) * 100 : undefined,
+			changeFormat: (n: number) => `${Math.round(n)} pts`,
+			series: trend.map((t) => t.mentionRate * 100),
+		},
+		{
+			label: "Your site cited in",
+			value: m.citationRate * 100,
+			format: (n: number) => `${Math.round(n)}%`,
+			change: previous ? (m.citationRate - previous.citationRate) * 100 : undefined,
+			changeFormat: (n: number) => `${Math.round(n)} pts`,
+			series: trend.map((t) => t.citationRate * 100),
+		},
+		{
+			label: "Average position",
+			value: m.averageRank ?? "–",
+			format: (n: number) => n.toFixed(1),
+			change:
+				m.averageRank !== null && typeof previous?.averageRank === "number"
+					? m.averageRank - previous.averageRank
+					: undefined,
+			changeFormat: (n: number) => n.toFixed(1),
+			lowerIsBetter: true,
+			series: trend.flatMap((t) => (t.averageRank === null ? [] : [t.averageRank])),
+		},
+		{
+			label: "Sentiment",
+			value: tone.score ?? "–",
+			format: (n: number) => `${Math.round(n)}`,
+			change:
+				tone.score !== null && typeof previous?.sentiment === "number" ? tone.score - previous.sentiment : undefined,
+			changeFormat: (n: number) => `${Math.round(n)} pts`,
+			series: trend.flatMap((t) => (t.sentiment === null ? [] : [t.sentiment])),
+		},
+	];
 
 	const actions =
 		running && run ? (
@@ -101,8 +145,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 					{["Visibility score", "Mentioned in", "Your site cited in", "Average position", "Sentiment"].map((label) => (
 						<StatCard
 							key={label}
-							className="ui-as-rev__stat"
-							layout="inline"
+							className="ui-as-rev__stat oa-stat"
 							label={label}
 							value=""
 							change={0}
@@ -199,64 +242,19 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 		<Page brand={project.name} title="Overview" actions={actions}>
 			{notices}
 			<div className="ui-as-rev__stats oa-stats-5">
-				<StatCard
-					className="ui-as-rev__stat"
-					layout="inline"
-					label="Visibility score"
-					value={overall.visibility}
-					format={(n) => n.toFixed(1)}
-					change={previous ? overall.visibility - previous.visibility : undefined}
-					changeFormat={(n) => n.toFixed(1)}
-					chart={bars(
-						trend.map((t) => t.visibility),
-						"Visibility",
-					)}
-				/>
-				<StatCard
-					className="ui-as-rev__stat"
-					layout="inline"
-					label="Mentioned in"
-					value={m.mentionRate * 100}
-					format={(n) => `${Math.round(n)}%`}
-					change={previous ? (m.mentionRate - previous.mentionRate) * 100 : undefined}
-					changeFormat={(n) => `${Math.round(n)} pts`}
-					chart={bars(
-						trend.map((t) => t.mentionRate * 100),
-						"Mention rate",
-					)}
-				/>
-				<StatCard
-					className="ui-as-rev__stat"
-					layout="inline"
-					label="Your site cited in"
-					value={m.citationRate * 100}
-					format={(n) => `${Math.round(n)}%`}
-					chart={<span />}
-				/>
-				<StatCard
-					className="ui-as-rev__stat"
-					layout="inline"
-					label="Average position"
-					value={m.averageRank === null ? "–" : m.averageRank.toFixed(1)}
-					chart={<span />}
-				/>
-				{tone.score === null ? (
-					<StatCard className="ui-as-rev__stat" layout="inline" label="Sentiment" value="–" chart={<span />} />
-				) : (
+				{stats.map((stat) => (
 					<StatCard
-						className="ui-as-rev__stat"
-						layout="inline"
-						label="Sentiment"
-						value={tone.score}
-						format={(n) => `${Math.round(n)}`}
-						change={typeof previous?.sentiment === "number" ? tone.score - previous.sentiment : undefined}
-						changeFormat={(n) => `${Math.round(n)} pts`}
-						chart={bars(
-							trend.flatMap((t) => (t.sentiment === null ? [] : [t.sentiment])),
-							"Sentiment",
-						)}
+						key={stat.label}
+						className="ui-as-rev__stat oa-stat"
+						label={stat.label}
+						value={stat.value}
+						format={stat.format}
+						change={stat.change}
+						changeFormat={stat.changeFormat}
+						lowerIsBetter={stat.lowerIsBetter}
+						chart={spark(stat.label, stat.series)}
 					/>
-				)}
+				))}
 			</div>
 
 			<div className="ui-as-rev__row ui-as-rev__row--main">

@@ -1,4 +1,4 @@
-import type { EngineInfo, OpportunitiesView, PageId, ProjectView } from "@openaeo/ui";
+import type { EngineInfo, OpportunitiesView, PageId, ProjectView } from "@/types";
 import { ArrowRight02Icon, Target02Icon } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";

@@ -1,4 +1,4 @@
-import type { EngineInfo, PageId, ProjectView, ReportView } from "@openaeo/ui";
+import type { EngineInfo, PageId, ProjectView, ReportView } from "@/types";
 import { Analytics01Icon, ArrowRight02Icon, ChartIncreaseIcon, News01Icon, PlayIcon, StopIcon } from "@hugeicons/core-free-icons";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { ChartCard } from "@/components/analytics";

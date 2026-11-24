@@ -1,4 +1,4 @@
-import type { AnswerView, EngineInfo, PageId, ProjectView } from "@openaeo/ui";
+import type { AnswerView, EngineInfo, PageId, ProjectView } from "@/types";
 import { ArrowRight02Icon, BubbleChatIcon, PlayIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";

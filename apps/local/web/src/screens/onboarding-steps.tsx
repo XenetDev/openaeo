@@ -1,6 +1,6 @@
 import { Icon } from "@/components/app-shell";
 import { ArrowRight02Icon, Plug01Icon } from "@hugeicons/core-free-icons";
-import type { EngineInfo } from "@openaeo/ui";
+import type { EngineInfo } from "@/types";
 import { type ReactNode, useState } from "react";
 import { OnboardingFrame, Steps } from "@/components/onboarding-website";
 import { Badge } from "@/components/ui/badge-clean";

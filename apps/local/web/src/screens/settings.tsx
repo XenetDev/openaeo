@@ -1,4 +1,4 @@
-import type { EngineInfo, EntityView, ProjectView } from "@openaeo/ui";
+import type { EngineInfo, EntityView, ProjectView } from "@/types";
 import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { Icon } from "@/components/app-shell";

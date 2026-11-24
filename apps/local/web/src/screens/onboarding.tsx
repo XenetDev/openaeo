@@ -1,4 +1,4 @@
-import type { EngineInfo, NewProject } from "@openaeo/ui";
+import type { EngineInfo, NewProject } from "@/types";
 import { useRef, useState } from "react";
 import { AppShell, type ShellNavItem } from "@/components/app-shell";
 import { OnboardingBrandScreen } from "@/components/onboarding-brand";

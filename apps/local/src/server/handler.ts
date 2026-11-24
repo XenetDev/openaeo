@@ -7,10 +7,11 @@ import { RunError, type RunService } from "../runs";
 import type { Store, StoredAudit } from "../store/store";
 import type { Provider } from "@openaeo/engine";
 import { askContext, buildAskPrompt, splitActions } from "../ask";
+import type { CompetitorContext, CompetitorIdea } from "../competitor-ideas";
 import { buildOpportunities } from "../opportunities";
 import { fallbackPrompts, type SuggestContext } from "../suggest";
 import { allowedHost, validToken } from "./guard";
-import { AddPromptsSchema, AskSchema, CompetitorsSchema, CreateProjectSchema, EntitySchema, MASK, PatchPromptSchema, SECRET_SETTINGS, SettingsSchema, StartAuditSchema } from "./schemas";
+import { AddPromptsSchema, AskSchema, CompetitorIdeasSchema, CompetitorsSchema, CreateProjectSchema, EntitySchema, MASK, PatchPromptSchema, SECRET_SETTINGS, SettingsSchema, StartAuditSchema } from "./schemas";
 
 export type HandlerDeps = {
 	store: Store;
@@ -23,6 +24,7 @@ export type HandlerDeps = {
 	suggest?: (context: SuggestContext) => Promise<{ prompts: string[]; fallback: boolean }>;
 	askProvider?: (engine?: string) => Provider | null;
 	describeSite?: (domain: string) => Promise<string | null>;
+	competitorIdeas?: (context: CompetitorContext) => Promise<CompetitorIdea[]>;
 };
 
 class HttpError extends Error {
@@ -97,6 +99,13 @@ export function createHandler(deps: HandlerDeps) {
 			return json({ project: created, competitors: store.competitors.list(created.id), prompts: store.prompts.list(created.id) }, 201);
 		}
 
+		if (a === "competitor-ideas" && parts.length === 1 && method === "POST") {
+			const input = await read(request, CompetitorIdeasSchema);
+			if (!deps.competitorIdeas) return json({ competitors: [] });
+			const about = input.domain && deps.describeSite ? await deps.describeSite(input.domain).catch(() => null) : null;
+			return json({ competitors: await deps.competitorIdeas({ brand: input.name, domains: input.domain ? [input.domain] : [], about, questions: [], answers: [], existing: [] }) });
+		}
+
 		if (a === "projects" && b && parts.length === 2) {
 			if (method === "GET") {
 				const found = project(b);
@@ -152,6 +161,15 @@ export function createHandler(deps: HandlerDeps) {
 				const about = found.domains[0] && deps.describeSite && deps.suggest ? await deps.describeSite(found.domains[0]).catch(() => null) : null;
 				const context = { brand: found.name, domains: found.domains, competitors: store.competitors.list(b).map((x) => x.name), existing: store.prompts.list(b).map((x) => x.text), about };
 				return json(deps.suggest ? await deps.suggest(context) : { prompts: fallbackPrompts(context), fallback: true });
+			}
+			if (c === "competitor-ideas" && method === "POST") {
+				const found = project(b);
+				if (!deps.competitorIdeas) return json({ competitors: [] });
+				const about = found.domains[0] && deps.describeSite ? await deps.describeSite(found.domains[0]).catch(() => null) : null;
+				const run = store.runs.list(b, 10).find((r) => r.status !== "running");
+				const answers = run ? store.answers.listByRun(run.id).filter((x) => x.errorCode === null).map((x) => x.text) : [];
+				const existing = [...found.aliases, ...store.competitors.list(b).flatMap((x) => [x.name, ...x.aliases])];
+				return json({ competitors: await deps.competitorIdeas({ brand: found.name, domains: found.domains, about, questions: store.prompts.list(b).map((x) => x.text), answers, existing }) });
 			}
 			if (c === "ask" && method === "POST") {
 				const found = project(b);

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, Icon, type ShellNavItem } from "@/components/app-shell";
 import { AgentMark, AuditMark, BrandMark, BriefMark, RunMark, SuggestMark } from "./screens/command-icons";
 import { saveTheme, storedTheme, type Theme } from "./theme";
-import { ApiError, api } from "./api";
+import { ApiError, api, type CompetitorIdea } from "./api";
 import { AnswersScreen } from "./screens/answers";
 import { AuditScreen } from "./screens/audit";
 import { CompetitorsScreen, SourcesScreen } from "./screens/lists";
@@ -59,6 +59,8 @@ export function App() {
 	const [suggesting, setSuggesting] = useState(false);
 	const [answerFilter, setAnswerFilter] = useState("");
 	const [turns, setTurns] = useState<Turn[]>([]);
+	const [ideas, setIdeas] = useState<CompetitorIdea[] | null>(null);
+	const [finding, setFinding] = useState(false);
 	const [theme, setTheme] = useState<Theme>(storedTheme);
 	const commandRef = useRef<(id: string, text?: string) => void>(() => {});
 	const loading = useRef(0);
@@ -82,6 +84,20 @@ export function App() {
 		if (ticket !== loading.current) return;
 		setData({ competitors: detail.competitors, prompts: detail.prompts, stats: stats.stats, report, answers, audit, found });
 		if (!window.location.hash && !report.run) setPage("prompts");
+	}, []);
+
+	const findCompetitors = useCallback((pid: string, announce: boolean) => {
+		setFinding(true);
+		api.competitorIdeas(pid)
+			.then((result) => {
+				if (liveId.current !== pid) return;
+				setIdeas(result.competitors);
+				if (announce && result.competitors.length > 0) toast(`Found ${result.competitors.length} likely competitors`, { description: "Open Competitors to choose the ones to track." });
+			})
+			.catch((caught) => {
+				if (!announce) toast.error("That didn't work", { description: messageOf(caught) });
+			})
+			.finally(() => liveId.current === pid && setFinding(false));
 	}, []);
 
 	const guard = useCallback(async (work: () => Promise<void>) => {
@@ -108,6 +124,8 @@ export function App() {
 		setData(null);
 		setSuggestions(null);
 		setSuggesting(false);
+		setIdeas(null);
+		setFinding(false);
 		setAnswerFilter("");
 		setTurns([]);
 		if (currentId) void guard(() => loadProject(currentId));
@@ -130,6 +148,19 @@ export function App() {
 		}, 2000);
 		return () => window.clearInterval(timer);
 	}, [running, currentId, loadProject]);
+
+	const runDone = data?.report.run?.status === "done";
+	const auditDone = data?.audit.audit?.status === "done";
+	const noRivals = data ? data.competitors.length === 0 : false;
+	const engineReady = engines.some((e) => e.available && e.enabled);
+	useEffect(() => {
+		if (!currentId || !noRivals || !engineReady || finding || ideas !== null) return;
+		if (!(runDone || auditDone || page === "competitors")) return;
+		const key = `openaeo.ideas.${currentId}`;
+		if (window.localStorage.getItem(key)) return;
+		window.localStorage.setItem(key, "1");
+		findCompetitors(currentId, page !== "competitors");
+	}, [currentId, noRivals, engineReady, finding, ideas, runDone, auditDone, page, findCompetitors]);
 
 	const navigate = (next: PageId) => {
 		window.location.hash = next;
@@ -236,6 +267,7 @@ export function App() {
 					nav={nav}
 					busy={busy}
 					onCancel={project ? () => setCreating(false) : undefined}
+					onFindCompetitors={engines.some((e) => e.available && e.enabled) ? async (name, domain) => (await api.competitorIdeasFor(name, domain)).competitors : undefined}
 					onCreate={(input) => {
 						setBusy(true);
 						void guard(async () => {
@@ -361,6 +393,11 @@ export function App() {
 						toast.success("Competitors saved", { description: "They apply from the next run." });
 					})
 				}
+				ideas={ideas}
+				finding={finding}
+				canFind={engines.some((e) => e.available && e.enabled)}
+				onDismissIdeas={() => setIdeas(null)}
+				onFind={() => findCompetitors(id, false)}
 			/>
 		) : page === "audit" ? (
 			<AuditScreen

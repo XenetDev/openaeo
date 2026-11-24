@@ -21,6 +21,7 @@ export const AskSchema = z.object({
 	history: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(20_000) })).max(40).default([]),
 	engine: z.string().max(40).optional(),
 });
+export const CompetitorIdeasSchema = z.object({ name: z.string().trim().min(1, "name is required").max(200), domain: z.string().trim().max(300).optional() });
 export const PatchPromptSchema = z.object({ active: z.boolean() });
 
 const toggle = z.enum(["true", "false"]);

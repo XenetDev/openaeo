@@ -1,7 +1,10 @@
 import type { EntityView, ProjectView, ReportView } from "@openaeo/ui";
-import { News01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon, News01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
-import { EmptyState } from "@/components/app-shell";
+import { EmptyState, Icon } from "@/components/app-shell";
+import { Spinner } from "@/components/ui/spinner-clean";
+import type { CompetitorIdea } from "../api";
+import { SuggestMark } from "./command-icons";
 import { Avatar } from "@/components/ui/avatar-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
@@ -34,9 +37,22 @@ export function SourcesScreen({ project, report }: { project: ProjectView; repor
 	);
 }
 
-type CompetitorsProps = { project: ProjectView; report: ReportView; competitors: EntityView[]; onSave: (next: EntityView[]) => void };
+type CompetitorsProps = {
+	project: ProjectView;
+	report: ReportView;
+	competitors: EntityView[];
+	onSave: (next: EntityView[]) => void;
+	ideas: CompetitorIdea[] | null;
+	finding: boolean;
+	canFind: boolean;
+	onFind: () => void;
+	onDismissIdeas: () => void;
+};
 
-export function CompetitorsScreen({ project, report, competitors, onSave }: CompetitorsProps) {
+export function CompetitorsScreen({ project, report, competitors, onSave, ideas, finding, canFind, onFind, onDismissIdeas }: CompetitorsProps) {
+	const tracked = new Set([project.name, ...competitors.map((c) => c.name)].map((n) => n.toLowerCase()));
+	const fresh = (ideas ?? []).filter((idea) => !tracked.has(idea.name.toLowerCase()));
+	const toEntity = (idea: CompetitorIdea): EntityView => ({ name: idea.name, aliases: [], domains: idea.domain ? [idea.domain] : [] });
 	const [open, setOpen] = useState(false);
 	const [name, setName] = useState("");
 	const [site, setSite] = useState("");
@@ -66,9 +82,16 @@ export function CompetitorsScreen({ project, report, competitors, onSave }: Comp
 			brand={project.name}
 			title="Competitors"
 			actions={
-				<Button size="sm" onClick={() => setOpen(true)}>
-					Add competitor
-				</Button>
+				<>
+					{canFind ? (
+						<Button variant="ghost" size="sm" loading={finding} onClick={onFind}>
+							Find competitors
+						</Button>
+					) : null}
+					<Button size="sm" onClick={() => setOpen(true)}>
+						Add competitor
+					</Button>
+				</>
 			}
 		>
 			<DataTable
@@ -93,6 +116,56 @@ export function CompetitorsScreen({ project, report, competitors, onSave }: Comp
 				})}
 				tagTones={{ You: "green", Competitor: "gray" }}
 			/>
+
+			{finding ? (
+				<Card>
+					<CardHeader icon={<Spinner />} title={`Finding ${project.name}'s competitors`} description="Your AI engine reads your website, your questions and the latest answers. This takes about half a minute." />
+				</Card>
+			) : ideas ? (
+				<Card>
+					<CardHeader
+						icon={
+							<span className="oa-cta-mark">
+								<SuggestMark />
+							</span>
+						}
+						title={fresh.length ? `${fresh.length} likely competitors` : "Suggested competitors"}
+						description="Found by your AI engine. Click the ones you really compete with; they are tracked from the next run."
+						action={
+							<span className="oa-inline">
+								{fresh.length > 1 ? (
+									<Button size="sm" onClick={() => onSave([...competitors, ...fresh.map(toEntity)])}>
+										Add all {fresh.length}
+									</Button>
+								) : null}
+								<Button variant="ghost" size="sm" onClick={onDismissIdeas}>
+									Dismiss
+								</Button>
+							</span>
+						}
+					/>
+					<CardContent>
+						{fresh.length === 0 ? (
+							<EmptyState bare icon={null} title={ideas.length ? "You already track all of these" : "No competitors found"} text={ideas.length ? "Press Find competitors again after your next run." : "The engine could not tell who you compete with. Add them yourself, or try again after a run."} />
+						) : (
+							<div className="oa-suggest">
+								{fresh.map((idea) => (
+									<button key={idea.name} type="button" onClick={() => onSave([...competitors, toEntity(idea)])} aria-label={`Track ${idea.name}`}>
+										<Avatar name={idea.name} size={20} shape="square" />
+										<span className="oa-suggest-text">
+											{idea.name}
+											{idea.domain ? <small>{idea.domain}</small> : null}
+										</span>
+										<i aria-hidden="true">
+											<Icon icon={Add01Icon} size={14} />
+										</i>
+									</button>
+								))}
+							</div>
+						)}
+					</CardContent>
+				</Card>
+			) : null}
 
 			{competitors.length === 0 ? (
 				<div>

@@ -14,6 +14,7 @@ import { createScheduler } from "./scheduler";
 import { createHandler } from "./server/handler";
 import { openDb } from "./store/db";
 import { createStore } from "./store/store";
+import { suggestCompetitors } from "./competitor-ideas";
 import { suggestPrompts } from "./suggest";
 
 function out(line: string) {
@@ -109,6 +110,7 @@ for (let port = first; port < first + (args.port ? 1 : 20) && !server; port += 1
 				const lines = [model.title, model.description, model.h1 ?? "", ...model.headings.slice(0, 8).map((h) => h.text)].map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
 				return [...new Set(lines)].join("\n") || null;
 			},
+			competitorIdeas: (context) => suggestCompetitors(buildProviders(engineDeps)[0] ?? null, context),
 			askProvider: (engine) => {
 				const ready = buildProviders(engineDeps);
 				return ready.find((p) => p.id === engine) ?? ready[0] ?? null;

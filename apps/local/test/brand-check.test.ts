@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
 import { BRAND_NOTICE, brandQuestion, parseBrandAnalysis, runBrandCheck } from "../src/brand-check";
-import { buildReasons } from "../src/reasons";
 import { buildReport } from "../src/report";
 import { createRunService } from "../src/runs";
 import { fakeProvider, freshStore, recordLog, seed, src } from "./helpers";
@@ -121,45 +120,6 @@ test("a run stores the brand check and the report carries it", async () => {
 		},
 	]);
 	expect(buildReport(store, seeded.id).overall.metrics.answers).toBe(1);
-});
-
-test("reasons explain why the brand is not recommended, from what the engines said", async () => {
-	const { store, seeded, runs } = brandWorld([
-		{ n: 1, knows: "yes", summary: "A CRM.", confusedWith: ["Pipefy"], concerns: ["Staff numbers conflict."] },
-	]);
-	await runs.wait(runs.start(seeded.id).id);
-	const reasons = buildReasons(store, seeded.id);
-	expect(reasons.map((reason) => reason.id)).toEqual([
-		"not-recommended",
-		"concerns",
-		"own-site-unused",
-		"missing-from-sources",
-		"confused",
-	]);
-	const byId = new Map(reasons.map((reason) => [reason.id, reason]));
-	expect(byId.get("not-recommended")?.detail).toContain("0 of 1");
-	expect(byId.get("concerns")?.evidence).toEqual(["Staff numbers conflict."]);
-	expect(byId.get("own-site-unused")?.evidence).toEqual(["g2.com"]);
-	expect(byId.get("missing-from-sources")?.evidence).toEqual(["capterra.com"]);
-	expect(byId.get("confused")?.evidence).toEqual(["Pipefy"]);
-});
-
-test("a brand the engines do not know gets that as the first reason, and a healthy brand gets none", async () => {
-	const unknown = brandWorld([{ n: 1, knows: "no", summary: null, confusedWith: [], concerns: [] }]);
-	await unknown.runs.wait(unknown.runs.start(unknown.seeded.id).id);
-	expect(buildReasons(unknown.store, unknown.seeded.id)[0]?.id).toBe("unknown");
-
-	const store = freshStore();
-	const seeded = seed(store, ["best crm?"]);
-	const engine = fakeProvider("claude-cli", (prompt) => {
-		if (prompt.includes("You are checking what AI assistants know"))
-			return JSON.stringify([{ n: 1, knows: "yes", summary: "A CRM.", confusedWith: [], concerns: [] }]);
-		return { text: "Pipedrive is best.", citations: [src("https://pipedrive.com/x")] };
-	});
-	const runs = createRunService({ store, providers: () => [engine.provider], brandCheck: true });
-	await runs.wait(runs.start(seeded.id).id);
-	expect(buildReasons(store, seeded.id)).toEqual([]);
-	expect(buildReasons(store, seed(freshStore()).id)).toEqual([]);
 });
 
 test("the assistant is told what the engines know about the brand, as quoted data", async () => {

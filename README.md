@@ -25,7 +25,7 @@ The dashboard opens in your browser. Enter your website, confirm your brand and 
 - **Answers.** Every answer from every engine, word for word, with the sites it relied on.
 - **Visibility.** How often you are named, in what position, and how often your own site is cited, tracked over time.
 - **Brand check.** Every run also asks each engine what your company is and does, then shows whether it knows you, what it relied on and any doubts it raised.
-- **Reasons.** Why you are not being recommended yet, worked out from those answers, each with what to do.
+- **Plan.** Concrete steps to get recommended, built from your own results: facts to fix, questions to answer, profiles to check and sites to get mentioned on. Tick them off as you go.
 - **Sentiment.** Whether each engine talks about you positively, neutrally or negatively, as a 0 to 100 score with a trend.
 - **Tags.** Group questions by topic, then filter questions, answers and the report by tag.
 - **Export.** Download every answer from a run as a CSV file.

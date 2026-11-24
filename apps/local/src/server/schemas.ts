@@ -29,6 +29,7 @@ export const CompetitorIdeasSchema = z.object({
 	name: z.string().trim().min(1, "name is required").max(200),
 	domain: z.string().trim().max(300).optional(),
 });
+export const PlanStepSchema = z.object({ done: z.boolean() });
 export const PatchPromptSchema = z
 	.object({ active: z.boolean().optional(), tags: z.array(z.string().max(200)).max(50).optional() })
 	.refine((input) => input.active !== undefined || input.tags !== undefined, "Send active or tags.");

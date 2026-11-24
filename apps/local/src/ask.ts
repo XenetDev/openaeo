@@ -10,6 +10,7 @@ export type { AskAction, AskTurn };
 
 const PAGES = [
 	"overview",
+	"plan",
 	"prompts",
 	"answers",
 	"sources",
@@ -57,6 +58,7 @@ const GUIDE = [
 	"Run now (search bar or Runs page) asks every enabled engine each question once. Runs page: history, a timeline of each run, and a daily or weekly schedule that works while OpenAEO is open.",
 	"Overview: visibility score (0 to 100, from how often the brand is named, how early, share against competitors and how often its own site is linked), trend and problems.",
 	"Overview also shows a sentiment score (0 to 100) with its trend and a positive, neutral and negative split.",
+	"Plan page: the steps to get recommended, built from the latest run, most important first; each can be marked done. Point users there when they ask how to improve.",
 	"Answers page: what each engine said per question, where the brand ranked, the tone, and the sources it linked. Export CSV downloads every answer from the run.",
 	"Tags: on the Prompts page, Edit tags in a question's menu groups questions by topic. The tag filter at the top of Overview, Prompts, Answers, Sources and Competitors limits every figure to questions with that tag.",
 	"Opportunities page: questions where competitors are named and the brand is not, sites worth getting mentioned on, and the top website fixes.",

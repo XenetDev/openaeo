@@ -1,12 +1,13 @@
-import type { Ok, OpportunitiesView, Progress, ReportView, RunDetail, RunView } from "../../api-types";
+import type { Ok, OpportunitiesView, PlanView, Progress, ReportView, RunDetail, RunView } from "../../api-types";
 import { answersCsv } from "../../export";
 import { buildOpportunities } from "../../opportunities";
-import { buildReasons } from "../../reasons";
+import { buildPlan, setStepDone } from "../../plan";
 import { buildReport } from "../../report";
 import { RunError } from "../../runs";
 import type { HandlerDeps } from "../handler";
-import { HttpError, json, notFound, requireProject } from "../http";
+import { HttpError, json, notFound, read, requireProject } from "../http";
 import { type Route, route } from "../router";
+import { PlanStepSchema } from "../schemas";
 
 const STATUS: Record<string, number> = { already_running: 409, no_prompts: 400, no_engines: 400, not_found: 404 };
 
@@ -65,10 +66,23 @@ export function runRoutes({ store, runs }: HandlerDeps): Route[] {
 				},
 			});
 		}),
+		route("GET", "/api/projects/:id/plan", ({ params }) => {
+			const id = params.id as string;
+			requireProject(store, id);
+			return json<PlanView>(buildPlan(store, id));
+		}),
+		route("PUT", "/api/projects/:id/plan/:step", async ({ request, params }) => {
+			const id = params.id as string;
+			requireProject(store, id);
+			const step = decodeURIComponent(params.step as string);
+			if (!buildPlan(store, id).steps.some((candidate) => candidate.id === step)) throw notFound("That step");
+			setStepDone(store, id, step, (await read(request, PlanStepSchema)).done);
+			return json<PlanView>(buildPlan(store, id));
+		}),
 		route("GET", "/api/projects/:id/opportunities", ({ params }) => {
 			const id = params.id as string;
 			requireProject(store, id);
-			return json<OpportunitiesView>({ ...buildOpportunities(store, id), reasons: buildReasons(store, id) });
+			return json<OpportunitiesView>(buildOpportunities(store, id));
 		}),
 		route("GET", "/api/runs/:id", ({ params }) => {
 			const run = requireRun(params.id as string);

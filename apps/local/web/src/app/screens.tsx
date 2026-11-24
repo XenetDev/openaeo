@@ -8,6 +8,7 @@ import { AuditScreen } from "../screens/audit";
 import { CompetitorsScreen, SourcesScreen } from "../screens/lists";
 import { OpportunitiesScreen } from "../screens/opportunities";
 import { OverviewScreen } from "../screens/overview";
+import { PlanScreen } from "../screens/plan";
 import { PromptsScreen } from "../screens/prompts";
 import { RunsScreen } from "../screens/runs";
 import { SettingsScreen } from "../screens/settings";
@@ -56,6 +57,24 @@ type Loaded = ScreenContext & { data: ProjectData };
 const tagFilter = ({ tags, tag, setTag }: Workspace) => <TagFilter tags={tags} tag={tag} onTag={setTag} />;
 
 const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNode> = {
+	plan: ({ workspace, project, data, chat, navigate }) => (
+		<PlanScreen
+			project={project}
+			plan={data.plan}
+			hasRun={data.report.run !== null}
+			onDone={(step, done) =>
+				void workspace.guard(async () => {
+					await api.setPlanStep(project.id, step, done);
+					await workspace.loadProject(project.id);
+				})
+			}
+			onAsk={(question) => {
+				chat.ask(project.id, question, "");
+				navigate("ask");
+			}}
+			onNavigate={navigate}
+		/>
+	),
 	prompts: ({ workspace, project, data, suggestions, act, navigate, setAnswerFilter }) => (
 		<PromptsScreen
 			brand={project.name}
@@ -153,7 +172,7 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 			}}
 		/>
 	),
-	audit: ({ project, data, act, copyBrief }) => {
+	audit: ({ project, data, act, copyBrief, navigate }) => {
 		const audit = data.audit.audit;
 		return (
 			<AuditScreen
@@ -166,6 +185,8 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 				onRun={(url) => act(() => api.startAudit(project.id, url))}
 				onCancel={() => act(async () => (audit ? api.cancelAudit(audit.id) : undefined))}
 				onCopyBrief={copyBrief}
+				planSteps={data.plan.steps.filter((step) => !step.done).length}
+				onPlan={() => navigate("plan")}
 			/>
 		);
 	},
@@ -245,6 +266,7 @@ export function Screen({ page, context }: { page: PageId; context: ScreenContext
 				report={data?.report ?? EMPTY_REPORT}
 				engines={workspace.engines}
 				loading={!data}
+				plan={data?.plan ?? null}
 				filter={tagFilter(workspace)}
 				onNavigate={context.navigate}
 				onRun={context.startRun}

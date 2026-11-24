@@ -1,7 +1,8 @@
 import type { AnswerView, ArtefactsView, AuditView, EngineInfo, EntityView, FindingView, PageId, ProjectView, PromptView, ReportView, Suggestions } from "@openaeo/ui";
-import { BubbleChatIcon, CheckListIcon, ComputerIcon, DashboardSquare01Icon, Globe02Icon, Moon02Icon, News01Icon, PaintBoardIcon, PlayIcon, Plug01Icon, PlusSignIcon, Search01Icon, Settings01Icon, Sun03Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import { BubbleChatIcon, CheckListIcon, ComputerIcon, DashboardSquare01Icon, Globe02Icon, Moon02Icon, News01Icon, PaintBoardIcon, Plug01Icon, PlusSignIcon, Search01Icon, Settings01Icon, Sun03Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, Icon, type ShellNavItem } from "@/components/app-shell";
+import { AgentMark, AuditMark, BrandMark, BriefMark, RunMark, SuggestMark } from "./screens/command-icons";
 import { saveTheme, storedTheme, type Theme } from "./theme";
 import { ApiError, api } from "./api";
 import { AnswersScreen } from "./screens/answers";
@@ -176,15 +177,17 @@ export function App() {
 				project
 					? [
 							{
-								id: "actions",
-								label: "Actions",
+								id: "suggestions",
+								label: "Suggestions",
 								commands: [
-									{ id: "run", label: "Run now", hint: "Ask every engine your questions", icon: <Icon icon={PlayIcon} size={16} />, keywords: "start ask engines" },
-									{ id: "audit", label: "Audit your website", hint: "Check what AI engines can read", icon: <Icon icon={CheckListIcon} size={16} />, keywords: "check site crawl" },
-									{ id: "suggest", label: "Suggest questions", hint: "Ideas from your AI engine", icon: <Icon icon={Search01Icon} size={16} />, keywords: "prompts ideas" },
-									{ id: "new", label: NEW_BRAND, icon: <Icon icon={PlusSignIcon} size={16} />, keywords: "add project" },
+									{ id: "run", label: "Run now", hint: "Ask every engine your questions", logo: <RunMark />, keywords: "start ask engines" },
+									{ id: "audit", label: "Audit your website", hint: "Check what AI engines can read", logo: <AuditMark />, keywords: "check site crawl robots" },
+									{ id: "suggest", label: "Suggest questions", hint: "Ideas from your AI engine", logo: <SuggestMark />, keywords: "prompts ideas" },
+									{ id: "brief", label: "Copy fix brief", hint: "For Claude Code or Codex", logo: <BriefMark />, keywords: "agent fix findings" },
+									{ id: "agent", label: "Connect your AI agent", hint: "Claude Code or Codex", logo: <AgentMark />, keywords: "mcp connect" },
 								],
 							},
+							{ id: "brands", label: "Brands", commands: [{ id: "new", label: NEW_BRAND, hint: "Start tracking a new name", logo: <BrandMark />, keywords: "add project" }] },
 						]
 					: []
 			}
@@ -248,6 +251,19 @@ export function App() {
 	commandRef.current = (command, text) => {
 		if (command === "run") startRun();
 		else if (command === "audit") navigate("audit");
+		else if (command === "agent") navigate("settings");
+		else if (command === "brief") {
+			const audit = data?.audit.audit;
+			if (!audit || audit.status !== "done") {
+				navigate("audit");
+				toast("Run an audit first", { description: "The fix brief is built from its findings." });
+			} else {
+				void guard(async () => {
+					await navigator.clipboard.writeText(await api.auditBrief(audit.id));
+					toast.success("Fix brief copied", { description: "Paste it into Claude Code or Codex in your website's code." });
+				});
+			}
+		}
 		else if (command === "new") setCreating(true);
 		else if (command === "suggest") {
 			navigate("prompts");
@@ -306,7 +322,7 @@ export function App() {
 				}}
 			/>
 		) : page === "answers" ? (
-			<AnswersScreen answers={data.answers} project={project} competitors={data.competitors.flatMap((c) => [c.name, ...c.aliases])} engines={engines} filter={answerFilter} onFilter={setAnswerFilter} onRunAgain={startRun} />
+			<AnswersScreen answers={data.answers} project={project} engines={engines} filter={answerFilter} onFilter={setAnswerFilter} onRunAgain={startRun} />
 		) : page === "sources" ? (
 			<SourcesScreen project={project} report={data.report} />
 		) : page === "competitors" ? (

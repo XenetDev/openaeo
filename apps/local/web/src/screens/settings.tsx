@@ -121,7 +121,7 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 				<h2>Connect your AI agent</h2>
 				<p>Let Claude Code or Codex read your reports and audit findings and fix problems in your site's code. Run one of these once in a terminal, then ask your agent to “get the OpenAEO fix brief and fix the findings”.</p>
 			</header>
-			<div className="oa-stack">
+			<div className="oa-stack oa-after-head">
 				<CodeBlock language="sh" filename="Claude Code" code="claude mcp add openaeo --scope user -- openaeo mcp" />
 				<CodeBlock language="sh" filename="Codex" code="codex mcp add openaeo -- openaeo mcp" />
 			</div>

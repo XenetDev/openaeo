@@ -16,6 +16,10 @@ body,
 	gap: 12px;
 }
 
+.oa-after-head {
+	margin-top: 12px;
+}
+
 .oa-cols-2 {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -53,89 +57,38 @@ body,
 	line-height: 18px;
 }
 
-.oa-answer-text {
-	max-width: 84ch;
-	max-height: 460px;
-	overflow: auto;
-	color: var(--text);
-	font-size: 13px;
-	line-height: 20px;
-	overflow-wrap: anywhere;
+.oa-question {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 8px 0 12px;
 }
 
-.oa-answer-text p,
-.oa-answer-text ul,
-.oa-answer-text ol {
-	margin: 0 0 10px;
+.oa-question-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 0 4px;
 }
 
-.oa-answer-text ul,
-.oa-answer-text ol {
-	padding-left: 20px;
-}
-
-.oa-answer-text strong,
-.oa-answer-h {
-	color: var(--ink);
+.oa-question-head h2 {
+	margin: 0;
+	font-size: 15px;
+	line-height: 22px;
 	font-weight: 500;
-}
-
-.oa-answer-h {
-	margin: 12px 0 4px;
-	font-size: 13px;
-}
-
-.oa-answer-text a {
-	color: var(--ink);
-	text-decoration-color: var(--line-strong);
-	text-underline-offset: 3px;
-}
-
-.oa-answer-text code {
-	font-family: var(--aui-font-mono);
-	font-size: 12px;
-}
-
-.oa-answer-table {
-	margin: 0 0 12px;
-	overflow-x: auto;
-}
-
-.oa-answer-table table {
-	border-collapse: collapse;
-}
-
-.oa-answer-table th,
-.oa-answer-table td {
-	min-width: 96px;
-	overflow-wrap: normal;
-	word-break: normal;
-	padding: 6px 14px 6px 0;
-	border-bottom: 1px solid var(--line);
-	text-align: left;
-	vertical-align: top;
-}
-
-.oa-answer-table th {
-	font-size: 12px;
-	font-weight: 400;
-	color: var(--muted);
-}
-
-.oa-mark {
-	border-radius: 3px;
-	background: transparent;
-	color: var(--ink);
-	text-decoration: underline;
-	text-decoration-color: var(--line-strong);
-	text-underline-offset: 3px;
-}
-
-.oa-mark[data-brand="true"] {
-	padding: 0 2px;
-	background: var(--accent-soft);
 	color: var(--strong);
-	text-decoration: none;
+}
+
+.oa-answer {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 0;
+}
+
+.oa-answer > .oa-inline {
+	padding: 0 4px;
 }
 
 .oa-finding-list {

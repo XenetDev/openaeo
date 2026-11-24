@@ -91,11 +91,11 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 							<TextField label="Website to check" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="example.com" disabled={running} />
 						</div>
 						{running ? (
-							<Button type="button" variant="secondary" onClick={onCancel}>
+							<Button type="button" variant="secondary" size="lg" onClick={onCancel}>
 								Stop
 							</Button>
 						) : (
-							<Button type="submit" disabled={url.trim() === ""}>
+							<Button type="submit" size="lg" disabled={url.trim() === ""}>
 								Run audit
 							</Button>
 						)}

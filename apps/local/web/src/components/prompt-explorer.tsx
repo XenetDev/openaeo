@@ -175,6 +175,8 @@ export type PromptExplorerScreenProps = Pick<AppShellProps, "className"> & {
   onOpen?: (text: string) => void;
   /** A line under the field, e.g. what was just added */
   note?: ReactNode;
+  /** More cards under the lists, in the same scroll area */
+  after?: ReactNode;
   /** The workspace in the sidebar */
   workspace?: string;
   /** The heading over the field */
@@ -212,6 +214,7 @@ export function PromptExplorerScreen({
   empty = false,
   actions,
   note,
+  after,
   onOpen,
 }: PromptExplorerScreenProps) {
   const [query, setQuery] = useState("");
@@ -476,6 +479,7 @@ export function PromptExplorerScreen({
             <KeywordList items={trending} loading={loading} empty={empty} label={`${trend === "rising" ? "Rising" : "Falling"} keywords`} spark none={trend === "rising" ? "Nothing improved since the last run" : "Nothing dropped since the last run"} onPick={open1} />
           </div>
         </section>
+        {after}
         {toast}
       </div>
     </>
@@ -555,14 +559,14 @@ const css = /* css */ `
 /* The hero: the Figma gradient in its order – #eef2ff, blue and cyan light over white, the blurred glow, a lavender veil on
    top – in one layer that fades out downward into the page, as in the reference; the hero itself lets the searches hang out */
 .ui-pex-hero { position: relative; isolation: isolate; display: grid; justify-items: center; gap: 28px; padding: 72px 24px 88px; }
-.ui-pex-hero__bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; border-radius: calc(var(--aui-radius-lg, 10px) + 2px) calc(var(--aui-radius-lg, 10px) + 2px) 0 0; background: #eef2ff; pointer-events: none;
+.ui-pex-hero__bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; contain: paint; transform: translateZ(0); border-radius: calc(var(--aui-radius-lg, 10px) + 2px) calc(var(--aui-radius-lg, 10px) + 2px) 0 0; background: #eef2ff; pointer-events: none;
   -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 50%, transparent 94%); mask-image: linear-gradient(180deg, #000 0%, #000 50%, transparent 94%); }
-.ui-pex-hero__bg::before { content: ""; position: absolute; inset: -20%; opacity: 0.7; animation: ui-pex-drift-a 9s ease-in-out infinite alternate; background:
+.ui-pex-hero__bg::before { content: ""; position: absolute; inset: -20%; opacity: 0.7; will-change: transform; backface-visibility: hidden; animation: ui-pex-drift-a 9s ease-in-out infinite alternate; background:
     radial-gradient(72% 90% at 12% 66%, rgba(92, 157, 238, 0.7) 0%, rgba(92, 157, 238, 0) 72%),
     radial-gradient(62% 78% at 86% 62%, rgba(106, 217, 232, 0.52) 0%, rgba(106, 217, 232, 0) 74%),
     linear-gradient(180deg, #ffffff 8%, #f8faf9 100%); }
-.ui-pex-hero__bg > i { position: absolute; inset: -46% -12% 6% -12%; opacity: 0.85; background: url("${GLOW}") center bottom / cover no-repeat; animation: ui-pex-drift-b 11s ease-in-out infinite alternate; }
-.ui-pex-hero__bg::after { content: ""; position: absolute; inset: -20%; animation: ui-pex-drift-c 13s ease-in-out infinite alternate; background:
+.ui-pex-hero__bg > i { position: absolute; inset: -46% -12% 6% -12%; opacity: 0.85; will-change: transform; backface-visibility: hidden; background: url("${GLOW}") center bottom / cover no-repeat; animation: ui-pex-drift-b 11s ease-in-out infinite alternate; }
+.ui-pex-hero__bg::after { content: ""; position: absolute; inset: -20%; will-change: transform; backface-visibility: hidden; animation: ui-pex-drift-c 13s ease-in-out infinite alternate; background:
     radial-gradient(120% 120% at 85% 85%, rgba(221, 201, 255, 0.72) 0%, rgba(221, 201, 255, 0) 65%),
     radial-gradient(116% 116% at 12% 25%, rgba(210, 231, 255, 0.55) 0%, rgba(210, 231, 255, 0) 60%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(238, 227, 255, 0.22) 100%); }

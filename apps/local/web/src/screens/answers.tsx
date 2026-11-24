@@ -1,21 +1,37 @@
-import { type AnswerView, AnswerText, type EngineInfo, type ProjectView } from "@openaeo/ui";
+import type { AnswerView, EngineInfo, ProjectView } from "@openaeo/ui";
 import { BubbleChatIcon } from "@hugeicons/core-free-icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/app-shell";
+import { AIAnswer } from "@/components/ui/ai-answer-clean";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card-clean";
-import { HoverCard } from "@/components/ui/hover-card-clean";
-import { MessageActions } from "@/components/ui/message-actions-clean";
+import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { SegmentedControl } from "@/components/ui/segmented-control-clean";
+import { toast } from "@/components/ui/toaster-clean";
+import { toAnswerMarkup } from "./answer-markup";
 import { engineLabel, ordinal, Page } from "./shared";
 
-type Props = { answers: AnswerView[]; project: ProjectView; competitors: string[]; engines: EngineInfo[]; filter: string; onFilter: (text: string) => void; onRunAgain: () => void };
+type Props = { answers: AnswerView[]; project: ProjectView; engines: EngineInfo[]; filter: string; onFilter: (text: string) => void; onRunAgain: () => void };
 
-export function AnswersScreen({ answers, project, competitors, engines, filter, onFilter, onRunAgain }: Props) {
+function Verdict({ answer }: { answer: AnswerView }) {
+	if (answer.errorCode !== null) return <Badge tone="danger">Failed</Badge>;
+	return (
+		<>
+			{answer.brandRank === null ? <Badge tone="warning">Not mentioned</Badge> : <Badge tone="success">Mentioned {ordinal(answer.brandRank)}</Badge>}
+			{answer.brandCited ? <Badge tone="info">Your site cited</Badge> : null}
+			{answer.sentiment ? <Badge>{answer.sentiment} tone</Badge> : null}
+			<Badge>{answer.searched ? "Searched the web" : "From memory"}</Badge>
+		</>
+	);
+}
+
+export function AnswersScreen({ answers, project, engines, filter, onFilter, onRunAgain }: Props) {
 	const [engine, setEngine] = useState("all");
 	const ids = [...new Set(answers.map((a) => a.engine))];
+	const brand = useMemo(() => [project.name, ...project.aliases], [project]);
 	const shown = answers.filter((a) => (engine === "all" || a.engine === engine) && (!filter || a.promptText === filter));
+	const questions = [...new Set(shown.map((a) => a.promptText))];
+
 	return (
 		<Page
 			brand={project.name}
@@ -40,80 +56,52 @@ export function AnswersScreen({ answers, project, competitors, engines, filter, 
 			}
 		>
 			{answers.length === 0 ? (
-				<EmptyState icon={BubbleChatIcon} title="No answers yet" text="Answers appear here after your first run, with every brand mention marked and every cited link listed." />
+				<EmptyState icon={BubbleChatIcon} title="No answers yet" text="Answers appear here after your first run, side by side for each engine, with their sources." />
 			) : shown.length === 0 ? (
 				<EmptyState bare icon={BubbleChatIcon} title="No answers match" text="Try another engine or show all questions." />
 			) : (
-				shown.map((answer) => (
-					<Card key={answer.id}>
-						<CardHeader
-							title={answer.promptText}
-							description={
-								answer.errorCode !== null ? "This engine could not answer." : answer.searched ? `${engineLabel(engines, answer.engine)} searched the web for this answer` : `${engineLabel(engines, answer.engine)} answered without searching the web`
-							}
-							action={
-								<span className="oa-inline">
-									<Badge>{engineLabel(engines, answer.engine)}</Badge>
-									{answer.errorCode !== null ? (
-										<Badge tone="danger">Failed</Badge>
-									) : answer.brandRank === null ? (
-										<Badge tone="warning">Not mentioned</Badge>
-									) : (
-										<Badge tone="success">Mentioned {ordinal(answer.brandRank)}</Badge>
-									)}
-									{answer.brandCited ? <Badge tone="info">Your site cited</Badge> : null}
-									{answer.sentiment ? <Badge>{answer.sentiment} tone</Badge> : null}
-								</span>
-							}
-						/>
-						<CardContent>
-							{answer.errorCode !== null ? (
-								<>
-									<p className="oa-quiet">{answer.errorMessage ?? "No reason was given."}</p>
-									<Button variant="secondary" size="sm" style={{ marginTop: 12 }} onClick={onRunAgain}>
-										Run again
-									</Button>
-								</>
-							) : (
-								<div data-ui-message>
-									<AnswerText text={answer.text} brand={[project.name, ...project.aliases]} others={competitors} />
-									<MessageActions text={answer.text} actions={["copy"]} quiet />
-								</div>
-							)}
-						</CardContent>
-						{answer.errorCode === null && answer.citations.length > 0 ? (
-							<CardFooter>
-								<span className="oa-inline">
-									{answer.citations.slice(0, 12).map((c, i) => (
-										<HoverCard
-											key={`${c.url}-${i}`}
-											width={280}
-											content={
-												<div>
-													<strong>{c.title ?? c.domain}</strong>
-													<p className="oa-quiet" style={{ overflowWrap: "anywhere" }}>
-														{c.url}
-													</p>
-												</div>
-											}
-										>
-											{/^https?:\/\//i.test(c.url) ? (
-												<a href={c.url} target="_blank" rel="noreferrer noopener" style={{ textDecoration: "none" }}>
-													<Badge>{c.domain}</Badge>
-												</a>
-											) : (
-												<span>
-													<Badge>{c.domain}</Badge>
-												</span>
-											)}
-										</HoverCard>
-									))}
-									{answer.citations.length > 12 ? <Badge>+{answer.citations.length - 12} more</Badge> : null}
-								</span>
-							</CardFooter>
-						) : null}
-					</Card>
-				))
+				questions.map((question) => {
+					const group = shown.filter((a) => a.promptText === question);
+					const good = group.filter((a) => a.errorCode === null);
+					const mentioned = good.filter((a) => a.brandRank !== null).length;
+					return (
+						<section key={question} className="oa-question">
+							<header className="oa-question-head">
+								<h2>{question}</h2>
+								<Badge tone={good.length === 0 ? "danger" : mentioned === good.length ? "success" : mentioned === 0 ? "warning" : "neutral"}>
+									{good.length === 0 ? "No answers" : `${project.name} mentioned by ${mentioned} of ${good.length} ${good.length === 1 ? "engine" : "engines"}`}
+								</Badge>
+							</header>
+							<div className={group.length > 1 ? "oa-cols-2" : "oa-stack"}>
+								{group.map((answer) => {
+									const label = engineLabel(engines, answer.engine);
+									if (answer.errorCode !== null) {
+										return (
+											<Card key={answer.id}>
+												<CardHeader title={label} description="This engine could not answer." action={<Verdict answer={answer} />} />
+												<CardContent>
+													<p className="oa-quiet">{answer.errorMessage ?? "No reason was given."}</p>
+													<Button variant="secondary" size="sm" style={{ marginTop: 12 }} onClick={onRunAgain}>
+														Run again
+													</Button>
+												</CardContent>
+											</Card>
+										);
+									}
+									const markup = toAnswerMarkup(answer.text, answer.citations, brand);
+									return (
+										<div key={answer.id} className="oa-answer">
+											<span className="oa-inline">
+												<Verdict answer={answer} />
+											</span>
+											<AIAnswer framed question={label} sources={markup.sources} answer={markup.answer} animate={false} tookSeconds={answer.durationMs / 1000} onCopy={() => toast.success("Answer copied")} />
+										</div>
+									);
+								})}
+							</div>
+						</section>
+					);
+				})
 			)}
 		</Page>
 	);

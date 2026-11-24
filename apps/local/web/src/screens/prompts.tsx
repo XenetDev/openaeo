@@ -44,7 +44,6 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 	const fresh = suggestions?.prompts.filter((p) => !tracked.has(p.toLowerCase())) ?? [];
 
 	return (
-		<div style={{ height: "100%", overflowY: "auto" }}>
 			<PromptExplorerScreen
 				workspace={brand}
 				prompts={keywords}
@@ -65,8 +64,8 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 						Suggest questions
 					</Button>
 				}
-			/>
-			<div className="oa-stack" style={{ padding: "0 12px 24px" }}>
+				after={
+<>
 				{suggestions ? (
 					<Card>
 						<CardHeader
@@ -131,7 +130,8 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 						</CardContent>
 					</Card>
 				) : null}
-			</div>
-		</div>
+</>
+				}
+			/>
 	);
 }

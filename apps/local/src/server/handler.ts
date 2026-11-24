@@ -166,7 +166,7 @@ export function createHandler(deps: HandlerDeps) {
 				const audit = store.audits.latest(b);
 				if (!audit) return json({ audit: null, findings: [], artefacts: {} });
 				const findings = store.audits.findings(audit.id);
-				return json({ audit, findings, artefacts: audit.status === "done" ? artefacts(resultOf(audit, findings), { name: found.name }) : {} });
+				return json({ audit, findings, artefacts: audit.status === "done" && audit.own ? artefacts(resultOf(audit, findings), { name: found.name }) : {} });
 			}
 		}
 
@@ -178,6 +178,7 @@ export function createHandler(deps: HandlerDeps) {
 				return json({ ok: true });
 			}
 			if (parts.length === 3 && c === "brief" && method === "GET") {
+				if (audit.status !== "done") throw new HttpError(409, "That audit did not finish, so there is no brief. Run the audit again.");
 				return new Response(buildFixBrief(resultOf(audit, store.audits.findings(b))), {
 					headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
 				});

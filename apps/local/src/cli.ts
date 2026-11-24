@@ -32,7 +32,7 @@ export function parseArgs(argv: string[]): Args {
 			i += 1;
 		} else if (arg.startsWith("-")) return fail(`Unknown option "${arg}".`);
 		else if (i === 0 && COMMANDS.has(arg)) args.command = arg as "run" | "status" | "audit" | "mcp" | "help";
-		else if (i === 1 && args.command === "audit") args.url = arg;
+		else if (args.command === "audit" && args.url === undefined) args.url = arg;
 		else return fail(`Unknown command "${arg}".`);
 	}
 	return args;

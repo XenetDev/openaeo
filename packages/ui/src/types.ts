@@ -48,6 +48,7 @@ export type AuditView = {
 	score: number | null;
 	pages: { url: string; status: number; words: number; error?: string }[];
 	skipped: number;
+	own?: boolean;
 };
 export type FindingView = { checkId: string; severity: "high" | "medium" | "low"; url: string; title: string; evidence: string; fix: string };
 export type ArtefactsView = { robotsTxt?: string; llmsTxt?: string; organizationJsonLd?: string };

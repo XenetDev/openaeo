@@ -96,6 +96,7 @@ const MIGRATIONS = [
 	);
 	CREATE INDEX finding_audit ON finding(audit_id, position);
 	`,
+	"ALTER TABLE audit ADD COLUMN own INTEGER NOT NULL DEFAULT 1;",
 ];
 
 export function openDb(path: string): Database {

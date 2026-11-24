@@ -40,7 +40,7 @@ export function AuditPage({ audit, findings, artefacts, defaultUrl, onRun, onCan
 					<p className="oa-eyebrow">Audit</p>
 					<h1 className="oa-title">Can AI engines read and quote your site?</h1>
 				</div>
-				{audit?.status === "done" && findings.length > 0 ? (
+				{audit?.status === "done" && audit.own !== false && findings.length > 0 ? (
 					<div className="oa-actions">
 						<button type="button" className="oa-button oa-button-quiet" onClick={onCopyBrief}>
 							{copied ? "Copied" : "Copy fix brief for your AI agent"}
@@ -92,6 +92,11 @@ export function AuditPage({ audit, findings, artefacts, defaultUrl, onRun, onCan
 				<p className="oa-alert">The last audit of {audit.origin} stopped before it finished. Run it again.</p>
 			) : (
 				<>
+					{audit.own === false ? (
+						<p className="oa-alert">
+							This audit is of {audit.origin}, which is not your project's website. It is shown for comparison and is not used for your fix brief.
+						</p>
+					) : null}
 					<section className="oa-hero">
 						<div className="oa-score">
 							<p className="oa-eyebrow">Audit score</p>
@@ -102,6 +107,7 @@ export function AuditPage({ audit, findings, artefacts, defaultUrl, onRun, onCan
 							<p className="oa-muted">
 								{audit.origin} · {when(audit.startedAt)}
 							</p>
+							<p className="oa-muted">A rough guide: it counts the problems found, weighted by severity. It does not predict AI visibility.</p>
 						</div>
 						<dl className="oa-tiles oa-tiles-3">
 							<div className="oa-tile">

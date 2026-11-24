@@ -42,10 +42,13 @@ const runs = createRunService({ store, providers: () => buildProviders(engineDep
 const stop = () => {
 	runs.cancelAll();
 	audits.cancelAll();
+	store.runs.interruptOwn();
+	store.audits.interruptOwn();
 	process.exit(130);
 };
 process.on("SIGINT", stop);
 process.on("SIGTERM", stop);
+process.on("SIGHUP", stop);
 
 if (args.command === "status") {
 	const projects = store.projects.list();
@@ -63,6 +66,8 @@ if (args.command === "mcp") {
 	await new Promise<void>((resolve) => process.stdin.on("close", resolve));
 	runs.cancelAll();
 	audits.cancelAll();
+	store.runs.interruptOwn();
+	store.audits.interruptOwn();
 	process.exit(0);
 }
 

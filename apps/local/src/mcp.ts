@@ -1,8 +1,8 @@
-import { buildFixBrief, QUOTE_NOTICE } from "@openaeo/engine";
+import { type AuditResult, buildFixBrief, groupFindings, QUOTE_NOTICE } from "@openaeo/engine";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuditError, type AuditService } from "./audits";
-import { formatAudit, formatReport } from "./cli";
+import { formatReport } from "./cli";
 import { ENGINE_LABELS } from "./engines";
 import { buildReport } from "./report";
 import { RunError, type RunService } from "./runs";
@@ -22,9 +22,26 @@ function ordinal(n: number): string {
 	return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
 }
 
+const oneLine = (text: string) => text.replace(/[\s\u0085\u2028\u2029]+/g, " ").trim();
+
+function auditForAgent(result: AuditResult): string {
+	const read = result.pages.filter((p) => !p.error).length;
+	const lines = [`OpenAEO audit · ${result.origin}`, `Score ${result.score} / 100 · read ${read} of ${result.pages.length} pages · ${result.findings.length} findings`];
+	const groups = groupFindings(result.findings);
+	if (groups.length === 0) lines.push("", "No problems found.");
+	for (const group of groups) {
+		const count = new Set(group.findings.map((f) => f.url)).size;
+		lines.push("", `[${group.severity}] ${group.title}${count > 1 ? ` (${count} pages)` : ""}`, ...group.fix.split("\n").map((line, i) => `  ${i === 0 ? "Fix: " : "     "}${line}`));
+	}
+	const evidence = result.findings.slice(0, 40).map((f) => `> [${f.checkId}] ${oneLine(f.url).slice(0, 300)}: ${oneLine(f.evidence).slice(0, 200)}`);
+	const unread = result.pages.filter((p) => p.error).slice(0, 15).map((p) => `> could not read ${oneLine(p.url).slice(0, 300)}: ${oneLine(p.error ?? "").slice(0, 200)}`);
+	if (evidence.length + unread.length > 0) lines.push("", "Evidence and addresses", QUOTE_NOTICE, ...evidence, ...unread);
+	return lines.join("\n");
+}
+
 const quoted = (text: string, max: number) =>
 	(text.length > max ? `${text.slice(0, max)}…` : text)
-		.split("\n")
+		.split(/[\n\r\u0085\u2028\u2029]+/)
 		.map((line) => `> ${line}`)
 		.join("\n");
 
@@ -108,7 +125,7 @@ export function createMcpServer(deps: { store: Store; runs: RunService; audits: 
 					.filter(Boolean)
 					.join(" · ");
 				const cited = [...new Set(a.citations.map((c) => c.domain))].slice(0, 8).join(", ");
-				return [`[${ENGINE_LABELS[a.engine] ?? a.engine}] ${prompts.get(a.promptId) ?? "(deleted question)"}`, `  ${verdict}`, `  cited sites: ${cited || "none"}`, quoted(a.text, 1500)].join("\n");
+				return [`[${ENGINE_LABELS[a.engine] ?? a.engine}] ${prompts.get(a.promptId) ?? "(deleted question)"}`, `  ${verdict}`, `> cited sites: ${oneLine(cited) || "none"}`, quoted(a.text, 1500)].join("\n");
 			});
 			return say([`${answers.length} answers in the latest run for ${found.name}.`, ANSWER_NOTICE, "", blocks.join("\n\n")].join("\n"));
 		},
@@ -124,12 +141,10 @@ export function createMcpServer(deps: { store: Store; runs: RunService; audits: 
 		async ({ project }) => {
 			const found = resolve(project);
 			if (isReply(found)) return found;
-			const audit = store.audits.latest(found.id);
+			const audit = store.audits.latest(found.id, { ownOnly: true });
 			if (!audit) return say(`No audit yet for ${found.name}. Use run_audit to run one.`);
 			if (audit.status !== "done") return say(`The latest audit of ${audit.origin} is ${audit.status}. Use run_audit to run it again.`);
-			const findings = store.audits.findings(audit.id);
-			const evidence = findings.slice(0, 30).map((f) => `> [${f.checkId}] ${f.url}: ${f.evidence.replace(/\s+/g, " ")}`);
-			return say([formatAudit(resultOf(audit, findings)), ...(evidence.length ? ["", "Evidence", QUOTE_NOTICE, "", ...evidence] : [])].join("\n"));
+			return say(auditForAgent(resultOf(audit, store.audits.findings(audit.id))));
 		},
 	);
 
@@ -143,7 +158,7 @@ export function createMcpServer(deps: { store: Store; runs: RunService; audits: 
 		async ({ project }) => {
 			const found = resolve(project);
 			if (isReply(found)) return found;
-			const audit = store.audits.latest(found.id);
+			const audit = store.audits.latest(found.id, { ownOnly: true });
 			if (!audit || audit.status !== "done") return say(`No audit yet for ${found.name}. Use run_audit to run one.`);
 			return say(buildFixBrief(resultOf(audit, store.audits.findings(audit.id))));
 		},
@@ -182,7 +197,8 @@ export function createMcpServer(deps: { store: Store; runs: RunService; audits: 
 			try {
 				const audit = await deps.audits.wait(deps.audits.start(found.id, url).id);
 				if (audit.status !== "done") return fail("The audit was interrupted before it finished.");
-				return say(`${formatAudit(resultOf(audit, store.audits.findings(audit.id)))}\n\nUse get_fix_brief for instructions on fixing these.`);
+				const note = audit.own ? "Use get_fix_brief for full fixing instructions." : "This address is not the project's own website, so it was not saved as the project's audit.";
+				return say(`${note}\n\n${auditForAgent(resultOf(audit, store.audits.findings(audit.id)))}`);
 			} catch (error) {
 				if (error instanceof AuditError) return fail(error.message);
 				throw error;

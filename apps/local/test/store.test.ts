@@ -193,7 +193,7 @@ test("a file database keeps its data when reopened", () => {
 		const second = openDb(path);
 		expect(createStore(second).projects.get(p.id)?.name).toBe("Kept");
 		expect(statSync(path).mode & 0o777).toBe(0o600);
-		expect(second.query("PRAGMA user_version").get()).toEqual({ user_version: 4 });
+		expect(second.query("PRAGMA user_version").get()).toEqual({ user_version: 5 });
 		second.close();
 	} finally {
 		rmSync(dir, { recursive: true, force: true });

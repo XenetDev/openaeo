@@ -222,7 +222,8 @@ test("openaeo audit explains what is missing", async () => {
 	};
 	lines.length = 0;
 	expect(await auditOnce({ store, audits: createAuditService({ store, get: down }), get: down, out: (l) => lines.push(l), json: false, url: "x.com" })).toBe(1);
-	expect(lines.join("\n")).toContain("Could not reach x.com");
+	expect(lines.join("\n")).toContain("The site could not be read");
+	expect(lines.join("\n")).not.toContain("Could not reach x.com");
 });
 
 test("the stored audit records the address the site redirected to", async () => {

@@ -50,9 +50,10 @@ export type StoredAudit = {
 	score: number | null;
 	pages: AuditPage[];
 	skipped: number;
+	own: boolean;
 };
 
-type AuditRow = { id: string; project_id: string; origin: string; status: AuditStatus; started_at: number; finished_at: number | null; score: number | null; pages: string; skipped: number };
+type AuditRow = { id: string; project_id: string; origin: string; status: AuditStatus; started_at: number; finished_at: number | null; score: number | null; pages: string; skipped: number; own: number };
 type FindingRow = { check_id: string; severity: Finding["severity"]; url: string; title: string; evidence: string; fix: string };
 
 type EntityRow = { id: string; name: string; aliases: string; domains: string };
@@ -142,6 +143,7 @@ const toAudit = (r: AuditRow): StoredAudit => ({
 	score: r.score,
 	pages: JSON.parse(r.pages) as AuditPage[],
 	skipped: r.skipped,
+	own: r.own === 1,
 });
 
 export function createStore(db: Database) {
@@ -261,6 +263,7 @@ export function createStore(db: Database) {
 			db.query("UPDATE run SET status = ?, finished_at = ? WHERE id = ?").run(status, Date.now(), id);
 			return runs.get(id);
 		},
+		interruptOwn: (): number => db.query("UPDATE run SET status = 'interrupted', finished_at = ? WHERE status = 'running' AND owner_pid = ?").run(Date.now(), process.pid).changes,
 		interruptStale(isAlive: (pid: number) => boolean = pidAlive): number {
 			const running = db.query<{ id: string; owner_pid: number | null }, []>("SELECT id, owner_pid FROM run WHERE status = 'running'").all();
 			let count = 0;
@@ -333,18 +336,31 @@ export function createStore(db: Database) {
 			Object.fromEntries(db.query<{ key: string; value: string }, []>("SELECT key, value FROM setting").all().map((r) => [r.key, r.value])),
 	};
 
+	const interruptOwnIn = (table: "run" | "audit") =>
+		db.query(`UPDATE ${table} SET status = 'interrupted', finished_at = ? WHERE status = 'running' AND owner_pid = ?`).run(Date.now(), process.pid).changes;
+
 	const audits = {
+		interruptOwn: (): number => interruptOwnIn("audit"),
 		get(id: string): StoredAudit | null {
 			const row = db.query<AuditRow, [string]>("SELECT * FROM audit WHERE id = ?").get(id);
 			return row ? toAudit(row) : null;
 		},
-		create(projectId: string, origin: string): StoredAudit {
+		create(projectId: string, origin: string, own = true): StoredAudit {
 			const id = crypto.randomUUID();
-			db.query("INSERT INTO audit (id, project_id, origin, status, started_at, owner_pid) VALUES (?, ?, ?, 'running', ?, ?)").run(id, projectId, origin, Date.now(), process.pid);
+			db.query("INSERT INTO audit (id, project_id, origin, status, started_at, owner_pid, own) VALUES (?, ?, ?, 'running', ?, ?, ?)").run(
+				id,
+				projectId,
+				origin,
+				Date.now(),
+				process.pid,
+				own ? 1 : 0,
+			);
 			return audits.get(id) as StoredAudit;
 		},
-		latest(projectId: string): StoredAudit | null {
-			const row = db.query<AuditRow, [string]>("SELECT * FROM audit WHERE project_id = ? ORDER BY started_at DESC, rowid DESC LIMIT 1").get(projectId);
+		latest(projectId: string, o: { ownOnly?: boolean } = {}): StoredAudit | null {
+			const row = db
+				.query<AuditRow, [string]>(`SELECT * FROM audit WHERE project_id = ? ${o.ownOnly ? "AND own = 1" : ""} ORDER BY started_at DESC, rowid DESC LIMIT 1`)
+				.get(projectId);
 			return row ? toAudit(row) : null;
 		},
 		active(projectId: string): StoredAudit | null {

@@ -91,3 +91,41 @@ export function buildReport(store: Store, projectId: string, opts: { runId?: str
 
 	return { projectId, run: answers.length || run ? run : null, overall: summarise(answers), engines, competitors, topDomains, trend, problems };
 }
+
+export type PromptStat = {
+	promptId: string;
+	text: string;
+	active: boolean;
+	history: { runId: string; startedAt: number; rate: number }[];
+	latest: number | null;
+	previous: number | null;
+	bestRank: number | null;
+};
+
+export function promptStats(store: Store, projectId: string, maxRuns = 12): PromptStat[] {
+	const runs = store.runs
+		.list(projectId, maxRuns)
+		.filter((r) => r.status !== "running")
+		.reverse();
+	const perRun = runs.map((run) => ({ run, answers: ok(store.answers.listByRun(run.id)) }));
+	return store.prompts.list(projectId).map((prompt) => {
+		const history: PromptStat["history"] = [];
+		let bestRank: number | null = null;
+		for (const { run, answers } of perRun) {
+			const mine = answers.filter((a) => a.promptId === prompt.id);
+			if (mine.length === 0) continue;
+			const mentioned = mine.filter((a) => a.brandRank !== null);
+			history.push({ runId: run.id, startedAt: run.startedAt, rate: mentioned.length / mine.length });
+			for (const answer of mentioned) bestRank = bestRank === null ? answer.brandRank : Math.min(bestRank, answer.brandRank ?? bestRank);
+		}
+		return {
+			promptId: prompt.id,
+			text: prompt.text,
+			active: prompt.active,
+			history,
+			latest: history.at(-1)?.rate ?? null,
+			previous: history.at(-2)?.rate ?? null,
+			bestRank,
+		};
+	});
+}

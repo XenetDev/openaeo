@@ -89,3 +89,26 @@ test("the trend lists finished runs oldest first and a chosen run can be reporte
 	expect(buildReport(store, project.id, { runId: first.id }).overall.metrics.mentionRate).toBe(0);
 	expect(buildReport(store, project.id, { trendRuns: 1 }).trend.map((t) => t.runId)).toEqual([second.id]);
 });
+
+test("prompt stats give each question's mention rate per run, oldest first", async () => {
+	const { promptStats } = await import("../src/report");
+	const store = freshStore();
+	const project = seed(store, ["q1", "q2"]);
+	const first = await runOnce(store, project.id, "HubSpot", "HubSpot");
+	await new Promise((resolve) => setTimeout(resolve, 5));
+	const claude = fakeProvider("claude-cli", (prompt) => (prompt === "q1" ? "Pipedrive wins" : "HubSpot"));
+	const codex = fakeProvider("codex-cli", (prompt) => (prompt === "q1" ? "HubSpot then Pipedrive" : "rate_limited"));
+	const runs = createRunService({ store, providers: () => [claude.provider, codex.provider], retries: 0 });
+	const second = await runs.wait(runs.start(project.id).id);
+	store.prompts.add(project.id, ["never run"]);
+	const stats = promptStats(store, project.id);
+	expect(stats.map((s) => s.text)).toEqual(["q1", "q2", "never run"]);
+	expect(stats[0]?.history.map((h) => [h.runId, h.rate])).toEqual([
+		[first.id, 0],
+		[second.id, 1],
+	]);
+	expect(stats[0]).toMatchObject({ latest: 1, previous: 0, bestRank: 1, active: true });
+	expect(stats[1]).toMatchObject({ latest: 0, previous: 0, bestRank: null });
+	expect(stats[1]?.history.length).toBe(2);
+	expect(stats[2]).toMatchObject({ latest: null, previous: null, bestRank: null, history: [] });
+});

@@ -1,4 +1,4 @@
-export type PageId = "overview" | "prompts" | "answers" | "sources" | "competitors" | "audit" | "settings";
+export type PageId = "overview" | "prompts" | "answers" | "sources" | "competitors" | "audit" | "runs" | "ask" | "settings";
 
 export type EngineInfo = { id: string; label: string; available: boolean; reason: string | null; enabled: boolean };
 export type EntityView = { name: string; aliases: string[]; domains: string[] };
@@ -33,6 +33,10 @@ export type AnswerView = {
 	citations: SourceView[];
 	sources: SourceView[];
 	sentiment?: "positive" | "neutral" | "negative" | null;
+	createdAt?: number;
+	model?: string | null;
+	inputTokens?: number | null;
+	outputTokens?: number | null;
 };
 
 export type NewProject = EntityView & { competitors: EntityView[]; prompts: string[] };

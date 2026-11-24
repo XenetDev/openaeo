@@ -33,9 +33,9 @@ import { EmptyState, Icon, Loading, Skeleton, rove, useToast, type AppShellProps
 /* ---------- Types ---------- */
 
 /** A prompt or keyword with how many times a month people ask it, and how much that changed since last month */
-export type PexKeyword = { id: string; text: string; volume: number; change: number; /** Twelve months, oldest first – the sparkline */ trend?: number[] };
+export type PexKeyword = { id: string; text: string; volume: number; change: number; /** Not measured yet – shown in words, not as 0 */ pending?: boolean; /** Twelve months, oldest first – the sparkline */ trend?: number[] };
 /** What Analyse found for one prompt */
-export type PexResult = { text: string; volume: number; change: number; trend: number[]; /** Share of answers that mention you, 0–1 */ share: number };
+export type PexResult = { text: string; volume: number; change: number; pending?: boolean; trend: number[]; /** Share of answers that mention you, 0–1 */ share: number };
 export type PexMode = "keyword" | "url";
 
 /* ---------- Sample content – replace with your own data ---------- */
@@ -429,7 +429,7 @@ export function PromptExplorerScreen({
                         {r.text}
                       </span>
                       <span data-num className="ui-pex-num">
-                        {short(r.volume)}
+                        {r.pending ? "Not run yet" : short(r.volume)}
                       </span>
                       <span data-num>
                         <Change value={r.change} />
@@ -441,7 +441,7 @@ export function PromptExplorerScreen({
                         <span className="ui-pex-meter" aria-hidden="true">
                           <i style={{ width: percent(r.share) }} />
                         </span>
-                        <span className="ui-pex-num">{percent(r.share)}</span>
+                        <span className="ui-pex-num">{r.pending ? "–" : percent(r.share)}</span>
                       </span>
                     </div>
                   ))}
@@ -502,13 +502,13 @@ function KeywordList({ items, loading, empty, label, spark, none, onPick }: { it
     <ul className="ui-pex-kws" aria-label={label}>
       {items.map((k) => (
         <li key={k.id}>
-          <button type="button" className="ui-pex-kw" data-spark={spark || undefined} aria-label={`${k.text}, ${short(k.volume)} of answers mention you, ${k.change >= 0 ? "up" : "down"} ${short(k.change)} – analyse`} onClick={() => onPick(k.text)}>
+          <button type="button" className="ui-pex-kw" data-spark={spark || undefined} aria-label={`${k.text}, ${short(k.volume)} of answers mention you${k.pending ? " (not run yet)" : ""}, ${k.change >= 0 ? "up" : "down"} ${short(k.change)} – analyse`} onClick={() => onPick(k.text)}>
             <span className="ui-pex-kw__text" dir="auto" title={k.text}>
               {k.text}
             </span>
             {spark && <Sparkline values={k.trend ?? []} />}
             {k.change !== 0 ? <Change value={k.change} /> : <span />}
-            <span className="ui-pex-kw__vol ui-pex-num">{short(k.volume)}</span>
+            <span className="ui-pex-kw__vol ui-pex-num">{k.pending ? "Not run yet" : short(k.volume)}</span>
           </button>
         </li>
       ))}

@@ -39,6 +39,8 @@ export type CommandMenuProps = {
   onClose?: () => void;
   /** Focus the field when the menu appears */
   autoFocus?: boolean;
+  /** What the first row offers for typed text – the assistant when left out */
+  typed?: { group: string; label: (text: string) => string; done: (text: string) => string };
   className?: string;
 };
 
@@ -369,6 +371,7 @@ export function CommandMenu({
   onClose,
   autoFocus,
   className,
+  typed,
 }: CommandMenuProps) {
   const id = "ui-cmc" + useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const input = useRef<HTMLInputElement>(null);
@@ -412,9 +415,9 @@ export function CommandMenu({
       }))
       .filter((g) => g.commands.length);
     // With text typed, the first row always offers to ask the assistant about it
-    if (needle) result.unshift({ key: "ask", id: "ask-about", label: "Assistant", commands: [{ key: "ask", n: 0, id: "ask-about", label: `Ask assistant about “${q}”`, logo: <SparkTile /> }] });
+    if (needle) result.unshift({ key: "ask", id: "ask-about", label: typed?.group ?? "Assistant", commands: [{ key: "ask", n: 0, id: "ask-about", label: typed ? typed.label(q) : `Ask assistant about “${q}”`, logo: <SparkTile /> }] });
     return result;
-  }, [all, q]);
+  }, [all, q, typed]);
   const order = useMemo(() => shown.flatMap((g) => g.commands), [shown]);
   const suggestions = order.filter((c) => c.n);
   const current = order.find((c) => c.key === active) ?? order[0];
@@ -482,7 +485,7 @@ export function CommandMenu({
 
   const run = (cmd: Row) => {
     setActive(cmd.key);
-    setRan({ id: cmd.key, label: cmd.key === "ask" ? `Asked the assistant about “${q}”` : cmd.label });
+    setRan({ id: cmd.key, label: cmd.key === "ask" ? (typed ? typed.done(q) : `Asked the assistant about “${q}”`) : cmd.label });
     if (cmd.key === "ask") onRun?.("ask", q);
     else onRun?.(cmd.id);
   };

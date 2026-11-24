@@ -1,6 +1,8 @@
 import type { PromptView, Suggestions } from "@openaeo/ui";
 import { PromptExplorerScreen, type PexKeyword, type PexResult } from "@/components/prompt-explorer";
+import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
+import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 
 export type PromptStat = {
 	promptId: string;
@@ -30,6 +32,7 @@ const toKeyword = (s: PromptStat): PexKeyword => ({
 	id: s.promptId,
 	text: s.text,
 	volume: (s.latest ?? 0) * 100,
+	pending: s.latest === null,
 	change: s.latest !== null && s.previous !== null ? (s.latest - s.previous) * 100 : 0,
 	trend: s.history.map((h) => h.rate * 100),
 });
@@ -54,7 +57,7 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 					await onAdd(texts);
 					return texts.map((text) => {
 						const known = keywords.find((k) => k.text.toLowerCase() === text.toLowerCase());
-						return { text, volume: known?.volume ?? 0, change: known?.change ?? 0, trend: known?.trend ?? [], share: (known?.volume ?? 0) / 100 };
+						return { text, volume: known?.volume ?? 0, change: known?.change ?? 0, pending: known?.pending ?? true, trend: known?.trend ?? [], share: (known?.volume ?? 0) / 100 };
 					});
 				}}
 				actions={
@@ -63,66 +66,70 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 					</Button>
 				}
 			/>
-			<div className="oa-view" style={{ height: "auto", overflow: "visible", paddingTop: 0 }}>
+			<div className="oa-stack" style={{ padding: "0 12px 24px" }}>
 				{suggestions ? (
-					<section className="oa-card">
-						<h2 className="oa-cap">
-							Suggested questions
-							<button type="button" className="oa-plain" onClick={onDismissSuggestions}>
-								Dismiss
-							</button>
-						</h2>
-						<p className="oa-note" style={{ marginBottom: 8 }}>
-							{suggestions.fallback
-								? "Generic starting points, because no AI engine could suggest better ones."
-								: "Suggested by your AI engine from your brand and competitors. Track the ones a real buyer would ask."}
-						</p>
-						{fresh.length === 0 ? (
-							<p className="oa-note">You already track all of these.</p>
-						) : (
-							<>
-								<ul className="oa-rows">
-									{fresh.map((text) => (
-										<li key={text} className="oa-list-item">
-											<span>{text}</span>
-											<button type="button" className="oa-plain" onClick={() => void onAdd([text])}>
-												Track
-											</button>
-										</li>
-									))}
-								</ul>
-								<div className="oa-actions" style={{ marginTop: 12 }}>
-									<Button size="sm" onClick={() => void onAdd(fresh)}>
-										Track all {fresh.length}
+					<Card>
+						<CardHeader
+							title="Suggested questions"
+							description={
+								suggestions.fallback
+									? "Generic starting points, because no AI engine could suggest better ones."
+									: "Suggested by your AI engine from your brand and competitors. Track the ones a real buyer would ask."
+							}
+							action={
+								<span className="oa-inline">
+									{fresh.length > 0 ? (
+										<Button size="sm" onClick={() => void onAdd(fresh)}>
+											Track all {fresh.length}
+										</Button>
+									) : null}
+									<Button variant="ghost" size="sm" onClick={onDismissSuggestions}>
+										Dismiss
 									</Button>
+								</span>
+							}
+						/>
+						<CardContent>
+							{fresh.length === 0 ? (
+								<p className="oa-quiet">You already track all of these.</p>
+							) : (
+								<div className="oa-stack" style={{ gap: 4 }}>
+									{fresh.map((text) => (
+										<div key={text} className="oa-inline" style={{ flexWrap: "nowrap" }}>
+											<span className="oa-grow">{text}</span>
+											<Button variant="secondary" size="sm" onClick={() => void onAdd([text])}>
+												Track
+											</Button>
+										</div>
+									))}
 								</div>
-							</>
-						)}
-					</section>
+							)}
+						</CardContent>
+					</Card>
 				) : null}
 
 				{prompts.length > 0 ? (
-					<section className="oa-card">
-						<h2 className="oa-cap">
-							Manage questions <span>{prompts.filter((p) => p.active).length} active</span>
-						</h2>
-						<ul className="oa-rows">
-							{prompts.map((prompt) => (
-								<li key={prompt.id} className="oa-list-item">
-									<span style={prompt.active ? undefined : { color: "var(--muted)" }}>
-										{prompt.text}
-										{prompt.active ? null : <span className="oa-tag">Paused</span>}
-									</span>
-									<button type="button" className="oa-plain" onClick={() => onToggle(prompt.id, !prompt.active)}>
-										{prompt.active ? "Pause" : "Resume"}
-									</button>
-									<button type="button" className="oa-plain" data-danger="true" onClick={() => onRemove(prompt.id)} aria-label={`Remove: ${prompt.text}`}>
-										Remove
-									</button>
-								</li>
-							))}
-						</ul>
-					</section>
+					<Card>
+						<CardHeader title="Manage questions" description="Paused questions are kept but not asked in runs." action={<Badge>{prompts.filter((p) => p.active).length} active</Badge>} />
+						<CardContent>
+							<div className="oa-stack" style={{ gap: 4 }}>
+								{prompts.map((prompt) => (
+									<div key={prompt.id} className="oa-inline" style={{ flexWrap: "nowrap" }}>
+										<span className="oa-grow" style={prompt.active ? undefined : { color: "var(--muted)" }}>
+											{prompt.text}
+										</span>
+										{prompt.active ? null : <Badge>Paused</Badge>}
+										<Button variant="ghost" size="sm" onClick={() => onToggle(prompt.id, !prompt.active)}>
+											{prompt.active ? "Pause" : "Resume"}
+										</Button>
+										<Button variant="ghost" size="sm" onClick={() => onRemove(prompt.id)} aria-label={`Remove: ${prompt.text}`}>
+											Remove
+										</Button>
+									</div>
+								))}
+							</div>
+						</CardContent>
+					</Card>
 				) : null}
 			</div>
 		</div>

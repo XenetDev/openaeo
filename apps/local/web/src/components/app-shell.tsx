@@ -320,6 +320,12 @@ export type AppShellProps = {
    * own, split from the page by a line; it stays open and can be dragged wider or narrower. With it, the column's head
    * is a project switcher – "All projects" or one of `projects`, which narrows the chats to that project
    */
+  /** Your own workspace menu, account menu and search commands – left out, the samples show */
+  workspaceItems?: MenuItem[];
+  accountItems?: MenuItem[];
+  commands?: CommandGroup[];
+  onCommand?: (id: string, text?: string) => void;
+  typedCommand?: { group: string; label: (text: string) => string; done: (text: string) => string };
   rail?: { items: ShellNavItem[]; /** Items at the bottom, above the account */ bottom?: ShellNavItem[]; /** The rail item that is open */ active?: string };
   className?: string;
 };
@@ -352,6 +358,11 @@ export function AppShell({
   className,
   layout,
   rail: railNav,
+  workspaceItems: workspaceItemsProp,
+  accountItems,
+  commands,
+  onCommand,
+  typedCommand,
 }: AppShellProps) {
   const [news, setNews] = useState(2);
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
@@ -465,13 +476,13 @@ export function AppShell({
   const goTo: CommandGroup = {
     id: "go",
     label: "Go to",
-    commands: [...(groups ? groups.flatMap((g) => g.items) : nav), ...(groups ? [] : projects.map((label) => ({ label, icon: FolderOpenIcon })))].map((item, i) => ({
+    commands: [...(commands ? nav : []), ...(groups ? groups.flatMap((g) => g.items) : nav), ...(groups ? [] : projects.map((label) => ({ label, icon: FolderOpenIcon })))].map((item, i) => ({
       id: `go:${i}:${item.label}`,
       label: item.label,
       icon: <Icon icon={item.icon} size={16} />,
     })),
   };
-  const commandGroups = defaultGroups.map((g) => (g.id === "go" ? goTo : g));
+  const commandGroups = commands ? [...commands, goTo] : defaultGroups.map((g) => (g.id === "go" ? goTo : g));
   // closed → open → closing → closed: while closing the guide stays, fades and the card shrinks, then the summary returns
   const [guide, setGuide] = useState<"closed" | "open" | "closing">("closed");
   const guideOpen = guide === "open";
@@ -551,7 +562,7 @@ export function AppShell({
   const [avatarFailed, setAvatarFailed] = useState<string | null>(null);
   const showAvatar = user.avatar && avatarFailed !== user.avatar;
   // Who is signed in, for the head of the account menu – the email made up from the name when none is given
-  const email = user.email ?? `${(words[0] ?? "you").toLowerCase().replace(/[^a-z0-9]/g, "") || "you"}@${workspace.toLowerCase().replace(/[^a-z0-9]/g, "") || "example"}.com`;
+  const email = user.email ?? (accountItems ? "" : `${(words[0] ?? "you").toLowerCase().replace(/[^a-z0-9]/g, "") || "you"}@${workspace.toLowerCase().replace(/[^a-z0-9]/g, "") || "example"}.com`);
   const [language, setLanguage] = useState("English");
   const [appearance, setAppearance] = useState("System");
 
@@ -563,7 +574,7 @@ export function AppShell({
       <span>{back.title}</span>
     </button>
   );
-  const workspaceItems: MenuItem[] = [
+  const workspaceItems: MenuItem[] = workspaceItemsProp ?? [
         { label: "Invite people", icon: UserAdd01Icon, onSelect: () => go("Members") },
         { label: "Workspace settings", icon: Settings01Icon, divider: true, onSelect: () => go("Members") },
         { label: "Analytics", icon: Analytics01Icon, onSelect: () => go("Analytics") },
@@ -626,7 +637,7 @@ export function AppShell({
           </span>
         </span>
       }
-      items={[
+      items={accountItems ?? [
         {
           label: "Language",
           icon: TranslateIcon,
@@ -942,9 +953,11 @@ export function AppShell({
             groups={commandGroups}
             autoFocus
             onClose={closeSearch}
-            onRun={(id) => {
+            typed={typedCommand}
+            onRun={(id, text) => {
               closeSearch();
               if (id.startsWith("go:")) go(id.split(":").slice(2).join(":"));
+              else onCommand?.(id, text);
             }}
           />
         </div>

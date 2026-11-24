@@ -118,7 +118,7 @@ function statValue(label: string, f: number) {
 
 
 /** Small trend line for the breakdown list – values are spread over its height; one value is a flat line */
-function Spark({ values: raw, tone = "up" }: { values: number[]; tone?: "up" | "down" | "flat" }) {
+export function Spark({ values: raw, tone = "up" }: { values: number[]; tone?: "up" | "down" | "flat" }) {
   const values = raw.filter(Number.isFinite);
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -186,7 +186,7 @@ const thousands = (n: number) => (Math.abs(n) >= 1000 ? `${+(n / 1000).toFixed(1
  * A chart card: the library's Stat Card with a Trend Chart in it – title, figure, the change against the period
  * before (in the figure's own unit) and the lines. While loading the same card shows its placeholders, at the same size.
  */
-function ChartCard({
+export function ChartCard({
   title,
   value = 0,
   delta,
@@ -438,7 +438,7 @@ export function AnalyticsScreen({ stats: statList = stats, breakdown: lines = br
 
 /* ---------- Styles ---------- */
 
-const css = /* css */ `
+export const css = /* css */ `
 /* Revenue dashboard: a header, then rows of white cards on the panel */
 .ui-as-rev { display: flex; flex-direction: column; min-height: 100%; }
 /* The bar stays on top while the page scrolls under it */

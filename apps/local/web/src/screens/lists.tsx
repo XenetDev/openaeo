@@ -1,94 +1,83 @@
-import type { EntityView, ReportView } from "@openaeo/ui";
+import type { EntityView, ProjectView, ReportView } from "@openaeo/ui";
+import { News01Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState } from "@/components/app-shell";
+import { Avatar } from "@/components/ui/avatar-clean";
 import { Button } from "@/components/ui/button-clean";
-import { Head, Meter, percent } from "./shared";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card-clean";
+import { DataTable } from "@/components/ui/data-table-clean";
+import { TagInput } from "@/components/ui/tag-input-clean";
+import { Page } from "./shared";
 
-export function SourcesScreen({ report }: { report: ReportView }) {
-	const max = Math.max(1, ...report.topDomains.map((d) => d.citations));
+export function SourcesScreen({ project, report }: { project: ProjectView; report: ReportView }) {
 	return (
-		<div className="oa-view">
-			<Head section="Sources" title="The sites AI answers cite" sub="These are the places worth being mentioned on." />
+		<Page brand={project.name} title="Sources">
 			{report.topDomains.length === 0 ? (
-				<EmptyState title="No sources yet" text="After a run, this lists the sites the engines linked to in their answers." />
+				<EmptyState icon={News01Icon} title="No sources yet" text="After a run, this lists the sites the engines linked to in their answers. These are the places worth being mentioned on." />
 			) : (
-				<section className="oa-card">
-					<ul className="oa-rows">
-						{report.topDomains.map((d) => (
-							<li key={d.domain} className="oa-row oa-row-wide" data-you={d.isBrand}>
-								<span className="oa-row-name">
-									{d.domain}
-									{d.isBrand ? (
-										<span className="oa-tag" data-tone="you">
-											Yours
-										</span>
-									) : null}
-								</span>
-								<Meter value={d.citations / max} />
-								<span className="oa-num">{d.citations}</span>
-								<span className="oa-dim">{d.citations === 1 ? "citation" : "citations"} in the latest run</span>
-							</li>
-						))}
-					</ul>
-				</section>
+				<DataTable
+					title="Sites cited in the latest answers"
+					editable={false}
+					columns={[
+						{ key: "site", label: "Site", type: "title" },
+						{ key: "citations", label: "Citations", type: "number", width: "120px" },
+						{ key: "owner", label: "Whose", type: "tag", width: "140px" },
+						{ key: "link", label: "Open", type: "link" },
+					]}
+					rows={report.topDomains.map((d) => ({ id: d.domain, logo: <Avatar name={d.domain} size={20} shape="square" />, site: d.domain, citations: d.citations, owner: d.isBrand ? "Yours" : "Other", link: `https://${d.domain}` }))}
+					tagTones={{ Yours: "green", Other: "gray" }}
+				/>
 			)}
-		</div>
+		</Page>
 	);
 }
 
-const byLine = (value: string) =>
-	value
-		.split("\n")
-		.map((v) => v.trim())
-		.filter(Boolean);
+type CompetitorsProps = { project: ProjectView; report: ReportView; competitors: EntityView[]; onSave: (next: EntityView[]) => void };
 
-export function CompetitorsScreen({ report, competitors, onSave }: { report: ReportView; competitors: EntityView[]; onSave: (next: EntityView[]) => void }) {
-	const [draft, setDraft] = useState(competitors.map((c) => c.name).join("\n"));
+export function CompetitorsScreen({ project, report, competitors, onSave }: CompetitorsProps) {
+	const [names, setNames] = useState(competitors.map((c) => c.name));
+	const dirty = names.join("\n") !== competitors.map((c) => c.name).join("\n");
 	return (
-		<div className="oa-view">
-			<Head section="Competitors" title="Who gets mentioned instead of you" />
-			<section className="oa-card">
-				<ul className="oa-rows">
-					{report.competitors.map((c) => (
-						<li key={c.name} className="oa-row oa-row-wide" data-you={c.isBrand}>
-							<span className="oa-row-name">
-								{c.name}
-								{c.isBrand ? (
-									<span className="oa-tag" data-tone="you">
-										You
-									</span>
-								) : null}
-							</span>
-							<Meter value={c.mentionRate} />
-							<span className="oa-num">{percent(c.mentionRate)}</span>
-							<span className="oa-dim">{c.averageRank === null ? "Not mentioned" : `average position ${c.averageRank.toFixed(1)}`}</span>
-						</li>
-					))}
-				</ul>
-			</section>
-			<section className="oa-card">
-				<form
-					className="oa-form"
-					onSubmit={(e) => {
-						e.preventDefault();
-						const known = new Map(competitors.map((c) => [c.name.toLowerCase(), c]));
-						onSave(byLine(draft).map((name) => known.get(name.toLowerCase()) ?? { name, aliases: [], domains: [] }));
-					}}
-				>
-					<div>
-						<label className="oa-label" htmlFor="oa-competitors">
-							Tracked competitors, one per line
-						</label>
-						<textarea id="oa-competitors" className="oa-textarea" rows={6} value={draft} onChange={(e) => setDraft(e.target.value)} />
+		<Page brand={project.name} title="Competitors">
+			<DataTable
+				title="Who gets mentioned in the latest answers"
+				editable={false}
+				columns={[
+					{ key: "brand", label: "Brand", type: "title" },
+					{ key: "share", label: "Share of answers", type: "number", width: "160px", format: (n: number) => `${Math.round(n)}%` },
+					{ key: "position", label: "Average position", type: "text", width: "160px" },
+					{ key: "who", label: "Whose", type: "tag", width: "140px" },
+				]}
+				rows={report.competitors.map((c) => ({
+					id: c.name,
+					logo: <Avatar name={c.name} size={20} shape="square" />,
+					brand: c.name,
+					share: c.mentionRate * 100,
+					position: c.averageRank === null ? "Not mentioned" : c.averageRank.toFixed(1),
+					who: c.isBrand ? "You" : "Competitor",
+				}))}
+				tagTones={{ You: "green", Competitor: "gray" }}
+			/>
+			<Card>
+				<CardHeader title="Tracked competitors" description="Type a name and press Enter. Changes apply from the next run." />
+				<CardContent>
+					<div className="oa-narrow">
+						<TagInput aria-label="Tracked competitors" value={names} onChange={setNames} placeholder="Add a competitor" max={50} normalize={(t) => t.trim()} />
 					</div>
-					<div className="oa-actions">
-						<Button type="submit" size="sm">
-							Save competitors
-						</Button>
-						<span className="oa-dim">Changes apply from the next run.</span>
-					</div>
-				</form>
-			</section>
-		</div>
+				</CardContent>
+				<CardFooter>
+					<Button
+						size="sm"
+						disabled={!dirty}
+						onClick={() => {
+							const known = new Map(competitors.map((c) => [c.name.toLowerCase(), c]));
+							onSave(names.map((name) => known.get(name.toLowerCase()) ?? { name, aliases: [], domains: [] }));
+						}}
+					>
+						Save competitors
+					</Button>
+				</CardFooter>
+			</Card>
+		</Page>
 	);
 }

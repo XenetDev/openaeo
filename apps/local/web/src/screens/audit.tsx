@@ -1,18 +1,22 @@
-import type { ArtefactsView, AuditView, FindingView } from "@openaeo/ui";
+import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@openaeo/ui";
+import { CheckListIcon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState } from "@/components/app-shell";
 import { AgentFindings, type Finding, type FindingAgent } from "@/components/ui/agent-findings-clean";
+import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
+import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
+import { CodeBlock } from "@/components/ui/code-block-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
 import { TextField } from "@/components/ui/text-field-clean";
-import { Head, when } from "./shared";
+import { Page, when } from "./shared";
 
 type Props = {
+	project: ProjectView;
 	audit: AuditView | null;
 	findings: FindingView[];
 	artefacts: ArtefactsView;
 	defaultUrl: string;
-	copied: boolean;
 	onRun: (url: string) => void;
 	onCancel: () => void;
 	onCopyBrief: () => void;
@@ -26,14 +30,14 @@ const AREAS: { id: string; name: string; checks: string[] }[] = [
 ];
 const SEVERITY = { high: "critical", medium: "warning", low: "note" } as const;
 const LEVELS = [
-	{ id: "high", label: "High", tone: "bad", note: "These stop AI engines from reading or using the site." },
-	{ id: "medium", label: "Medium", tone: undefined, note: "These make pages harder for engines to quote and trust." },
-	{ id: "low", label: "Low", tone: undefined, note: "Smaller improvements." },
+	{ id: "high", label: "High", tone: "danger", note: "These stop AI engines from reading or using the site." },
+	{ id: "medium", label: "Medium", tone: "warning", note: "These make pages harder for engines to quote and trust." },
+	{ id: "low", label: "Low", tone: "neutral", note: "Smaller improvements." },
 ] as const;
-const FILES: { key: keyof ArtefactsView; name: string }[] = [
-	{ key: "robotsTxt", name: "robots.txt" },
-	{ key: "llmsTxt", name: "llms.txt" },
-	{ key: "organizationJsonLd", name: "Organization JSON-LD for the home page" },
+const FILES: { key: keyof ArtefactsView; name: string; language: string }[] = [
+	{ key: "robotsTxt", name: "robots.txt", language: "txt" },
+	{ key: "llmsTxt", name: "llms.txt", language: "md" },
+	{ key: "organizationJsonLd", name: "organization.jsonld", language: "json" },
 ];
 
 const pathOf = (url: string) => {
@@ -44,12 +48,13 @@ const pathOf = (url: string) => {
 	}
 };
 
-export function AuditScreen({ audit, findings, artefacts, defaultUrl, copied, onRun, onCancel, onCopyBrief }: Props) {
+export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, onRun, onCancel, onCopyBrief }: Props) {
 	const [url, setUrl] = useState(defaultUrl);
 	const running = audit?.status === "running";
 	const unread = audit?.pages.filter((p) => p.error) ?? [];
 	const read = (audit?.pages.length ?? 0) - unread.length;
 	const at = audit?.finishedAt ?? audit?.startedAt ?? 0;
+	const done = audit?.status === "done";
 
 	const agents: FindingAgent[] = AREAS.map((area) => {
 		const count = findings.filter((f) => area.checks.includes(f.checkId)).length;
@@ -68,133 +73,150 @@ export function AuditScreen({ audit, findings, artefacts, defaultUrl, copied, on
 		}));
 
 	return (
-		<div className="oa-view">
-			<Head
-				section="Audit"
-				title="Can AI engines read and quote your site?"
-				sub="Reads up to 25 pages in a few seconds. It uses no AI calls."
-				actions={
-					audit?.status === "done" && audit.own !== false && findings.length > 0 ? (
-						<Button variant="secondary" size="sm" onClick={onCopyBrief}>
-							{copied ? "Copied" : "Copy fix brief for your AI agent"}
-						</Button>
-					) : undefined
-				}
-			/>
-
-			<form
-				className="oa-actions"
-				style={{ marginBottom: 16, alignItems: "flex-end" }}
-				onSubmit={(e) => {
-					e.preventDefault();
-					if (!running) onRun(url.trim());
-				}}
-			>
-				<div style={{ flex: 1, maxWidth: 420 }}>
-					<TextField label="Website to check" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="example.com" disabled={running} />
-				</div>
-				{running ? (
-					<Button type="button" variant="secondary" onClick={onCancel}>
-						Stop
-					</Button>
-				) : (
-					<Button type="submit" disabled={url.trim() === ""}>
-						Run audit
-					</Button>
-				)}
-			</form>
+		<Page
+			brand={project.name}
+			title="Audit"
+		>
+			<Card>
+				<CardHeader title="Can AI engines read and quote your site?" description="Reads up to 25 pages in a few seconds and uses no AI calls." action={running ? <Badge tone="info" live>Reading the site</Badge> : undefined} />
+				<CardContent>
+					<form
+						className="oa-inline-end"
+						onSubmit={(e) => {
+							e.preventDefault();
+							if (!running) onRun(url.trim());
+						}}
+					>
+						<div className="oa-grow" style={{ maxWidth: 420 }}>
+							<TextField label="Website to check" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="example.com" disabled={running} />
+						</div>
+						{running ? (
+							<Button type="button" variant="secondary" onClick={onCancel}>
+								Stop
+							</Button>
+						) : (
+							<Button type="submit" disabled={url.trim() === ""}>
+								Run audit
+							</Button>
+						)}
+					</form>
+				</CardContent>
+			</Card>
 
 			{!audit ? (
-				<EmptyState title="No audit yet" text="An audit checks what AI engines need: access for their crawlers, content present without JavaScript, structured data and direct answers." />
+				<EmptyState icon={CheckListIcon} title="No audit yet" text="An audit checks what AI engines need: access for their crawlers, content present without JavaScript, structured data and direct answers." />
 			) : running ? (
-				<p className="oa-dim" role="status">
-					Reading {audit.origin}…
-				</p>
+				<div className="oa-cols-3">
+					{["Audit score", "Pages read", "Findings"].map((label) => (
+						<StatCard key={label} label={label} value="" change={0} loading />
+					))}
+				</div>
 			) : audit.status === "interrupted" ? (
-				<p className="oa-alert">The last audit of {audit.origin} stopped before it finished. Run it again.</p>
+				<Card>
+					<CardHeader title="The last audit stopped before it finished" description={`Run the audit of ${audit.origin} again.`} action={<Badge tone="warning">Interrupted</Badge>} />
+				</Card>
 			) : (
 				<>
-					{audit.own === false ? <p className="oa-alert">This audit is of {audit.origin}, which is not your project's website. It is shown for comparison and is not used for your fix brief.</p> : null}
-					<div className="oa-grid oa-grid-3">
-						<StatCard label="Audit score" value={audit.score ?? 0} format={(n) => `${Math.round(n)} / 100`} changeLabel="a rough guide, not a prediction" />
-						<StatCard label="Pages read" value={read} changeLabel={unread.length > 0 ? `${unread.length} could not be read` : "all readable"} />
-						<StatCard label="Findings" value={findings.length} changeLabel={`${findings.filter((f) => f.severity === "high").length} high · ${when(audit.startedAt)}`} />
+					{audit.own === false ? (
+						<Card>
+							<CardHeader
+								title="This is not your project's website"
+								description={`The audit of ${audit.origin} is shown for comparison and is not used for your fix brief.`}
+								action={<Badge>Comparison</Badge>}
+							/>
+						</Card>
+					) : null}
+					<div className="oa-cols-3">
+						<StatCard label="Audit score" value={audit.score ?? 0} format={(n) => `${Math.round(n)} / 100`} footer="A rough guide. It counts problems; it does not predict AI visibility." />
+						<StatCard label="Pages read" value={read} footer={unread.length > 0 ? `${unread.length} could not be read` : "All readable"} />
+						<StatCard label="Findings" value={findings.length} footer={`${findings.filter((f) => f.severity === "high").length} high · ${when(audit.startedAt)}`} />
 					</div>
 
 					{findings.length === 0 ? (
-						<EmptyState title="No problems found" text="Every check passed on the pages read." />
+						<EmptyState icon={CheckListIcon} title="No problems found" text="Every check passed on the pages read." />
 					) : (
 						<>
-							<div style={{ marginBottom: 12 }}>
+							<div className="oa-cols-2">
 								<AgentFindings title={`Checks on ${audit.origin.replace(/^https?:\/\//, "")}`} agents={agents} findings={feed} rows={Math.min(6, feed.length)} now={at} />
+								<Card>
+									<CardHeader title="Fix these with your AI agent" description="OpenAEO finds the problems. Your own Claude Code or Codex fixes them in your site's code, under your supervision." />
+									<CardContent>
+										<div className="oa-stack">
+											<p className="oa-quiet">1. Connect your agent once (the command is in Settings).</p>
+											<p className="oa-quiet">2. Open your website's code and ask: “get the OpenAEO fix brief and fix the findings”.</p>
+											<p className="oa-quiet">3. Run the audit again to confirm the findings are gone.</p>
+											{audit.own !== false ? (
+												<span>
+													<Button size="sm" onClick={onCopyBrief}>
+														Copy fix brief
+													</Button>
+												</span>
+											) : null}
+										</div>
+									</CardContent>
+								</Card>
 							</div>
 							{LEVELS.map((level) => {
 								const groups = new Map<string, FindingView[]>();
 								for (const finding of findings.filter((f) => f.severity === level.id)) groups.set(finding.title, [...(groups.get(finding.title) ?? []), finding]);
 								if (groups.size === 0) return null;
 								return (
-									<section key={level.id} className="oa-card">
-										<h2 className="oa-cap">
-											<span>
-												<span className="oa-tag" data-tone={level.tone} style={{ marginLeft: 0, marginRight: 8 }}>
-													{level.label}
-												</span>
-												{level.note}
-											</span>
-										</h2>
-										{[...groups.entries()].map(([title, group]) => (
-											<article key={title} className="oa-finding">
-												<h3>
-													{title}
-													{group.length > 1 ? <span className="oa-dim"> · {group.length} pages</span> : null}
-												</h3>
-												<p>{group[0]?.evidence}</p>
-												<pre className="oa-code">{group[0]?.fix}</pre>
-												<ul className="oa-urls">
-													{group.slice(0, 6).map((f) => (
-														<li key={f.url}>{f.url}</li>
-													))}
-													{group.length > 6 ? <li>and {group.length - 6} more</li> : null}
-												</ul>
-											</article>
-										))}
-									</section>
+									<Card key={level.id}>
+										<CardHeader title={`${level.label} priority`} description={level.note} action={<Badge tone={level.tone}>{groups.size} to fix</Badge>} />
+										<CardContent>
+											<div className="oa-finding-list">
+												{[...groups.entries()].map(([title, group]) => (
+													<article key={title}>
+														<h3>
+															{title} {group.length > 1 ? <Badge>{group.length} pages</Badge> : null}
+														</h3>
+														<p>{group[0]?.evidence}</p>
+														<CodeBlock code={group[0]?.fix ?? ""} language="txt" filename="How to fix" wrap />
+														<ul className="oa-urls">
+															{group.slice(0, 6).map((f) => (
+																<li key={f.url}>{f.url}</li>
+															))}
+															{group.length > 6 ? <li>and {group.length - 6} more</li> : null}
+														</ul>
+													</article>
+												))}
+											</div>
+										</CardContent>
+									</Card>
 								);
 							})}
 						</>
 					)}
 
 					{FILES.some((f) => artefacts[f.key]) ? (
-						<section className="oa-card">
-							<h2 className="oa-cap">
-								Starter files <span>drafts to adapt, not to paste blindly</span>
-							</h2>
-							{FILES.map((file) =>
-								artefacts[file.key] ? (
-									<details key={file.key}>
-										<summary>{file.name}</summary>
-										<pre className="oa-code">{artefacts[file.key]}</pre>
-									</details>
-								) : null,
-							)}
-						</section>
+						<Card>
+							<CardHeader title="Starter files" description="Drafts to adapt, not to paste blindly. Keep any rules your current robots.txt needs." />
+							<CardContent>
+								<div className="oa-stack">
+									{FILES.map((file) => (artefacts[file.key] ? <CodeBlock key={file.key} code={artefacts[file.key] ?? ""} language={file.language} filename={file.name} maxHeight={220} /> : null))}
+								</div>
+							</CardContent>
+						</Card>
 					) : null}
 
 					{unread.length > 0 || audit.skipped > 0 ? (
-						<section className="oa-card">
-							<h2 className="oa-cap">Not checked</h2>
-							<ul className="oa-urls">
-								{unread.slice(0, 10).map((p) => (
-									<li key={p.url}>
-										{p.url} · {p.error}
-									</li>
-								))}
-							</ul>
-							{audit.skipped > 0 ? <p className="oa-note">{audit.skipped} more pages were not checked, because an audit reads 25 pages at most.</p> : null}
-						</section>
+						<Card>
+							<CardHeader title="Not checked" description={audit.skipped > 0 ? `${audit.skipped} more pages were not checked, because an audit reads 25 pages at most.` : undefined} />
+							{unread.length > 0 ? (
+								<CardContent>
+									<ul className="oa-urls" style={{ marginTop: 0 }}>
+										{unread.slice(0, 10).map((p) => (
+											<li key={p.url}>
+												{p.url} · {p.error}
+											</li>
+										))}
+									</ul>
+								</CardContent>
+							) : null}
+						</Card>
 					) : null}
 				</>
 			)}
-		</div>
+		</Page>
 	);
 }

@@ -58,6 +58,10 @@ export type OnboardingWebsiteProps = {
   step?: number;
   steps?: number;
   className?: string;
+  /** The question, the line under it and what the right side shows – your own instead of the assistant's */
+  title?: ReactNode;
+  sub?: ReactNode;
+  preview?: (state: { domains: string[]; pending?: string; brand: string }) => ReactNode;
 };
 
 /* ---------- Helpers ---------- */
@@ -109,6 +113,9 @@ export function OnboardingWebsiteScreen({
   step = 1,
   steps = 4,
   className,
+  title,
+  sub,
+  preview,
 }: OnboardingWebsiteProps) {
   const [domains, setDomains] = useState<string[]>(defaultDomains.map(cleanDomain).filter(isDomain));
   const [value, setValue] = useState("");
@@ -193,11 +200,11 @@ export function OnboardingWebsiteScreen({
       layout={layout}
       onBack={onBack}
       onLogout={onLogout}
-      preview={<Preview brand={brand} domains={domains} pending={isDomain(pending) ? pending : undefined} focus="table" />}
+      preview={preview ? preview({ domains, pending: isDomain(pending) ? pending : undefined, brand }) : <Preview brand={brand} domains={domains} pending={isDomain(pending) ? pending : undefined} focus="table" />}
     >
       <Steps step={step} steps={steps} />
-      <h1 className="ui-obw-title">What's your company's website?</h1>
-      <p className="ui-obw-sub">Your assistant learns from it. Add your docs or help center, too.</p>
+      <h1 className="ui-obw-title">{title ?? "What's your company's website?"}</h1>
+      <p className="ui-obw-sub">{sub ?? "Your assistant learns from it. Add your docs or help center, too."}</p>
 
       <form className="ui-obw-form" onSubmit={submit} noValidate>
         <ChipField
@@ -206,7 +213,7 @@ export function OnboardingWebsiteScreen({
           brand={brand}
           hint={
             <p id={hintId} className="ui-obw-hint" data-error={error || undefined} aria-live="polite">
-              {error ? "That doesn't look like a domain – try northwind.com" : "\u00a0"}
+              {error ? "That doesn't look like a domain – try yourcompany.com" : "\u00a0"}
             </p>
           }
         >
@@ -220,7 +227,7 @@ export function OnboardingWebsiteScreen({
               setError(false);
             }}
             onKeyDown={onKey}
-            placeholder={domains.length ? "Add another domain" : "northwind.com"}
+            placeholder={domains.length ? "Add another domain" : "yourcompany.com"}
             aria-label="Website or docs domain"
             aria-invalid={error || undefined}
             aria-describedby={hintId}
@@ -289,13 +296,19 @@ export function OnboardingFrame({
             Back
           </button>
         )}
-        <span className="ui-obw-account">
-          Logged in as <b>{email}</b>
-        </span>
-        <button type="button" className="ui-obw-chip-btn" onClick={onLogout}>
-          <Icon icon={Logout03Icon} size={14} />
-          Log out
-        </button>
+        {onLogout ? (
+          <>
+            <span className="ui-obw-account">
+              Logged in as <b>{email}</b>
+            </span>
+            <button type="button" className="ui-obw-chip-btn" onClick={onLogout}>
+              <Icon icon={Logout03Icon} size={14} />
+              Log out
+            </button>
+          </>
+        ) : (
+          <span className="ui-obw-account">{email}</span>
+        )}
       </header>
 
       <div className="ui-obw-preview" aria-hidden>
@@ -309,9 +322,7 @@ export function OnboardingFrame({
       </main>
 
       <footer className="ui-obw-foot">
-        <span>© 2026 {product}</span>
-        <a href="#terms">Terms</a>
-        <a href="#privacy">Privacy</a>
+        <span>{product} · open source</span>
       </footer>
     </div>
   );

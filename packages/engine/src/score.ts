@@ -1,0 +1,36 @@
+import type { MatchResult } from "./match";
+
+export type Metrics = {
+	answers: number;
+	mentionRate: number;
+	averageRank: number | null;
+	shareOfVoice: number;
+	citationRate: number;
+};
+
+export function metrics(results: MatchResult[]): Metrics {
+	let mentioned = 0;
+	let cited = 0;
+	let rankTotal = 0;
+	let brandCount = 0;
+	let allCount = 0;
+	for (const result of results) {
+		if (result.brandCited) cited += 1;
+		for (const mention of result.mentions) {
+			allCount += mention.count;
+			if (mention.rank === result.brandRank) brandCount += mention.count;
+		}
+		if (result.brandRank !== null) {
+			mentioned += 1;
+			rankTotal += result.brandRank;
+		}
+	}
+	const answers = results.length;
+	return {
+		answers,
+		mentionRate: answers ? mentioned / answers : 0,
+		averageRank: mentioned ? rankTotal / mentioned : null,
+		shareOfVoice: allCount ? brandCount / allCount : 0,
+		citationRate: answers ? cited / answers : 0,
+	};
+}

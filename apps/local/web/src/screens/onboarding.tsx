@@ -2,7 +2,8 @@ import type { EngineInfo, NewProject } from "@openaeo/ui";
 import { useRef, useState } from "react";
 import { AppShell, type ShellNavItem } from "@/components/app-shell";
 import { OnboardingBrandScreen } from "@/components/onboarding-brand";
-import { brandFrom, Monogram, OnboardingWebsiteScreen } from "@/components/onboarding-website";
+import { Mark } from "@/components/mark";
+import { brandFrom, OnboardingWebsiteScreen } from "@/components/onboarding-website";
 import { Badge } from "@/components/ui/badge-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
@@ -71,7 +72,7 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 	const [domains, setDomains] = useState<string[]>([]);
 	const [names, setNames] = useState<string[]>([]);
 	const [rivals, setRivals] = useState<string[]>([]);
-	const frame = { product: "OpenAEO", email: "Runs on this computer", steps: 5, logo: <Monogram name="OpenAEO" size={20} /> };
+	const frame = { product: "OpenAEO", email: "Runs on this computer", steps: 5, logo: <Mark size={20} /> };
 	const brand = names[0] ?? brandFrom(domains[0]);
 	const [found, setFound] = useState<CompetitorIdea[] | null>(null);
 	const [looking, setLooking] = useState(false);

@@ -15,7 +15,7 @@ import { OverviewScreen } from "./screens/overview";
 import { type PromptStat, PromptsScreen } from "./screens/prompts";
 import { OnboardingFlow, SetupPreview } from "./screens/onboarding";
 import { FirstRunStep } from "./screens/onboarding-steps";
-import { Monogram } from "@/components/onboarding-website";
+import { Mark } from "@/components/mark";
 import { SettingsScreen } from "./screens/settings";
 import { Toaster, toast } from "@/components/ui/toaster-clean";
 
@@ -299,7 +299,7 @@ export function App() {
 		return (
 			<>
 				<FirstRunStep
-					frame={{ product: "OpenAEO", email: "Runs on this computer", steps: 5, logo: <Monogram name="OpenAEO" size={20} /> }}
+					frame={{ product: "OpenAEO", email: "Runs on this computer", steps: 5, logo: <Mark size={20} /> }}
 					step={5}
 					brand={project.name}
 					finished={finished}

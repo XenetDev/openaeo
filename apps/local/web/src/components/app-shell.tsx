@@ -366,6 +366,7 @@ export function AppShell({
 }: AppShellProps) {
   const [news, setNews] = useState(2);
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [tip, setTip] = useState<{ label: string; x: number; y: number } | null>(null);
   const side = { default: 272, min: 220, max: 380, ...sidebarWidth };
   const base = { default: 360, min: 280, max: 560, ...panelWidth };
   const [sideW, setSideW] = useState(side.default);
@@ -749,14 +750,14 @@ export function AppShell({
           <header className="ui-as-side__head">
             {workspaceMenu}
             <span className="ui-as-side__tools">
-              <button className="ui-as-icon-btn" type="button" aria-label={narrow ? "Close sidebar" : rail ? "Expand sidebar" : "Collapse sidebar"} title={rail ? "Expand sidebar" : undefined} onClick={() => (narrow ? setDrawer(false) : setCollapsed((c) => !c))}>
+              <button className="ui-as-icon-btn" type="button" aria-label={narrow ? "Close sidebar" : rail ? "Expand sidebar" : "Collapse sidebar"} data-tip={rail ? "Expand sidebar" : undefined} onClick={() => (narrow ? setDrawer(false) : setCollapsed((c) => !c))}>
                 <Icon icon={SidebarLeftIcon} size={16} />
               </button>
             </span>
           </header>
 
           {/* Search, like the affectUI library's: a field with its shortcut */}
-          <button ref={searchBtn} className="ui-as-side__search" type="button" title={rail ? "Search ⌘K" : undefined} aria-keyshortcuts="Meta+K" aria-haspopup="dialog" aria-expanded={search} onClick={() => setSearch(true)}>
+          <button ref={searchBtn} className="ui-as-side__search" type="button" aria-label={rail ? "Search ⌘K" : undefined} data-tip={rail ? "Search ⌘K" : undefined} aria-keyshortcuts="Meta+K" aria-haspopup="dialog" aria-expanded={search} onClick={() => setSearch(true)}>
             <Icon icon={Search01Icon} size={15} />
             <span>Search…</span>
             <kbd>⌘K</kbd>
@@ -773,7 +774,7 @@ export function AppShell({
                   type="button"
                   className="ui-as-side__item"
                   aria-current={active === (item.id ?? item.label) ? "page" : undefined}
-                  title={rail ? item.label : undefined}
+                  aria-label={rail ? item.label : undefined} data-tip={rail ? item.label : undefined}
                   onClick={() => go(item.id ?? item.label)}
                 >
                   <Icon icon={item.icon} size={16} />
@@ -795,7 +796,7 @@ export function AppShell({
                       type="button"
                       className="ui-as-side__item"
                       aria-current={active === (item.id ?? item.label) ? "page" : undefined}
-                      title={rail ? item.label : undefined}
+                      aria-label={rail ? item.label : undefined} data-tip={rail ? item.label : undefined}
                       onClick={() => go(item.id ?? item.label)}
                     >
                       <Icon icon={item.icon} size={16} />
@@ -817,7 +818,7 @@ export function AppShell({
                 type="button"
                 className="ui-as-side__item"
                 aria-current={active === name ? "page" : undefined}
-                title={rail ? name : undefined}
+                aria-label={rail ? name : undefined} data-tip={rail ? name : undefined}
                 onClick={() => go(name)}
               >
                 <Icon icon={FolderOpenIcon} size={16} />
@@ -929,6 +930,13 @@ export function AppShell({
       className={["ui-as", "ui-as-app", className].filter(Boolean).join(" ")}
       style={{ "--side-w": `${sideW}px`, "--panel-w": `${paneW}px` } as CSSProperties}
       data-collapsed={rail || undefined}
+      onPointerOver={(e) => {
+        const target = rail ? (e.target as Element).closest<HTMLElement>("[data-tip]") : null;
+        const box = target?.getBoundingClientRect();
+        setTip(target && box ? { label: target.dataset.tip ?? "", x: box.right + 8, y: box.top + box.height / 2 } : null);
+      }}
+      onPointerLeave={() => setTip(null)}
+      onPointerDown={() => setTip(null)}
       data-rail={railNav ? "" : undefined}
       data-drawer={(narrow && drawer) || undefined}
       data-panel={ws ? (paneOpen ? "open" : "closed") : undefined}
@@ -999,7 +1007,7 @@ export function AppShell({
         <>
           <div className="ui-as-bar ui-as-bar--side" inert={sideHidden}>
             {workspaceMenu}
-            <button className="ui-as-icon-btn" type="button" aria-label={rail ? "Expand sidebar" : "Collapse sidebar"} title={rail ? "Expand sidebar" : undefined} onClick={() => setCollapsed((c) => !c)}>
+            <button className="ui-as-icon-btn" type="button" aria-label={rail ? "Expand sidebar" : "Collapse sidebar"} data-tip={rail ? "Expand sidebar" : undefined} onClick={() => setCollapsed((c) => !c)}>
               <Icon icon={SidebarLeftIcon} size={16} />
             </button>
           </div>
@@ -1046,6 +1054,11 @@ export function AppShell({
             <WorkAreaBody ws={ws} />
           </div>
         </aside>
+      )}
+      {tip && rail && (
+        <span className="ui-as-side__tip" aria-hidden="true" style={{ left: tip.x, top: tip.y }}>
+          {tip.label}
+        </span>
       )}
     </div>
     </WorkAreaContext.Provider>
@@ -2124,7 +2137,7 @@ function ChatList({
               type="button"
               className="ui-as-side__item ui-as-chat-folder"
               aria-expanded={isOpen}
-              title={rail ? name : undefined}
+              aria-label={rail ? name : undefined} data-tip={rail ? name : undefined}
               data-drop={dropFolder === name || undefined}
               onClick={() => toggleFolder(name)}
             >
@@ -6574,6 +6587,8 @@ const css = /* css */ `
 /* The rail: the sidebar keeps its layout and is only cut to the icons – every row stays where it was,
    at its height, with its own fill. Words go; each row names itself on hover */
 .ui-as-app[data-collapsed] { --side-col: 48px; }
+.ui-as-side__tip { position: fixed; z-index: 60; padding: 3px 7px; border-radius: 6px; background: var(--ink); font-size: 12px; line-height: 16px; font-weight: 500; color: var(--card); white-space: nowrap; pointer-events: none; transform: translateY(-50%); animation: ui-as-tip 120ms ease both; }
+@keyframes ui-as-tip { from { opacity: 0; } }
 .ui-as-app[data-collapsed] > .ui-as-side { width: 100%; overflow: hidden; }
 .ui-as-app[data-collapsed] > .ui-as-side > * { flex-shrink: 0; width: calc(var(--side-w, 272px) - 20px); }
 .ui-as-app[data-collapsed] :is(.ui-as-side__name, .ui-as-side__workspace > svg, .ui-as-side__text, .ui-as-side__count, .ui-as-user__name, .ui-as-user > svg, .ui-as-side__search > span, .ui-as-side__search > kbd) { display: none; }

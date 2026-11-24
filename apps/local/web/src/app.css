@@ -409,9 +409,6 @@ body,
 		radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--aui-blue, #0190fe) 16%, transparent) 0%, transparent 60%),
 		radial-gradient(90% 80% at 0% 100%, color-mix(in srgb, var(--aui-teal, #13b3a0) 12%, transparent) 0%, transparent 60%),
 		var(--card);
-	box-shadow:
-		0 0 0 1px color-mix(in srgb, var(--aui-blue, #0190fe) 35%, transparent),
-		0 8px 24px -12px color-mix(in srgb, var(--aui-blue, #0190fe) 45%, transparent);
 }
 
 .oa-cta-mark {

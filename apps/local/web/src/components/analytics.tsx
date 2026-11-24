@@ -197,7 +197,9 @@ export function ChartCard({
   footer,
   tall,
   loading,
+  ceiling,
 }: {
+  ceiling?: number;
   title: string;
   value?: number;
   delta?: number;
@@ -220,7 +222,7 @@ export function ChartCard({
       changeFormat={format}
       footer={footer ?? (loading ? <SkelLine width={96} height={8} /> : undefined)}
       loading={loading}
-      chart={loading ? <span /> : <TrendChart variant="line" label={title} labels={axisLabels} tooltipLabels={tips} series={lines} format={format} />}
+      chart={loading ? <span /> : <TrendChart variant="line" label={title} labels={axisLabels} tooltipLabels={tips} series={lines} format={format} ceiling={ceiling} />}
     />
   );
 }

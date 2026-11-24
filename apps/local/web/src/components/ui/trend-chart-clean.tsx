@@ -52,6 +52,8 @@ export type TrendChartProps = {
   label?: string;
   /** Quiet text in the plot when there is nothing to draw */
   emptyText?: string;
+  /** A fixed top for the value axis, e.g. 100 for a score. With it, a line of zeros is drawn as data, not as "no data" */
+  ceiling?: number;
   className?: string;
 };
 
@@ -181,6 +183,7 @@ export function TrendChart({
   defaultIndex,
   label = "Chart",
   emptyText = "No data yet",
+  ceiling,
   className,
 }: TrendChartProps) {
   const uid = useId().replace(/:/g, "");
@@ -204,7 +207,7 @@ export function TrendChart({
     return series.map((s) => s.color || (s.previous ? "var(--ui-trc-soft)" : PALETTE[n++ % PALETTE.length]));
   }, [series]);
   const all = vals.flat().filter(finite);
-  const empty = all.length === 0 || (!spark && all.every((v) => v === 0));
+  const empty = all.length === 0 || (!spark && ceiling === undefined && all.every((v) => v === 0));
 
   // The scale: from zero up to a round value. Only negatives hang down from zero; both signs get a scale mirrored
   // around zero, so the middle line is the zero line. A sparkline hugs its own range
@@ -215,7 +218,7 @@ export function TrendChart({
   const sHi = all.length ? Math.max(...all) : 1;
   // zero={false}: the axis zooms in around the values, so a small change in an average or a rate stays visible
   const zoom = !zero && !bars && !spark && all.length > 0 ? niceRange(sLo, sHi) : null;
-  const max = zoom ? zoom[1] : both || (top > 0 || low === 0 ? niceMax(top) : 0);
+  const max = zoom ? zoom[1] : (ceiling ?? (both || (top > 0 || low === 0 ? niceMax(top) : 0)));
   const min = zoom ? zoom[0] : both ? -both : low < 0 ? -niceMax(-low) : 0;
   const y = (v: number) =>
     spark ? (sHi === sLo ? 50 : 10 + ((sHi - v) / (sHi - sLo)) * 80) : ((max - v) / (max - min)) * 100;

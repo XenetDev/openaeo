@@ -2,7 +2,7 @@ import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@openae
 import { CheckListIcon, Globe02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState } from "@/components/app-shell";
-import { PillField } from "@/components/pill-field";
+import { PillButton, PillField } from "@/components/pill-field";
 import { AgentFindings, type Finding, type FindingAgent } from "@/components/ui/agent-findings-clean";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -159,17 +159,7 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 					maxLines={1}
 					disabled={running}
 					textareaProps={{ autoCapitalize: "off", autoCorrect: "off" }}
-					action={
-						running ? (
-							<Button variant="secondary" size="lg" onClick={onCancel}>
-								Stop
-							</Button>
-						) : (
-							<Button size="lg" disabled={url.trim() === ""} onClick={() => onRun(url.trim())}>
-								{audit ? "Check again" : "Check my site"}
-							</Button>
-						)
-					}
+					action={running ? <PillButton kind="stop" label="Stop the audit" onClick={onCancel} /> : <PillButton label={audit ? "Check again" : "Check my site"} disabled={url.trim() === ""} onClick={() => onRun(url.trim())} />}
 				/>
 				{running ? (
 					<Badge tone="info" live>

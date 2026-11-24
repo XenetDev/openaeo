@@ -1,6 +1,8 @@
 import type { IconSvgElement } from "@hugeicons/react";
 import { type ComponentPropsWithoutRef, type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
+import { ArrowUp02Icon, StopIcon } from "@hugeicons/core-free-icons";
 import { Icon } from "@/components/app-shell";
+import { Spinner } from "@/components/ui/spinner-clean";
 
 const LINE = 24;
 
@@ -63,5 +65,13 @@ export function PillField({ icon, label, value, onChange, onSubmit, placeholder,
 			</div>
 			{children}
 		</div>
+	);
+}
+
+export function PillButton({ label, onClick, disabled, loading, kind = "go" }: { label: string; onClick: () => void; disabled?: boolean; loading?: boolean; kind?: "go" | "stop" }) {
+	return (
+		<button type="button" className="oa-pill-go" data-kind={kind} aria-label={label} title={label} disabled={disabled || loading} aria-busy={loading || undefined} onClick={onClick}>
+			{loading ? <Spinner /> : <Icon icon={kind === "stop" ? StopIcon : ArrowUp02Icon} size={18} stroke={2.2} />}
+		</button>
 	);
 }

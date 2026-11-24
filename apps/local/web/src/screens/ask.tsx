@@ -6,7 +6,7 @@ import { AssistantStart } from "@/components/assistant-start";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
-import { PillField } from "@/components/pill-field";
+import { PillButton, PillField } from "@/components/pill-field";
 import { DropdownMenu } from "@/components/ui/dropdown-menu-clean";
 import { ThinkingState } from "@/components/ui/thinking-state-clean";
 import { toast } from "@/components/ui/toaster-clean";
@@ -74,11 +74,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 					/>
 				) : null
 			}
-			action={
-				<Button size="lg" disabled={!draft.trim() || busy} onClick={send}>
-					Ask
-				</Button>
-			}
+			action={<PillButton label="Ask Aeo" disabled={!draft.trim() || busy} onClick={send} />}
 		/>
 	);
 	const retry = [...turns].reverse().find((t) => t.role === "user")?.text;

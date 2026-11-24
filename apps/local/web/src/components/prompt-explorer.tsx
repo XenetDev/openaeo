@@ -28,8 +28,7 @@ import {
   Search01Icon,
   Target02Icon,
 } from "@hugeicons/core-free-icons";
-import { PillField } from "@/components/pill-field";
-import { Button } from "@/components/ui/button-clean";
+import { PillButton, PillField } from "@/components/pill-field";
 import { EmptyState, Icon, Loading, Skeleton, rove, useToast, type AppShellProps, type ShellNavItem } from "@/components/app-shell";
 
 /* ---------- Types ---------- */
@@ -327,11 +326,7 @@ export function PromptExplorerScreen({
               onBlur: () => window.setTimeout(() => setOpen(false), 120),
               onKeyDown: onFieldKey,
             }}
-            action={
-              <Button size="lg" loading={busy} onClick={analyseNow}>
-                Track
-              </Button>
-            }
+            action={<PillButton label="Track this question" loading={busy} disabled={!query.trim()} onClick={analyseNow} />}
           >
             {/* Relevant searches: each completes what you typed, with its prompts a month and the change */}
             <div className="ui-pex-list" id={`${id}-list`} role="listbox" aria-label="Relevant searches" hidden={!showList}>

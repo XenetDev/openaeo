@@ -634,7 +634,7 @@ body,
 	position: relative;
 	z-index: 4;
 	width: min(640px, 100%);
-	border-radius: 28px;
+	border-radius: 26px;
 	background: var(--card);
 	box-shadow: var(--card-shadow);
 	text-align: left;
@@ -653,8 +653,8 @@ body,
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	min-height: 56px;
-	padding: 8px 8px 8px 20px;
+	min-height: 52px;
+	padding: 8px 8px 8px 18px;
 	color: var(--muted);
 }
 
@@ -664,13 +664,13 @@ body,
 
 .oa-pill[data-multi] .oa-pill-row > svg {
 	align-self: flex-start;
-	margin-top: 11px;
+	margin-top: 9px;
 }
 
 .oa-pill[data-multi] .oa-pill-row > textarea {
 	align-self: flex-start;
-	margin-top: 8px;
-	margin-bottom: 8px;
+	margin-top: 6px;
+	margin-bottom: 6px;
 }
 
 .oa-pill-row > textarea {
@@ -694,12 +694,44 @@ body,
 	color: var(--faint);
 }
 
-.oa-pill-row > .ui-buttonc {
+.oa-pill-go {
+	display: grid;
 	flex: none;
-	--h: 40px;
-	padding-inline: 18px;
-	border-radius: 20px;
-	font-size: 14px;
+	place-items: center;
+	width: 36px;
+	height: 36px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: var(--ink);
+	color: var(--panel);
+	cursor: pointer;
+	transition: opacity 140ms ease, transform 140ms ease, background-color 140ms ease;
+}
+
+.oa-pill-go:not(:disabled):hover {
+	background: var(--strong);
+}
+
+.oa-pill-go:not(:disabled):active {
+	transform: scale(0.94);
+}
+
+.oa-pill-go:disabled {
+	background: var(--chip);
+	color: var(--faint);
+	cursor: default;
+}
+
+.oa-pill-go[aria-busy] {
+	background: var(--chip);
+	color: var(--ink);
+}
+
+.oa-pill-go[data-kind="stop"] {
+	background: var(--chip);
+	color: var(--ink);
 }
 
 .oa-pill .ui-pex-list {

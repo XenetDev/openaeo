@@ -66,7 +66,7 @@ function buildSteps(store: Store, projectId: string): Step[] {
 			title: "Fix the facts AI is unsure about",
 			why: "These doubts came up when the engines were asked about you by name. An engine that is unsure about a company describes it with warnings, or leaves it out.",
 			how: [
-				"For each point above, decide what is true.",
+				"For each doubt listed, decide what is true.",
 				"State it clearly on your own site, then correct every profile or listing that says something different.",
 				"Where a claim is only your word, add proof AI can read: a case study page, a named customer quote, or a link to the award or partner listing.",
 			],

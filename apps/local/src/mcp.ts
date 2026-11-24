@@ -1,7 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { type AuditResult, buildFixBrief, groupFindings, QUOTE_NOTICE } from "@openaeo/engine";
+import { type AuditResult, groupFindings, QUOTE_NOTICE } from "@openaeo/engine";
 import { z } from "zod";
 import { AuditError, type AuditService, resultOf } from "./audits";
+import { buildBrief } from "./brief";
 import { ENGINE_LABELS } from "./engines";
 import { formatReport } from "./format";
 import { buildReport } from "./report";
@@ -209,7 +210,7 @@ export function createMcpServer(deps: {
 		"get_fix_brief",
 		{
 			description:
-				"Get step-by-step instructions for fixing the problems found by the latest website audit. Use this before editing the site's source code.",
+				"Get step-by-step instructions for fixing the problems found by the latest website audit and the issues AI engines raised about the brand in the latest run. Use this before editing the site's source code.",
 			inputSchema: projectArg,
 			annotations: { readOnlyHint: true },
 		},
@@ -218,7 +219,7 @@ export function createMcpServer(deps: {
 			if (isReply(found)) return found;
 			const audit = store.audits.latest(found.id, { ownOnly: true });
 			if (audit?.status !== "done") return say(`No audit yet for ${found.name}. Use run_audit to run one.`);
-			return say(buildFixBrief(resultOf(audit, store.audits.findings(audit.id))));
+			return say(buildBrief(store, audit));
 		},
 	);
 

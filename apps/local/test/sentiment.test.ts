@@ -103,7 +103,7 @@ test("an existing database gains the sentiment column", async () => {
 		openDb(path).close();
 		const raw = new Database(path);
 		raw.exec(
-			"ALTER TABLE answer DROP COLUMN sentiment; ALTER TABLE run DROP COLUMN owner_pid; ALTER TABLE prompt DROP COLUMN tags; DROP TABLE finding; DROP TABLE audit; PRAGMA user_version = 1",
+			"ALTER TABLE answer DROP COLUMN sentiment; ALTER TABLE run DROP COLUMN owner_pid; DROP TABLE brand_check; ALTER TABLE prompt DROP COLUMN tags; DROP TABLE finding; DROP TABLE audit; PRAGMA user_version = 1",
 		);
 		raw.close();
 		const db = openDb(path);

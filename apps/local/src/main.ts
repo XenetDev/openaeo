@@ -44,7 +44,12 @@ const get = createSafeFetch({
 });
 const audits = createAuditService({ store, get });
 const engineDeps = { store, which: (bin: string) => Bun.which(bin) };
-const runs = createRunService({ store, providers: () => buildProviders(engineDeps), sentiment: true });
+const runs = createRunService({
+	store,
+	providers: () => buildProviders(engineDeps),
+	sentiment: true,
+	brandCheck: true,
+});
 
 const release = () => {
 	runs.cancelAll();

@@ -1,6 +1,7 @@
 import type { Ok, OpportunitiesView, Progress, ReportView, RunDetail, RunView } from "../../api-types";
 import { answersCsv } from "../../export";
 import { buildOpportunities } from "../../opportunities";
+import { buildReasons } from "../../reasons";
 import { buildReport } from "../../report";
 import { RunError } from "../../runs";
 import type { HandlerDeps } from "../handler";
@@ -67,7 +68,7 @@ export function runRoutes({ store, runs }: HandlerDeps): Route[] {
 		route("GET", "/api/projects/:id/opportunities", ({ params }) => {
 			const id = params.id as string;
 			requireProject(store, id);
-			return json<OpportunitiesView>(buildOpportunities(store, id));
+			return json<OpportunitiesView>({ ...buildOpportunities(store, id), reasons: buildReasons(store, id) });
 		}),
 		route("GET", "/api/runs/:id", ({ params }) => {
 			const run = requireRun(params.id as string);

@@ -107,6 +107,11 @@ export function askContext(store: Store, project: Project): AskContext {
 					`Tracked question "${oneLine(stat.text, 160)}": the brand is named in ${pct(stat.latest)} of latest answers${stat.previous === null ? "" : ` (was ${pct(stat.previous)})`}.`,
 				);
 		}
+		const KNOWS = { yes: "knows the company", partly: "is unsure", no: "could not identify it" };
+		for (const check of report.brand)
+			quoted.push(
+				`Asked about the brand by name, ${check.engine} ${check.knows ? KNOWS[check.knows] : "answered"}${check.summary ? `: ${oneLine(check.summary, 200)}` : ""}. Own website used as a source: ${check.ownSiteUsed ? "yes" : "no"}. Sources: ${check.sources.slice(0, 6).join(", ") || "none"}.${check.concerns.length ? ` Doubts raised: ${oneLine(check.concerns.join(" "), 300)}` : ""}`,
+			);
 		const found = buildOpportunities(store, project.id);
 		for (const miss of found.missed.slice(0, 10))
 			quoted.push(

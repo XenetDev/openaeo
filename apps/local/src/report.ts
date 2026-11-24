@@ -7,7 +7,7 @@ import {
 	toDomain,
 	visibility,
 } from "@openaeo/engine";
-import type { PromptStatView } from "./api-types";
+import type { BrandCheckView, PromptStatView } from "./api-types";
 import type { Project, Run, Store, StoredAnswer } from "./store/store";
 
 export type Sentiment = { score: number | null; positive: number; neutral: number; negative: number };
@@ -37,6 +37,7 @@ export type Report = {
 		sentiment: number | null;
 	}[];
 	problems: { engine: EngineId; message: string; count: number }[];
+	brand: BrandCheckView[];
 };
 
 const ok = (answers: StoredAnswer[]) => answers.filter((a) => a.errorCode === null);
@@ -165,6 +166,7 @@ export function buildReport(
 		topDomains,
 		trend,
 		problems,
+		brand: source ? store.brandChecks.listByRun(source.id).map(({ text: _text, ...check }) => check) : [],
 	};
 }
 

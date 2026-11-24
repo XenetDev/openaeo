@@ -10,6 +10,7 @@ import type {
 	RunItem,
 	Source,
 } from "@openaeo/engine";
+import type { BrandCheck } from "../brand-check";
 
 export type EntityInput = { name: string; aliases: string[]; domains: string[] };
 export type Project = EntityInput & { id: string; createdAt: number };
@@ -94,6 +95,16 @@ type FindingRow = {
 type EntityRow = { id: string; name: string; aliases: string; domains: string };
 type ProjectRow = EntityRow & { created_at: number };
 type CompetitorRow = EntityRow & { project_id: string };
+type BrandCheckRow = {
+	engine: string;
+	text: string;
+	knows: BrandCheck["knows"];
+	summary: string | null;
+	confused_with: string;
+	concerns: string;
+	sources: string;
+	own_site_used: number;
+};
 type PromptRow = { id: string; project_id: string; text: string; active: number; tags: string; created_at: number };
 type RunRow = {
 	id: string;
@@ -556,7 +567,46 @@ export function createStore(db: Database) {
 		},
 	};
 
-	return { projects, competitors, prompts, runs, answers, settings, audits };
+	const brandChecks = {
+		save(runId: string, projectId: string, checks: BrandCheck[]): void {
+			const insert = db.query(
+				"INSERT INTO brand_check (id, run_id, project_id, engine, text, knows, summary, confused_with, concerns, sources, own_site_used, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			);
+			db.transaction(() => {
+				for (const check of checks)
+					insert.run(
+						crypto.randomUUID(),
+						runId,
+						projectId,
+						check.engine,
+						check.text,
+						check.knows,
+						check.summary,
+						JSON.stringify(check.confusedWith),
+						JSON.stringify(check.concerns),
+						JSON.stringify(check.sources),
+						check.ownSiteUsed ? 1 : 0,
+						Date.now(),
+					);
+			})();
+		},
+		listByRun: (runId: string): BrandCheck[] =>
+			db
+				.query<BrandCheckRow, [string]>("SELECT * FROM brand_check WHERE run_id = ? ORDER BY created_at, rowid")
+				.all(runId)
+				.map((row) => ({
+					engine: row.engine,
+					text: row.text,
+					knows: row.knows,
+					summary: row.summary,
+					confusedWith: JSON.parse(row.confused_with) as string[],
+					concerns: JSON.parse(row.concerns) as string[],
+					sources: JSON.parse(row.sources) as string[],
+					ownSiteUsed: row.own_site_used === 1,
+				})),
+	};
+
+	return { projects, competitors, prompts, runs, answers, settings, audits, brandChecks };
 }
 
 export type Store = ReturnType<typeof createStore>;

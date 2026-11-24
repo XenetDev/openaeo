@@ -1,4 +1,5 @@
 import { match, type Provider, run as runEngine } from "@openaeo/engine";
+import { runBrandCheck } from "./brand-check";
 import { type Log, logError } from "./log";
 import { labelSentiment } from "./sentiment";
 import type { Run, Store } from "./store/store";
@@ -21,6 +22,7 @@ export type RunServiceDeps = {
 	concurrency?: number;
 	retries?: number;
 	sentiment?: boolean;
+	brandCheck?: boolean;
 	log?: Log;
 };
 
@@ -56,6 +58,10 @@ export function createRunService(deps: RunServiceDeps) {
 				const mentioned = store.answers.listByRun(runId).filter((a) => a.errorCode === null && a.brandRank !== null);
 				const labels = await labelSentiment(judge, project.name, mentioned, { signal: controller.signal, log });
 				for (const [id, label] of labels) store.answers.setSentiment(id, label);
+			}
+			if (deps.brandCheck && judge && !controller.signal.aborted) {
+				const checks = await runBrandCheck({ providers, judge, project, signal: controller.signal, log });
+				if (!controller.signal.aborted) store.brandChecks.save(runId, projectId, checks);
 			}
 		} catch (error) {
 			if (!controller.signal.aborted) log(`run ${runId}`, error);

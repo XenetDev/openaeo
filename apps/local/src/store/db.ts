@@ -98,6 +98,23 @@ const MIGRATIONS = [
 	`,
 	"ALTER TABLE audit ADD COLUMN own INTEGER NOT NULL DEFAULT 1;",
 	"ALTER TABLE prompt ADD COLUMN tags TEXT NOT NULL DEFAULT '[]';",
+	`
+	CREATE TABLE brand_check (
+		id TEXT PRIMARY KEY,
+		run_id TEXT NOT NULL REFERENCES run(id) ON DELETE CASCADE,
+		project_id TEXT NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+		engine TEXT NOT NULL,
+		text TEXT NOT NULL,
+		knows TEXT,
+		summary TEXT,
+		confused_with TEXT NOT NULL,
+		concerns TEXT NOT NULL,
+		sources TEXT NOT NULL,
+		own_site_used INTEGER NOT NULL,
+		created_at INTEGER NOT NULL
+	);
+	CREATE INDEX brand_check_run ON brand_check(run_id);
+	`,
 ];
 
 export function openDb(path: string): Database {

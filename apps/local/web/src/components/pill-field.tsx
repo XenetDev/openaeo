@@ -42,7 +42,7 @@ export function PillField({ icon, label, value, onChange, onSubmit, placeholder,
 	return (
 		<div className={["oa-pill", className].filter(Boolean).join(" ")} data-multi={multi || undefined} {...rest}>
 			<div className="oa-pill-row">
-				<Icon icon={icon} size={18} />
+				<Icon icon={icon} size={16} />
 				<textarea
 					ref={field}
 					aria-label={label}

@@ -66,11 +66,11 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 						align="end"
 						trigger={({ triggerProps }) => (
 							<button type="button" className="oa-pill-pick" {...triggerProps} aria-label={`Engine: ${engineLabel(engines, engine)}`}>
-								<EngineLogo engine={engine} label={engineLabel(engines, engine)} size={14} />
+								<EngineLogo engine={engine} label={engineLabel(engines, engine)} size={16} />
 								{engineLabel(engines, engine)}
 							</button>
 						)}
-						items={ready.map((e) => ({ label: e.label, logo: <EngineLogo engine={e.id} label={e.label} size={14} />, checked: e.id === engine, onSelect: () => setPickedEngine(e.id) }))}
+						items={ready.map((e) => ({ label: e.label, logo: <EngineLogo engine={e.id} label={e.label} size={16} />, checked: e.id === engine, onSelect: () => setPickedEngine(e.id) }))}
 					/>
 				) : null
 			}

@@ -1,5 +1,5 @@
 import type { Answer } from "./types";
-import { sameSite, toDomain } from "./url";
+import { URL_SOURCE, sameSite, toDomain } from "./url";
 
 export type Entity = { name: string; aliases?: string[]; domains?: string[] };
 
@@ -14,13 +14,22 @@ export type MatchResult = {
 	citedDomains: string[];
 };
 
-const URL_PATTERN = /https?:\/\/[^\s)\]>"']+/gi;
 const UNSPACED_SCRIPT = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}]/u;
+const ORDINARY_WORD = /^\p{Lu}\p{Ll}*$/u;
 
-function pattern(term: string): RegExp {
-	const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
-	if (UNSPACED_SCRIPT.test(term)) return new RegExp(escaped, "giu");
-	return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "giu");
+type Term = { entity: number; firstChar: string | null };
+
+const keyOf = (text: string) => text.toLowerCase().replace(/\s+/g, " ");
+const escape = (term: string) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+
+function buildPattern(terms: string[]): RegExp | null {
+	const longestFirst = [...terms].sort((a, b) => b.length - a.length);
+	const spaced = longestFirst.filter((t) => !UNSPACED_SCRIPT.test(t)).map(escape);
+	const unspaced = longestFirst.filter((t) => UNSPACED_SCRIPT.test(t)).map(escape);
+	const parts: string[] = [];
+	if (spaced.length) parts.push(`(?<![\\p{L}\\p{N}])(?:${spaced.join("|")})(?![\\p{L}\\p{N}])`);
+	if (unspaced.length) parts.push(`(?:${unspaced.join("|")})`);
+	return parts.length ? new RegExp(parts.join("|"), "giu") : null;
 }
 
 function siteOf(value: string): string | null {
@@ -41,23 +50,29 @@ export function match(answer: Pick<Answer, "text" | "citations" | "sources">, br
 		entities.push({ name, terms });
 	}
 
-	const terms = entities
-		.flatMap((entity, index) => entity.terms.map((term) => ({ term, index })))
-		.sort((a, b) => b.term.length - a.term.length);
+	const lookup = new Map<string, Term>();
+	const terms: string[] = [];
+	entities.forEach((entity, index) => {
+		for (const term of entity.terms) {
+			const key = keyOf(term);
+			if (lookup.has(key)) continue;
+			lookup.set(key, { entity: index, firstChar: ORDINARY_WORD.test(term) ? (term[0] ?? null) : null });
+			terms.push(term);
+		}
+	});
 
-	let text = answer.text.replace(URL_PATTERN, (url) => " ".repeat(url.length));
 	const found = new Map<number, { firstIndex: number; count: number }>();
-	for (const { term, index } of terms) {
-		text = text.replace(pattern(term), (hit: string, offset: number) => {
-			const entry = found.get(index);
-			if (entry) {
-				entry.count += 1;
-				entry.firstIndex = Math.min(entry.firstIndex, offset);
-			} else {
-				found.set(index, { firstIndex: offset, count: 1 });
-			}
-			return " ".repeat(hit.length);
-		});
+	const pattern = buildPattern(terms);
+	if (pattern) {
+		const text = answer.text.replace(new RegExp(URL_SOURCE, "gi"), (url) => " ".repeat(url.length));
+		for (const hit of text.matchAll(pattern)) {
+			const term = lookup.get(keyOf(hit[0]));
+			if (!term) continue;
+			if (term.firstChar !== null && hit[0][0] !== term.firstChar) continue;
+			const entry = found.get(term.entity);
+			if (entry) entry.count += 1;
+			else found.set(term.entity, { firstIndex: hit.index, count: 1 });
+		}
 	}
 
 	const mentions = [...found.entries()]

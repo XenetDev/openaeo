@@ -10,6 +10,7 @@ export function createCodexCli(o: CliOptions = {}): Provider {
 		label: "Codex",
 		bin: o.bin ?? "codex",
 		exec: o.exec ?? runCommand,
+		model: o.model,
 		args: (prompt) => [
 			"--search",
 			"exec",

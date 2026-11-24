@@ -24,7 +24,8 @@ test("parses a searched answer", () => {
 	expect(answer.engine).toBe("codex-cli");
 	expect(answer.model).toBeNull();
 	expect(answer.searched).toBe(true);
-	expect(answer.text.startsWith("I’ll compare")).toBe(true);
+	expect(answer.text.startsWith("**My default pick is Pipedrive")).toBe(true);
+	expect(answer.text).not.toContain("I’ll compare");
 	expect(answer.text).toContain("Pipedrive");
 	expect(answer.citations.length).toBe(4);
 	expect(answer.sources.length).toBe(39);

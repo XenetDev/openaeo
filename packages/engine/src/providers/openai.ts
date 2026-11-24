@@ -26,8 +26,13 @@ const TextSchema = z.object({
 const CitationSchema = z.object({ type: z.literal("url_citation"), url: z.string(), title: z.string().optional() });
 const SourceSchema = z.object({ url: z.string(), title: z.string().optional() });
 
+const RefusalSchema = z.object({ type: z.literal("refusal"), refusal: z.string() });
+
 const ResponseSchema = z.object({
 	model: z.string().optional(),
+	status: z.string().optional(),
+	error: z.object({ message: z.string().optional() }).nullish(),
+	incomplete_details: z.object({ reason: z.string().optional() }).nullish(),
 	output: z.array(z.unknown()),
 	usage: z.object({ input_tokens: z.number().optional(), output_tokens: z.number().optional() }).optional(),
 });
@@ -66,6 +71,7 @@ export function createOpenAI(o: OpenAIOptions): Provider {
 				});
 				raw = await response.text();
 			} catch (error) {
+				if (opts.signal?.aborted) fail("timeout", "The OpenAI request was cancelled.");
 				if (signal.aborted) fail("timeout", "OpenAI did not answer in time.");
 				fail("failed", `Could not reach OpenAI: ${redact(error instanceof Error ? error.message : String(error))}`);
 			}
@@ -88,7 +94,15 @@ export function createOpenAI(o: OpenAIOptions): Provider {
 			const parsed = ResponseSchema.safeParse(json);
 			if (!parsed.success) fail("failed", "OpenAI returned a response in an unexpected format.");
 
+			if (parsed.data.status === "failed") {
+				fail("failed", `OpenAI could not complete the request. ${redact(parsed.data.error?.message ?? "")}`.trim());
+			}
+			if (parsed.data.status === "incomplete") {
+				fail("failed", `OpenAI stopped before finishing the answer (${parsed.data.incomplete_details?.reason ?? "no reason given"}).`);
+			}
+
 			const texts: string[] = [];
+			const refusals: string[] = [];
 			const cited: { url: string; title?: string }[] = [];
 			const consulted: { url: string; title?: string }[] = [];
 			let searched = false;
@@ -108,6 +122,8 @@ export function createOpenAI(o: OpenAIOptions): Provider {
 				const message = MessageSchema.safeParse(item);
 				if (!message.success) continue;
 				for (const block of message.data.content) {
+					const refusal = RefusalSchema.safeParse(block);
+					if (refusal.success) refusals.push(refusal.data.refusal);
 					const text = TextSchema.safeParse(block);
 					if (!text.success) continue;
 					texts.push(text.data.text);
@@ -119,10 +135,13 @@ export function createOpenAI(o: OpenAIOptions): Provider {
 			}
 
 			const text = texts.join("\n\n");
-			if (!text.trim()) fail("failed", "OpenAI returned an empty answer.");
+			if (!text.trim()) {
+				if (refusals.length) fail("failed", `OpenAI declined to answer: ${refusals.join(" ")}`);
+				fail("failed", "OpenAI returned an empty answer.");
+			}
 
 			const citations = collectSources([...cited, ...extractUrls(text).map((url) => ({ url }))]);
-			const sources = collectSources([...consulted, ...citations]);
+			const sources = searched ? collectSources([...consulted, ...citations]) : [];
 			const usage = parsed.data.usage
 				? { inputTokens: parsed.data.usage.input_tokens ?? 0, outputTokens: parsed.data.usage.output_tokens ?? 0, searches }
 				: null;

@@ -6,11 +6,15 @@ import type { Exec } from "./exec";
 
 export const DEFAULT_TIMEOUT_MS = 180_000;
 
+const MODEL_NAME = /^[A-Za-z0-9][A-Za-z0-9._:/[\]-]*$/;
+
 type Spec = {
 	id: EngineId;
 	label: string;
 	bin: string;
 	exec: Exec;
+	model?: string;
+	stderrError?: (stderr: string) => ProviderError | null;
 	args: (prompt: string) => string[];
 	stdin?: (prompt: string) => string;
 	parse: (stdout: string, durationMs: number) => Answer;
@@ -24,6 +28,9 @@ export function cliProvider(spec: Spec): Provider {
 	return {
 		id: spec.id,
 		async ask(prompt: string, opts: AskOptions = {}) {
+			if (spec.model !== undefined && !MODEL_NAME.test(spec.model)) {
+				throw new ProviderError(spec.id, "failed", `"${spec.model}" is not a valid ${spec.label} model name.`);
+			}
 			const cwd = await mkdtemp(join(tmpdir(), "openaeo-"));
 			try {
 				const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -42,6 +49,10 @@ export function cliProvider(spec: Spec): Provider {
 					return spec.parse(result.stdout, result.durationMs);
 				} catch (error) {
 					const stderr = result.stderr.trim();
+					if (error instanceof ProviderError && error.code === "failed" && stderr) {
+						const known = spec.stderrError?.(stderr);
+						if (known) throw known;
+					}
 					if (error instanceof ProviderError && error.code === "failed" && result.code !== 0 && stderr) {
 						throw new ProviderError(spec.id, "failed", `${error.message} ${stderr.slice(-400)}`);
 					}

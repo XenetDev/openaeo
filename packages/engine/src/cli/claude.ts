@@ -1,4 +1,4 @@
-import { parseClaudeStream } from "../providers/claude-parse";
+import { claudeError, parseClaudeStream } from "../providers/claude-parse";
 import type { Provider } from "../types";
 import { cliProvider } from "./adapter";
 import { type Exec, runCommand } from "./exec";
@@ -26,6 +26,8 @@ export function createClaudeCli(o: CliOptions = {}): Provider {
 		label: "Claude Code",
 		bin: o.bin ?? "claude",
 		exec: o.exec ?? runCommand,
+		model: o.model,
+		stderrError: (stderr) => claudeError(stderr, true),
 		args: () => (o.model ? [...ARGS, "--model", o.model] : ARGS),
 		stdin: (prompt) => prompt,
 		parse: parseClaudeStream,

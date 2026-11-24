@@ -30,24 +30,45 @@ const ErrorSchema = z.union([
 
 const WrappedSchema = z.object({
 	status: z.number().optional(),
-	error: z.object({ message: z.string().optional(), code: z.string().optional() }).optional(),
+	error: z.object({ message: z.string().optional(), code: z.string().nullish() }).optional(),
 });
 
+const TailSchema = z.object({
+	detail: z.string().optional(),
+	message: z.string().optional(),
+	error: z.union([z.string(), z.object({ message: z.string().optional() })]).optional(),
+});
+
+function textOf(json: unknown): string | null {
+	const tail = TailSchema.safeParse(json);
+	if (!tail.success) return null;
+	const nested = typeof tail.data.error === "string" ? tail.data.error : tail.data.error?.message;
+	return nested ?? tail.data.detail ?? tail.data.message ?? null;
+}
+
 function unwrap(raw: string): { text: string; status?: number; code?: string } {
+	const brace = raw.indexOf("{");
+	if (brace === -1) return { text: raw.trim() };
+	const head = raw.slice(0, brace).trim();
+	let json: unknown = null;
 	try {
-		const wrapped = WrappedSchema.safeParse(JSON.parse(raw));
-		if (wrapped.success && wrapped.data.error?.message) {
-			return { text: wrapped.data.error.message, status: wrapped.data.status, code: wrapped.data.error.code };
-		}
+		json = JSON.parse(raw.slice(brace));
 	} catch {}
-	return { text: raw };
+	const wrapped = WrappedSchema.safeParse(json);
+	const inner = textOf(json);
+	const text = [head, inner].filter(Boolean).join(" ").replace(/[{}]/g, "").trim();
+	return {
+		text: text || "Codex reported an error it did not describe.",
+		status: wrapped.success ? wrapped.data.status : undefined,
+		code: wrapped.success ? (wrapped.data.error?.code ?? undefined) : undefined,
+	};
 }
 
 function classify(error: { text: string; status?: number; code?: string }): ProviderErrorCode {
 	if (/requires a newer version/i.test(error.text)) return "cli_outdated";
-	if (error.code === "model_not_found" || /is not supported|model_not_found/i.test(error.text)) return "model_unavailable";
-	if (error.status === 429 || /usage limit|rate limit/i.test(error.text)) return "rate_limited";
-	if (error.status === 401 || /log in|logged in|unauthorized/i.test(error.text)) return "not_logged_in";
+	if (error.code === "model_not_found" || /model\b[^.]{0,80}\bis not supported|model_not_found/i.test(error.text)) return "model_unavailable";
+	if (error.status === 429 || /\busage limit\b|\brate limit/i.test(error.text)) return "rate_limited";
+	if (error.status === 401 || /\bnot logged in\b|\bplease log in\b|\bcodex login\b|\bunauthorized\b/i.test(error.text)) return "not_logged_in";
 	return "failed";
 }
 
@@ -95,14 +116,13 @@ export function parseCodexStream(stdout: string, durationMs: number): Answer {
 		if (error.success) failure ??= "message" in error.data ? error.data.message : error.data.error.message;
 	}
 
-	const text = messages.join("\n\n");
-	if (!text.trim()) {
-		if (failure === null) throw new ProviderError("codex-cli", "failed", "Codex exited without an answer.");
+	if (failure !== null) {
 		const detail = unwrap(failure);
 		const code = classify(detail);
-		const clean = detail.text.replace(/[{}]/g, "").trim();
-		throw new ProviderError("codex-cli", code, [clean, ADVICE[code]].filter(Boolean).join(" "));
+		throw new ProviderError("codex-cli", code, [detail.text, ADVICE[code]].filter(Boolean).join(" "));
 	}
+	const text = messages.at(-1) ?? "";
+	if (!text.trim()) throw new ProviderError("codex-cli", "failed", "Codex exited without an answer.");
 
 	const sources = collectSources(found);
 	return {

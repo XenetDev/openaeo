@@ -21,7 +21,7 @@ test("ranks entities by first appearance and counts mentions", () => {
 });
 
 test("does not match a name inside a longer word", () => {
-	const result = match(answer("In the beginning, bigin-like tools were rare. Rebigin is unrelated."), { name: "Bigin" }, []);
+	const result = match(answer("In the beginning, Bigin-like tools were rare. Rebigin is unrelated."), { name: "Bigin" }, []);
 	expect(result.mentions).toEqual([{ entity: "Bigin", rank: 1, firstIndex: 18, count: 1 }]);
 });
 

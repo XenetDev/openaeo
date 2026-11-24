@@ -20,6 +20,7 @@ const SearchSchema = z.object({
 const ResultSchema = z.object({
 	type: z.literal("result"),
 	is_error: z.boolean().optional(),
+	subtype: z.string().optional(),
 	result: z.string().optional(),
 	usage: z
 		.object({
@@ -32,9 +33,30 @@ const ResultSchema = z.object({
 });
 
 function classify(text: string): ProviderErrorCode {
-	if (/\/login|invalid api key|not logged in|authentication/i.test(text)) return "not_logged_in";
+	if (/unknown option|unknown argument|unrecognized option/i.test(text)) return "cli_outdated";
+	if (/please run \/login|invalid api key|not logged in|authentication_error|oauth token (has )?expired/i.test(text)) return "not_logged_in";
+	if (/issue with the selected model|model[^.]{0,80}(not exist|not found|not available|not supported)|invalid model/i.test(text)) return "model_unavailable";
 	if (/rate limit|usage limit|\b429\b|overloaded/i.test(text)) return "rate_limited";
 	return "failed";
+}
+
+const MESSAGES: Partial<Record<ProviderErrorCode, string>> = {
+	cli_outdated: "This version of Claude Code is too old for OpenAEO. Update Claude Code and try again.",
+	not_logged_in: "Claude Code is not logged in. Run `claude` and use /login, then try again.",
+};
+
+export function claudeError(text: string, knownOnly = false): ProviderError | null {
+	const code = classify(text);
+	if (code === "failed" && knownOnly) return null;
+	const detail = text.trim().slice(-400);
+	const message =
+		MESSAGES[code] ??
+		(code === "rate_limited"
+			? `Claude Code hit a usage limit: ${detail}`
+			: code === "model_unavailable"
+				? `Claude Code cannot use that model on this account: ${detail}`
+				: `Claude Code returned an error: ${detail}`);
+	return new ProviderError("claude-cli", code, message);
 }
 
 function hits(results: unknown[]): { url: string; title?: string }[] {
@@ -77,14 +99,8 @@ export function parseClaudeStream(stdout: string, durationMs: number): Answer {
 	if (!result) throw new ProviderError("claude-cli", "failed", "Claude Code exited without an answer.");
 	const text = result.result ?? "";
 	if (result.is_error) {
-		const code = classify(text);
-		const message =
-			code === "not_logged_in"
-				? "Claude Code is not logged in. Run `claude` and use /login, then try again."
-				: code === "rate_limited"
-					? `Claude Code hit a usage limit: ${text}`
-					: `Claude Code returned an error: ${text}`;
-		throw new ProviderError("claude-cli", code, message);
+		const detail = text.trim() || `the run stopped early (${result.subtype ?? "unknown reason"})`;
+		throw claudeError(detail) ?? new ProviderError("claude-cli", "failed", detail);
 	}
 	if (!text.trim()) throw new ProviderError("claude-cli", "failed", "Claude Code returned an empty answer.");
 

@@ -449,7 +449,7 @@ export const css = /* css */ `
 .ui-as-rev__actions { display: flex; align-items: center; gap: 6px; }
 .ui-as-rev__period { border-radius: calc(var(--aui-radius, 7px) + 2px); }
 
-.ui-as-rev__content { display: flex; flex: 1; flex-direction: column; gap: 12px; padding: 0 16px 16px; }
+.ui-as-rev__content { display: flex; flex: 1; flex-direction: column; gap: 12px; padding: 2px 16px 16px; }
 .ui-as-rev__card {
   padding: 14px 16px;
   border-radius: calc(var(--aui-radius-lg, 10px) + 2px);
@@ -553,6 +553,6 @@ export const css = /* css */ `
   .ui-as-rev__actions { flex-wrap: wrap; gap: 6px 4px; width: calc(100% + 44px); margin-left: -44px; }
   .ui-as-rev__actions > :last-child { margin-left: auto; }
   .ui-as-rev__actions button { white-space: nowrap; }
-  .ui-as-rev__content { gap: 8px; padding: 0 8px 8px; }
+  .ui-as-rev__content { gap: 8px; padding: 2px 8px 8px; }
 }
 `;

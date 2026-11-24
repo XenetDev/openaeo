@@ -594,7 +594,7 @@ body,
 	transition: background-color 140ms ease, transform 140ms ease;
 }
 
-.oa-suggest > button > span:first-child {
+.oa-suggest-text {
 	flex: 1;
 	min-width: 0;
 }
@@ -806,4 +806,12 @@ body,
 
 .ui-as-rev__content > .ui-pex > .oa-prompt-hero {
 	padding-top: 28px;
+}
+
+
+.oa-suggest small {
+	display: block;
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 16px;
 }

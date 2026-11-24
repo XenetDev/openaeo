@@ -1,14 +1,22 @@
 import type { EngineInfo, NewProject } from "@openaeo/ui";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AppShell, type ShellNavItem } from "@/components/app-shell";
 import { OnboardingBrandScreen } from "@/components/onboarding-brand";
 import { brandFrom, Monogram, OnboardingWebsiteScreen } from "@/components/onboarding-website";
 import { Badge } from "@/components/ui/badge-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
+import type { CompetitorIdea } from "../api";
 import { Page, ShareList } from "./shared";
 
-type Props = { engines: EngineInfo[]; nav: ShellNavItem[]; busy: boolean; onCreate: (project: NewProject) => void; onCancel?: () => void };
+type Props = {
+	engines: EngineInfo[];
+	nav: ShellNavItem[];
+	busy: boolean;
+	onCreate: (project: NewProject) => void;
+	onCancel?: () => void;
+	onFindCompetitors?: (name: string, domain?: string) => Promise<CompetitorIdea[]>;
+};
 
 function SetupPreview({ brand, domains, competitors, engines, nav }: { brand: string; domains: string[]; competitors: string[]; engines: EngineInfo[]; nav: ShellNavItem[] }) {
 	const name = brand || "Your brand";
@@ -56,12 +64,28 @@ function SetupPreview({ brand, domains, competitors, engines, nav }: { brand: st
 	);
 }
 
-export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel }: Props) {
+export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindCompetitors }: Props) {
 	const [step, setStep] = useState(1);
 	const [domains, setDomains] = useState<string[]>([]);
 	const [names, setNames] = useState<string[]>([]);
 	const frame = { product: "OpenAEO", email: "Runs on this computer", steps: 3, logo: <Monogram name="OpenAEO" size={20} /> };
 	const brand = names[0] ?? brandFrom(domains[0]);
+	const [found, setFound] = useState<CompetitorIdea[] | null>(null);
+	const [looking, setLooking] = useState(false);
+	const asked = useRef("");
+	const touched = useRef(false);
+	const look = (name: string, domain?: string) => {
+		const key = `${name}|${domain ?? ""}`;
+		if (!onFindCompetitors || !name || asked.current === key) return;
+		asked.current = key;
+		setFound(null);
+		setLooking(true);
+		onFindCompetitors(name, domain).then(
+			(list) => asked.current === key && (setFound(list), setLooking(false)),
+			() => asked.current === key && (setFound([]), setLooking(false)),
+		);
+	};
+	const prefill = found && found.length > 0 && !touched.current ? found.map((c) => c.name) : [];
 
 	if (step === 1) {
 		return (
@@ -97,6 +121,8 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel }: Props
 				preview={(s) => <SetupPreview brand={s.names[0] ?? s.pending} domains={domains} competitors={[]} engines={engines} nav={nav} />}
 				onContinue={(next) => {
 					setNames(next);
+					touched.current = false;
+					look(next[0] ?? brandFrom(domains[0]), domains[0]);
 					setStep(3);
 				}}
 			/>
@@ -105,21 +131,31 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel }: Props
 	return (
 		<OnboardingBrandScreen
 			{...frame}
-			key="competitors"
+			key={`competitors-${prefill.length}`}
 			step={3}
 			autoFocus
-			defaultNames={[]}
+			defaultNames={prefill}
 			optional
 			onBack={() => setStep(2)}
 			title="Who do you compete with?"
-			sub="OpenAEO tracks who gets recommended instead of you. You can add or change these later."
+			sub={prefill.length ? "Your AI engine found these. Remove any that are not real competitors, and add ones it missed." : "OpenAEO tracks who gets recommended instead of you. You can add or change these later."}
 			label="Competitors"
 			placeholder="Add a competitor"
-			hint={(all) => (busy ? "Setting up…" : all.length ? "Press Enter on an empty field to finish" : "Leave it empty to skip")}
-			preview={(s) => <SetupPreview brand={brand} domains={domains} competitors={s.pending ? [...s.names, s.pending] : s.names} engines={engines} nav={nav} />}
-			onContinue={(competitors) =>
-				onCreate({ name: brand || "My brand", aliases: names.slice(1), domains, competitors: competitors.map((name) => ({ name, aliases: [], domains: [] })), prompts: [] })
-			}
+			hint={(all) => (busy ? "Setting up…" : looking && !all.length ? "Looking for your competitors… you can type or skip while it works" : all.length ? "Press Enter on an empty field to finish" : "Leave it empty to skip")}
+			preview={(s) => {
+				if (s.pending || (looking && s.names.length > 0)) touched.current = true;
+				return <SetupPreview brand={brand} domains={domains} competitors={s.pending ? [...s.names, s.pending] : s.names} engines={engines} nav={nav} />;
+			}}
+			onContinue={(competitors) => {
+				const sites = new Map((found ?? []).map((c) => [c.name.toLowerCase(), c.domain]));
+				onCreate({
+					name: brand || "My brand",
+					aliases: names.slice(1),
+					domains,
+					competitors: competitors.slice(0, 50).map((name) => ({ name, aliases: [], domains: sites.get(name.toLowerCase()) ? [sites.get(name.toLowerCase()) as string] : [] })),
+					prompts: [],
+				});
+			}}
 		/>
 	);
 }

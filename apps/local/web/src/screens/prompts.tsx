@@ -131,7 +131,7 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 								<div className="oa-suggest">
 									{fresh.map((text) => (
 										<button key={text} type="button" onClick={() => void onAdd([text])} aria-label={`Track: ${text}`}>
-											<span>{text}</span>
+											<span className="oa-suggest-text">{text}</span>
 											{text.toLowerCase().includes(brand.toLowerCase()) ? <Badge tone="info">Names you</Badge> : null}
 											<i aria-hidden="true">
 												<Icon icon={Add01Icon} size={14} />

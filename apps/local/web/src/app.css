@@ -1280,3 +1280,8 @@ body,
 	line-height: 20px;
 	color: var(--text);
 }
+
+.oa-brand article {
+	border: 1px solid var(--line);
+	background: color-mix(in srgb, var(--chip) 30%, transparent);
+}

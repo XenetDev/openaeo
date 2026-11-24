@@ -969,6 +969,14 @@ body,
 	margin-bottom: auto;
 }
 
+.oa-chart-empty {
+	min-height: 340px;
+}
+
+.oa-chart-empty .ui-as-empty {
+	padding: 32px 0 40px;
+}
+
 .ui-pex-col {
 	display: flex;
 	flex-direction: column;

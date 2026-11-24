@@ -304,7 +304,7 @@ export function OverviewScreen({
 
 			<div className="ui-as-rev__row ui-as-rev__row--main">
 				{neverNamed ? (
-					<Card className="oa-card-fill">
+					<Card className="oa-card-fill oa-chart-empty">
 						<CardHeader title="Visibility over time" description="Your score after each run" />
 						<CardContent>
 							<EmptyState

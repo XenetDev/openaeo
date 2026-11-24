@@ -123,7 +123,7 @@ export function checkPage(page: PageModel, now: number = Date.now()): Finding[] 
 				"no-direct-answer",
 				"medium",
 				"No short, direct answer after the main heading",
-				size === 0 ? `Heading: "${page.h1}". No paragraph follows it.` : `The first paragraph after the heading is ${size} words: "${first}"`,
+				size === 0 ? `Heading: "${page.h1}". No paragraph follows it.` : `After the heading "${quote(page.h1, 60)}", the first paragraph is ${size} words: "${first}"`,
 				"Open with a 30 to 60 word paragraph that answers the heading's question outright. Engines lift this passage.",
 			);
 		}

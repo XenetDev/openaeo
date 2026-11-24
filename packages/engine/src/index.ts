@@ -10,3 +10,5 @@ export * from "./audit/fetch";
 export * from "./audit/checks";
 export * from "./audit/page";
 export * from "./audit/robots";
+export * from "./audit/brief";
+export * from "./audit/run";

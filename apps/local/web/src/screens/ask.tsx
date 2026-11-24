@@ -1,12 +1,13 @@
 import type { EngineInfo, ProjectView } from "@openaeo/ui";
 import { AiChat02Icon, CheckListIcon, News01Icon, Search01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
-import { Fragment, useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/app-shell";
 import { AssistantStart } from "@/components/assistant-start";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
-import { ChatComposer } from "@/components/ui/chat-composer-clean";
+import { PillField } from "@/components/pill-field";
+import { DropdownMenu } from "@/components/ui/dropdown-menu-clean";
 import { ThinkingState } from "@/components/ui/thinking-state-clean";
 import { toast } from "@/components/ui/toaster-clean";
 import type { AskAction } from "../api";
@@ -30,11 +31,13 @@ const actionLabel = (action: AskAction) =>
 
 export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }: Props) {
 	const ready = engines.filter((e) => e.available && e.enabled);
-	const models = useMemo(() => ready.map((e) => ({ id: e.id, name: e.label, Logo: () => <EngineLogo engine={e.id} label={e.label} size={14} /> })), [ready.map((e) => e.id).join()]); // eslint-disable-line react-hooks/exhaustive-deps
 	const brand = useMemo(() => [project.name, ...project.aliases], [project]);
 	const busy = turns.some((t) => t.pending);
 	const end = useRef<HTMLDivElement>(null);
-	const picked = useRef(ready[0]?.id ?? "");
+	const [draft, setDraft] = useState("");
+	const [pickedEngine, setPickedEngine] = useState("");
+	const engine = ready.some((e) => e.id === pickedEngine) ? pickedEngine : (ready[0]?.id ?? "");
+	const picked = { current: engine };
 	const last = turns[turns.length - 1];
 	const fresh = useRef(new Set<string>());
 	for (const turn of turns) if (turn.pending) fresh.current.add(turn.id);
@@ -43,17 +46,39 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 		end.current?.scrollIntoView({ block: "end", behavior: "smooth" });
 	}, [turns.length, last?.pending]);
 
+	const send = () => {
+		const text = draft.trim();
+		if (!text || busy) return;
+		onAsk(text, engine);
+		setDraft("");
+	};
 	const composer = (
-		<ChatComposer
-			plain
-			tray={false}
-			busy={busy}
+		<PillField
+			icon={AiChat02Icon}
+			label="Message"
+			value={draft}
+			onChange={setDraft}
+			onSubmit={send}
 			placeholder={turns.length ? "Ask a follow-up…" : "Ask about your visibility, competitors or site…"}
-			models={models}
-			onModelChange={(model) => {
-				picked.current = model.id;
-			}}
-			onSend={(message, details) => onAsk(message, details.model || picked.current)}
+			extra={
+				ready.length > 1 ? (
+					<DropdownMenu
+						align="end"
+						trigger={({ triggerProps }) => (
+							<button type="button" className="oa-pill-pick" {...triggerProps} aria-label={`Engine: ${engineLabel(engines, engine)}`}>
+								<EngineLogo engine={engine} label={engineLabel(engines, engine)} size={14} />
+								{engineLabel(engines, engine)}
+							</button>
+						)}
+						items={ready.map((e) => ({ label: e.label, logo: <EngineLogo engine={e.id} label={e.label} size={14} />, checked: e.id === engine, onSelect: () => setPickedEngine(e.id) }))}
+					/>
+				) : null
+			}
+			action={
+				<Button size="lg" disabled={!draft.trim() || busy} onClick={send}>
+					Ask
+				</Button>
+			}
 		/>
 	);
 	const retry = [...turns].reverse().find((t) => t.role === "user")?.text;
@@ -82,12 +107,14 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 					}
 				/>
 			) : turns.length === 0 ? (
+				<div className="oa-ask-glow">
 				<AssistantStart
 					title={`What do you want to know about ${project.name}?`}
 					composer={composer}
 					chips={STARTERS.map((s) => ({ label: s.label, icon: s.icon, onSelect: () => onAsk(s.question, picked.current) }))}
 					note={<p className="oa-quiet oa-ask-note">Written by your own Claude or Codex from your runs and site audit, not from the web. Chats are not saved.</p>}
 				/>
+				</div>
 			) : (
 				<div className="oa-ask">
 					<div className="oa-thread" aria-live="polite">

@@ -527,44 +527,6 @@ body,
 	text-wrap: pretty;
 }
 
-.oa-search {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	width: min(620px, 100%);
-	height: 52px;
-	padding: 0 8px 0 18px;
-	border-radius: 26px;
-	background: var(--card);
-	box-shadow: var(--card-shadow);
-	color: var(--muted);
-	transition: box-shadow 160ms ease;
-}
-
-.oa-search:focus-within {
-	box-shadow: 0 0 0 2px var(--aui-focus), var(--card-shadow);
-}
-
-.oa-search input {
-	flex: 1;
-	min-width: 0;
-	height: 100%;
-	border: 0;
-	outline: 0;
-	background: none;
-	font: inherit;
-	font-size: 15px;
-	color: var(--ink);
-}
-
-.oa-search input::placeholder {
-	color: var(--faint);
-}
-
-.oa-search button {
-	border-radius: 18px;
-}
-
 .oa-crawlers {
 	display: flex;
 	flex-wrap: wrap;
@@ -578,66 +540,6 @@ body,
 
 .oa-prompt-hero {
 	padding-top: 44px;
-}
-
-.ui-pex-box.oa-pill {
-	width: min(620px, 100%);
-	border-radius: 26px;
-	background: var(--card);
-	box-shadow: var(--card-shadow);
-	text-align: left;
-}
-
-.ui-pex-box.oa-pill[data-bulk] {
-	border-radius: 18px;
-}
-
-.oa-pill .ui-pex-list {
-	top: calc(100% + 6px);
-	padding: 6px;
-	border-radius: 14px;
-	background: var(--aui-overlay, var(--card));
-	box-shadow: var(--aui-shadow-popover, 0 0 0 0.5px var(--line-strong), 0 12px 32px -8px rgba(0, 0, 0, 0.3));
-	clip-path: none;
-}
-
-.ui-pex-box.oa-pill:focus-within {
-	box-shadow: 0 0 0 2px var(--aui-focus), var(--card-shadow);
-}
-
-.oa-pill-row {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	min-height: 52px;
-	padding: 8px 8px 8px 18px;
-	color: var(--muted);
-}
-
-.oa-pill[data-bulk] .oa-pill-row {
-	align-items: flex-start;
-	padding-top: 14px;
-}
-
-.oa-pill[data-bulk] .oa-pill-row > svg {
-	margin-top: 3px;
-}
-
-.oa-pill[data-bulk] .oa-pill-row button {
-	align-self: flex-end;
-}
-
-.oa-pill-row .ui-pex-field {
-	flex: 1;
-	min-height: 24px;
-	padding: 0;
-	font-size: 15px;
-	line-height: 24px;
-}
-
-.oa-pill-row button {
-	flex: none;
-	border-radius: 18px;
 }
 
 .oa-crawlers .ui-pex-switch {
@@ -726,4 +628,119 @@ body,
 	.oa-suggest {
 		grid-template-columns: minmax(0, 1fr);
 	}
+}
+
+.oa-pill {
+	position: relative;
+	z-index: 4;
+	width: min(640px, 100%);
+	border-radius: 28px;
+	background: var(--card);
+	box-shadow: var(--card-shadow);
+	text-align: left;
+	transition: box-shadow 160ms ease, border-radius 160ms ease;
+}
+
+.oa-pill[data-multi] {
+	border-radius: 20px;
+}
+
+.oa-pill:focus-within {
+	box-shadow: 0 0 0 2px var(--aui-focus), var(--card-shadow);
+}
+
+.oa-pill-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 56px;
+	padding: 8px 8px 8px 20px;
+	color: var(--muted);
+}
+
+.oa-pill[data-multi] .oa-pill-row {
+	align-items: flex-end;
+}
+
+.oa-pill[data-multi] .oa-pill-row > svg {
+	align-self: flex-start;
+	margin-top: 11px;
+}
+
+.oa-pill[data-multi] .oa-pill-row > textarea {
+	align-self: flex-start;
+	margin-top: 8px;
+	margin-bottom: 8px;
+}
+
+.oa-pill-row > textarea {
+	display: block;
+	flex: 1;
+	min-width: 0;
+	height: 24px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	resize: none;
+	background: none;
+	font: inherit;
+	font-size: 15px;
+	line-height: 24px;
+	color: var(--ink);
+}
+
+.oa-pill-row > textarea::placeholder {
+	color: var(--faint);
+}
+
+.oa-pill-row > .ui-buttonc {
+	flex: none;
+	--h: 40px;
+	padding-inline: 18px;
+	border-radius: 20px;
+	font-size: 14px;
+}
+
+.oa-pill .ui-pex-list {
+	top: calc(100% + 6px);
+	padding: 6px;
+	border-radius: 14px;
+	background: var(--aui-overlay, var(--card));
+	box-shadow: var(--aui-shadow-popover, 0 0 0 0.5px var(--line-strong), 0 12px 32px -8px rgba(0, 0, 0, 0.3));
+	clip-path: none;
+}
+
+.oa-pill-pick {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	margin: 0;
+	padding: 0 10px;
+	border: 0;
+	border-radius: 16px;
+	background: none;
+	font: inherit;
+	font-size: 13px;
+	color: var(--text);
+	cursor: pointer;
+	transition: background-color 140ms ease;
+}
+
+.oa-pill-pick:hover {
+	background: var(--hover);
+}
+
+.oa-ask-glow {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	border-radius: calc(var(--aui-radius-lg, 10px) + 2px);
+	background: radial-gradient(60% 70% at 50% 0%, color-mix(in srgb, var(--aui-blue, #0190fe) 10%, transparent) 0%, transparent 70%);
+}
+
+.oa-ask-dock > .oa-pill {
+	width: 100%;
 }

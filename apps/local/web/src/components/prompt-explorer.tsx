@@ -28,6 +28,7 @@ import {
   Search01Icon,
   Target02Icon,
 } from "@hugeicons/core-free-icons";
+import { PillField } from "@/components/pill-field";
 import { Button } from "@/components/ui/button-clean";
 import { EmptyState, Icon, Loading, Skeleton, rove, useToast, type AppShellProps, type ShellNavItem } from "@/components/app-shell";
 
@@ -285,13 +286,6 @@ export function PromptExplorerScreen({
     }
   };
 
-  // The field grows with its lines in bulk, up to six
-  useEffect(() => {
-    const el = field.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, bulk ? 156 : 24)}px`;
-  }, [query, bulk]);
 
   const trending = trend === "rising" ? rising : falling;
   const open1 = (text: string) => (onOpen ? onOpen(text) : pick(text));
@@ -310,40 +304,35 @@ export function PromptExplorerScreen({
           <h2 id={`${id}-title`}>{title}</h2>
           <p>Track the questions people ask AI before they choose a business like yours.</p>
 
-          <div className="ui-pex-box oa-pill" data-open={showList || undefined} data-bulk={bulk || undefined}>
-            <label htmlFor={`${id}-field`} className="ui-pex-sr">
-              {mode === "url" ? "A page's address" : bulk ? "Prompts, one per line" : "A prompt or keyword"}
-            </label>
-            <div className="oa-pill-row">
-              <Icon icon={Search01Icon} size={18} />
-            <textarea
-                ref={field}
-                id={`${id}-field`}
-                className="ui-pex-field"
-                rows={bulk ? 3 : 1}
-                value={query}
-                placeholder={bulk ? "One question per line…" : "Type a question a buyer would ask an AI assistant…"}
-                role="combobox"
-                aria-expanded={showList}
-                aria-controls={`${id}-list`}
-                aria-autocomplete="list"
-                aria-activedescendant={showList ? `${id}-opt-${at}` : undefined}
-                aria-keyshortcuts="Enter ArrowDown ArrowUp Escape"
-                spellCheck={false}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setOpen(true);
-                  setActive(0);
-                }}
-                onFocus={() => setOpen(true)}
-                onBlur={() => window.setTimeout(() => setOpen(false), 120)}
-                onKeyDown={onFieldKey}
-              />
-              <Button type="button" loading={busy} onClick={analyseNow}>
+          <PillField
+            data-open={showList || undefined}
+            icon={Search01Icon}
+            label={bulk ? "Questions, one per line" : "A question to track"}
+            value={query}
+            onChange={(next) => {
+              setQuery(next);
+              setOpen(true);
+              setActive(0);
+            }}
+            placeholder={bulk ? "One question per line…" : "Type a question a buyer would ask an AI assistant…"}
+            fieldRef={field}
+            textareaProps={{
+              id: `${id}-field`,
+              role: "combobox",
+              "aria-expanded": showList,
+              "aria-controls": `${id}-list`,
+              "aria-autocomplete": "list",
+              "aria-activedescendant": showList ? `${id}-opt-${at}` : undefined,
+              onFocus: () => setOpen(true),
+              onBlur: () => window.setTimeout(() => setOpen(false), 120),
+              onKeyDown: onFieldKey,
+            }}
+            action={
+              <Button size="lg" loading={busy} onClick={analyseNow}>
                 Track
               </Button>
-            </div>
-
+            }
+          >
             {/* Relevant searches: each completes what you typed, with its prompts a month and the change */}
             <div className="ui-pex-list" id={`${id}-list`} role="listbox" aria-label="Relevant searches" hidden={!showList}>
               <p className="ui-pex-list__head" aria-hidden="true">
@@ -369,7 +358,7 @@ export function PromptExplorerScreen({
                 </div>
               ))}
             </div>
-          </div>
+          </PillField>
           <div className="oa-crawlers">
             {actions}
             <button

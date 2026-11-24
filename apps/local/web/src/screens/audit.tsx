@@ -1,7 +1,8 @@
 import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@openaeo/ui";
 import { CheckListIcon, Globe02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
-import { EmptyState, Icon } from "@/components/app-shell";
+import { EmptyState } from "@/components/app-shell";
+import { PillField } from "@/components/pill-field";
 import { AgentFindings, type Finding, type FindingAgent } from "@/components/ui/agent-findings-clean";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -148,25 +149,28 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 			<section className="oa-audit-hero" data-tall={!audit || undefined}>
 				<h2>Can AI read your website?</h2>
 				<p>Reads up to 25 pages the way an AI crawler does and shows what stops engines quoting you.</p>
-				<form
-					className="oa-search"
-					onSubmit={(e) => {
-						e.preventDefault();
-						if (!running) onRun(url.trim());
-					}}
-				>
-					<Icon icon={Globe02Icon} size={18} />
-					<input aria-label="Website to check" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="yourwebsite.com" disabled={running} spellCheck={false} autoCapitalize="off" autoCorrect="off" />
-					{running ? (
-						<Button type="button" variant="secondary" onClick={onCancel}>
-							Stop
-						</Button>
-					) : (
-						<Button type="submit" disabled={url.trim() === ""}>
-							{audit ? "Check again" : "Check my site"}
-						</Button>
-					)}
-				</form>
+				<PillField
+					icon={Globe02Icon}
+					label="Website to check"
+					value={url}
+					onChange={setUrl}
+					onSubmit={() => !running && url.trim() !== "" && onRun(url.trim())}
+					placeholder="yourwebsite.com"
+					maxLines={1}
+					disabled={running}
+					textareaProps={{ autoCapitalize: "off", autoCorrect: "off" }}
+					action={
+						running ? (
+							<Button variant="secondary" size="lg" onClick={onCancel}>
+								Stop
+							</Button>
+						) : (
+							<Button size="lg" disabled={url.trim() === ""} onClick={() => onRun(url.trim())}>
+								{audit ? "Check again" : "Check my site"}
+							</Button>
+						)
+					}
+				/>
 				{running ? (
 					<Badge tone="info" live>
 						Reading the site

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { CodeBlock } from "@/components/ui/code-block-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
 import { TextField } from "@/components/ui/text-field-clean";
+import { FilesMark, HighMark, LowMark, MediumMark, SkippedMark } from "./command-icons";
 import { Page, when } from "./shared";
 
 type Props = {
@@ -30,9 +31,9 @@ const AREAS: { id: string; name: string; checks: string[] }[] = [
 ];
 const SEVERITY = { high: "critical", medium: "warning", low: "note" } as const;
 const LEVELS = [
-	{ id: "high", label: "High", tone: "danger", note: "These stop AI engines from reading or using the site." },
-	{ id: "medium", label: "Medium", tone: "warning", note: "These make pages harder for engines to quote and trust." },
-	{ id: "low", label: "Low", tone: "neutral", note: "Smaller improvements." },
+	{ id: "high", label: "High", tone: "danger", mark: <HighMark />, note: "These stop AI engines from reading or using the site." },
+	{ id: "medium", label: "Medium", tone: "warning", mark: <MediumMark />, note: "These make pages harder for engines to quote and trust." },
+	{ id: "low", label: "Low", tone: "info", mark: <LowMark />, note: "Smaller improvements." },
 ] as const;
 const FILES: { key: keyof ArtefactsView; name: string; language: string }[] = [
 	{ key: "robotsTxt", name: "robots.txt", language: "txt" },
@@ -162,9 +163,9 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 								if (groups.size === 0) return null;
 								return (
 									<Card key={level.id}>
-										<CardHeader title={`${level.label} priority`} description={level.note} action={<Badge tone={level.tone}>{groups.size} to fix</Badge>} />
+										<CardHeader icon={level.mark} title={`${level.label} priority`} description={level.note} action={<Badge tone={level.tone}>{groups.size} to fix</Badge>} />
 										<CardContent>
-											<div className="oa-finding-list">
+											<div className="oa-finding-list" data-tone={level.id}>
 												{[...groups.entries()].map(([title, group]) => (
 													<article key={title}>
 														<h3>
@@ -190,7 +191,7 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 
 					{FILES.some((f) => artefacts[f.key]) ? (
 						<Card>
-							<CardHeader title="Starter files" description="Drafts to adapt, not to paste blindly. Keep any rules your current robots.txt needs." />
+							<CardHeader icon={<FilesMark />} title="Starter files" description="Drafts to adapt, not to paste blindly. Keep any rules your current robots.txt needs." />
 							<CardContent>
 								<div className="oa-stack">
 									{FILES.map((file) => (artefacts[file.key] ? <CodeBlock key={file.key} code={artefacts[file.key] ?? ""} language={file.language} filename={file.name} maxHeight={220} /> : null))}
@@ -201,7 +202,7 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 
 					{unread.length > 0 || audit.skipped > 0 ? (
 						<Card>
-							<CardHeader title="Not checked" description={audit.skipped > 0 ? `${audit.skipped} more pages were not checked, because an audit reads 25 pages at most.` : undefined} />
+							<CardHeader icon={<SkippedMark />} title="Not checked" description={audit.skipped > 0 ? `${audit.skipped} more pages were not checked, because an audit reads 25 pages at most.` : undefined} />
 							{unread.length > 0 ? (
 								<CardContent>
 									<ul className="oa-urls" style={{ marginTop: 0 }}>

@@ -73,3 +73,41 @@ export const AgentMark = () => (
 		)}
 	</Tile>
 );
+
+function Level({ tone, children }: { tone: "high" | "medium" | "low" | "files" | "skipped"; children: ReactNode }) {
+	return (
+		<span className="oa-level" data-tone={tone} aria-hidden="true">
+			<svg viewBox="0 0 24 24">{children}</svg>
+		</span>
+	);
+}
+
+export const HighMark = () => (
+	<Level tone="high">
+		<path fillRule="evenodd" d="M10.300 3.900a2 2 0 0 1 3.400 0l8 13.600a2 2 0 0 1-1.700 3H4a2 2 0 0 1-1.700-3zM12 8.500a1 1 0 0 0-1 1v4a1 1 0 1 0 2 0v-4a1 1 0 0 0-1-1m0 9.300a1.200 1.200 0 1 0 0-2.400 1.200 1.200 0 0 0 0 2.400" />
+	</Level>
+);
+
+export const MediumMark = () => (
+	<Level tone="medium">
+		<path fillRule="evenodd" d="M12 2.500a9.500 9.500 0 1 0 0 19 9.500 9.500 0 0 0 0-19M12 7a1 1 0 0 0-1 1v4.500a1 1 0 1 0 2 0V8a1 1 0 0 0-1-1m0 10.200a1.200 1.200 0 1 0 0-2.400 1.200 1.200 0 0 0 0 2.400" />
+	</Level>
+);
+
+export const LowMark = () => (
+	<Level tone="low">
+		<path fillRule="evenodd" d="M12 2.500a9.500 9.500 0 1 0 0 19 9.500 9.500 0 0 0 0-19m0 4.300a1.200 1.200 0 1 0 0 2.400 1.200 1.200 0 0 0 0-2.400M11 11.500a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0z" />
+	</Level>
+);
+
+export const FilesMark = () => (
+	<Level tone="files">
+		<path fillRule="evenodd" d="M7 2.500A2.500 2.500 0 0 0 4.500 5v14A2.500 2.500 0 0 0 7 21.500h10a2.500 2.500 0 0 0 2.500-2.500V9.200a2 2 0 0 0-.600-1.400l-4.700-4.700a2 2 0 0 0-1.400-.600zm1.500 9.500a1 1 0 0 1 1-1h5a1 1 0 1 1 0 2h-5a1 1 0 0 1-1-1m1 3a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2z" />
+	</Level>
+);
+
+export const SkippedMark = () => (
+	<Level tone="skipped">
+		<path fillRule="evenodd" d="M12 2.500a9.500 9.500 0 1 0 0 19 9.500 9.500 0 0 0 0-19M8 11a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2z" />
+	</Level>
+);

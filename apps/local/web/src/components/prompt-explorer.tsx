@@ -565,7 +565,7 @@ const css = /* css */ `
     radial-gradient(72% 90% at 12% 66%, rgba(92, 157, 238, 0.7) 0%, rgba(92, 157, 238, 0) 72%),
     radial-gradient(62% 78% at 86% 62%, rgba(106, 217, 232, 0.52) 0%, rgba(106, 217, 232, 0) 74%),
     linear-gradient(180deg, #ffffff 8%, #f8faf9 100%); }
-.ui-pex-hero__bg > i { position: absolute; inset: -46% -12% 6% -12%; opacity: 0.85; will-change: transform; backface-visibility: hidden; background: url("${GLOW}") center bottom / cover no-repeat; animation: ui-pex-drift-b 11s ease-in-out infinite alternate; }
+.ui-pex-hero__bg > i { position: absolute; inset: -46% -12% 6% -12%; opacity: 0.85; will-change: transform; backface-visibility: hidden; background: url("${GLOW}") center bottom / cover no-repeat; -webkit-mask-image: radial-gradient(closest-side, #000 45%, transparent 100%); mask-image: radial-gradient(closest-side, #000 45%, transparent 100%); animation: ui-pex-drift-b 11s ease-in-out infinite alternate; }
 .ui-pex-hero__bg::after { content: ""; position: absolute; inset: -20%; will-change: transform; backface-visibility: hidden; animation: ui-pex-drift-c 13s ease-in-out infinite alternate; background:
     radial-gradient(120% 120% at 85% 85%, rgba(221, 201, 255, 0.72) 0%, rgba(221, 201, 255, 0) 65%),
     radial-gradient(116% 116% at 12% 25%, rgba(210, 231, 255, 0.55) 0%, rgba(210, 231, 255, 0) 60%),
@@ -576,7 +576,10 @@ const css = /* css */ `
     radial-gradient(72% 90% at 12% 66%, rgba(70, 120, 230, 0.55) 0%, rgba(70, 120, 230, 0) 72%),
     radial-gradient(62% 78% at 86% 62%, rgba(60, 170, 200, 0.32) 0%, rgba(60, 170, 200, 0) 74%),
     linear-gradient(180deg, #14162a 8%, #181a2e 100%); }
-:where(.dark, [data-theme="dark"]) .ui-pex-hero__bg > i { opacity: 0.5; filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
+:where(.dark, [data-theme="dark"]) .ui-pex-hero__bg > i { opacity: 1; background:
+    radial-gradient(46% 58% at 50% 78%, rgba(96, 124, 255, 0.34) 0%, rgba(96, 124, 255, 0) 100%),
+    radial-gradient(34% 44% at 30% 70%, rgba(72, 176, 214, 0.2) 0%, rgba(72, 176, 214, 0) 100%),
+    radial-gradient(34% 44% at 72% 72%, rgba(150, 110, 240, 0.22) 0%, rgba(150, 110, 240, 0) 100%); }
 :where(.dark, [data-theme="dark"]) .ui-pex-hero__bg::after { background:
     radial-gradient(120% 120% at 85% 85%, rgba(120, 90, 220, 0.4) 0%, rgba(120, 90, 220, 0) 65%),
     radial-gradient(116% 116% at 12% 25%, rgba(60, 90, 190, 0.3) 0%, rgba(60, 90, 190, 0) 60%),

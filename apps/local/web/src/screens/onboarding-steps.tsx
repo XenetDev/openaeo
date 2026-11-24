@@ -19,7 +19,6 @@ const HOW: Record<string, string> = {
 export function EnginesStep({ frame, step, engines, preview, onBack, onContinue, onSaveKey }: { frame: Frame; step: number; engines: EngineInfo[]; preview: ReactNode; onBack: () => void; onContinue: () => void; onSaveKey: (id: string, key: string) => Promise<void> }) {
 	const [keys, setKeys] = useState<Record<string, string>>({});
 	const [saving, setSaving] = useState<string | null>(null);
-	const [showKeys, setShowKeys] = useState(false);
 	const subscriptions = engines.filter((e) => isSubscription(e.id));
 	const apis = engines.filter((e) => !isSubscription(e.id));
 	const ready = engines.filter((e) => e.available && e.enabled).length;
@@ -41,8 +40,7 @@ export function EnginesStep({ frame, step, engines, preview, onBack, onContinue,
 						<Badge tone={e.available ? "success" : "neutral"}>{e.available ? "Ready" : "Not found"}</Badge>
 					</div>
 				))}
-				{showKeys || ready === 0
-					? apis.map((e) => (
+				{apis.map((e) => (
 							<div key={e.id} className="oa-ob-row" data-key={!e.available || undefined}>
 								<EngineLogo engine={e.id} label={e.label} size={18} />
 								<span className="oa-grow">
@@ -72,16 +70,10 @@ export function EnginesStep({ frame, step, engines, preview, onBack, onContinue,
 								</span>
 								{e.available ? <Badge tone="success">Ready</Badge> : null}
 							</div>
-						))
-					: null}
+				))}
 			</div>
 
 			<div className="oa-ob-foot">
-				{!showKeys && ready > 0 ? (
-					<Button variant="ghost" onClick={() => setShowKeys(true)}>
-						Add API keys
-					</Button>
-				) : null}
 				<Button data-autofocus disabled={ready === 0} onClick={onContinue}>
 					{ready === 0 ? "Connect an engine to continue" : `Continue with ${ready} ${ready === 1 ? "engine" : "engines"}`}
 				</Button>

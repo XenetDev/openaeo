@@ -217,7 +217,7 @@ test("settings explain how to connect an AI agent", () => {
 
 test("an audit of another site says so and the score is described honestly", () => {
 	const other = html(<AuditPage audit={{ ...auditDone, own: false, origin: "https://competitor.example" }} findings={auditFindings} artefacts={{}} defaultUrl="" onRun={noop} onCancel={noop} onCopyBrief={noop} />);
-	expect(other).toMatch(/not your project.s website/i);
+	expect(other).toMatch(/which is not your project/i);
 	expect(other).not.toContain("Copy fix brief");
 	const own = html(<AuditPage audit={auditDone} findings={auditFindings} artefacts={{}} defaultUrl="" onRun={noop} onCancel={noop} onCopyBrief={noop} />);
 	expect(own).toMatch(/rough guide/i);

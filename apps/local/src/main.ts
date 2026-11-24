@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { randomBytes } from "node:crypto";
+import { writeSync } from "node:fs";
 import pkg from "../package.json" with { type: "json" };
 import { diskAssets, embeddedAssets } from "./assets";
 import { createSafeFetch } from "@openaeo/engine";
@@ -15,7 +16,22 @@ import { openDb } from "./store/db";
 import { createStore } from "./store/store";
 import { suggestPrompts } from "./suggest";
 
-const out = (line: string) => process.stdout.write(`${line}\n`);
+function out(line: string) {
+	const data = Buffer.from(`${line}\n`);
+	let offset = 0;
+	let stalls = 0;
+	while (offset < data.length) {
+		try {
+			offset += writeSync(1, data, offset);
+			stalls = 0;
+		} catch (error) {
+			if (!(error instanceof Error) || !("code" in error) || error.code !== "EAGAIN" || stalls > 2000) return;
+			stalls += 1;
+			Bun.sleepSync(2);
+		}
+	}
+}
+const exit = async (code: number): Promise<never> => process.exit(code);
 const args = parseArgs(process.argv.slice(2));
 
 if (args.command === "error") {
@@ -24,11 +40,11 @@ if (args.command === "error") {
 }
 if (args.command === "version") {
 	out(pkg.version);
-	process.exit(0);
+	await exit(0);
 }
 if (args.command === "help") {
 	out(HELP);
-	process.exit(0);
+	await exit(0);
 }
 
 const store = createStore(openDb(dbPath(dataDir())));
@@ -56,7 +72,7 @@ if (args.command === "status") {
 	for (const engine of detectEngines(engineDeps)) {
 		out(`${engine.label.padEnd(18)}${engine.available ? (engine.enabled ? "ready" : "turned off") : `unavailable: ${engine.reason}`}`);
 	}
-	process.exit(0);
+	await exit(0);
 }
 
 if (args.command === "mcp") {
@@ -72,11 +88,11 @@ if (args.command === "mcp") {
 }
 
 if (args.command === "audit") {
-	process.exit(await auditOnce({ store, audits, get, out, json: args.json, url: args.url, project: args.project }));
+	await exit(await auditOnce({ store, audits, get, out, json: args.json, url: args.url, project: args.project }));
 }
 
 if (args.command === "run") {
-	process.exit(await runOnce({ store, runs, out, json: args.json, project: args.project }));
+	await exit(await runOnce({ store, runs, out, json: args.json, project: args.project }));
 }
 
 const token = randomBytes(24).toString("hex");

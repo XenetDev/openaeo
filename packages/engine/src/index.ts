@@ -6,3 +6,4 @@ export * from "./match";
 export * from "./score";
 export * from "./providers/openai";
 export * from "./run";
+export * from "./audit/fetch";

@@ -19,5 +19,8 @@
 		"@types/node": "^22",
 		"typescript": "^5.9",
 		"zod": "^4"
+	},
+	"dependencies": {
+		"node-html-parser": "^9.0.7"
 	}
 }

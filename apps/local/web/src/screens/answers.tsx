@@ -1,107 +1,191 @@
-import type { AnswerView, EngineInfo, ProjectView } from "@openaeo/ui";
+import type { AnswerView, EngineInfo, PageId, ProjectView } from "@openaeo/ui";
 import { BubbleChatIcon } from "@hugeicons/core-free-icons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/app-shell";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
-import { Badge } from "@/components/ui/badge-clean";
+import { Avatar } from "@/components/ui/avatar-clean";
+import { Badge, type BadgeTone } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { SegmentedControl } from "@/components/ui/segmented-control-clean";
+import { Spinner } from "@/components/ui/spinner-clean";
 import { toast } from "@/components/ui/toaster-clean";
 import { toAnswerMarkup } from "./answer-markup";
-import { engineLabel, ordinal, Page } from "./shared";
+import { engineLabel, ordinal, Page, ShareList } from "./shared";
 
-type Props = { answers: AnswerView[]; project: ProjectView; engines: EngineInfo[]; filter: string; onFilter: (text: string) => void; onRunAgain: () => void };
+type Props = {
+	answers: AnswerView[];
+	project: ProjectView;
+	engines: EngineInfo[];
+	live: boolean;
+	filter: string;
+	onFilter: (text: string) => void;
+	onRunAgain: () => void;
+	onNavigate: (page: PageId) => void;
+};
 
-function Verdict({ answer }: { answer: AnswerView }) {
-	if (answer.errorCode !== null) return <Badge tone="danger">Failed</Badge>;
+const NEXT: { label: string; page: PageId }[] = [
+	{ label: "See which sites the engines rely on", page: "sources" },
+	{ label: "Compare how often competitors are named", page: "competitors" },
+	{ label: "Check whether AI engines can read your site", page: "audit" },
+];
+
+const seconds = (ms: number) => Math.max(0.1, Math.round(ms / 100) / 10);
+
+function standing(answer: AnswerView | undefined): { text: string; tone: BadgeTone } {
+	if (!answer) return { text: "Waiting", tone: "neutral" };
+	if (answer.errorCode !== null) return { text: "Failed", tone: "danger" };
+	if (answer.brandRank === null) return { text: "Not named", tone: "warning" };
+	return { text: ordinal(answer.brandRank), tone: "success" };
+}
+
+function Favicon({ href }: { href: string }) {
+	try {
+		return <img src={`${new URL(href).origin}/favicon.ico`} alt="" loading="lazy" referrerPolicy="no-referrer" />;
+	} catch {
+		return null;
+	}
+}
+
+function Facts({ answer, brand }: { answer: AnswerView; brand: string }) {
+	const rows: [string, string][] = [
+		["Position", answer.brandRank === null ? `${brand} is not named` : `${ordinal(answer.brandRank)} of ${answer.mentions.length} ${answer.mentions.length === 1 ? "brand" : "brands"}`],
+		["Your site", answer.brandCited ? "Linked as a source" : "Not linked"],
+		["Based on", answer.searched ? `A web search, ${answer.citations.length} ${answer.citations.length === 1 ? "source" : "sources"}` : "The engine's memory"],
+		...(answer.sentiment ? ([["Tone about you", answer.sentiment[0]?.toUpperCase() + answer.sentiment.slice(1)]] as [string, string][]) : []),
+	];
 	return (
-		<>
-			{answer.brandRank === null ? <Badge tone="warning">Not mentioned</Badge> : <Badge tone="success">Mentioned {ordinal(answer.brandRank)}</Badge>}
-			{answer.brandCited ? <Badge tone="info">Your site cited</Badge> : null}
-			{answer.sentiment ? <Badge>{answer.sentiment} tone</Badge> : null}
-			<Badge>{answer.searched ? "Searched the web" : "From memory"}</Badge>
-		</>
+		<dl className="oa-facts">
+			{rows.map(([term, value]) => (
+				<div key={term}>
+					<dt>{term}</dt>
+					<dd>{value}</dd>
+				</div>
+			))}
+		</dl>
 	);
 }
 
-export function AnswersScreen({ answers, project, engines, filter, onFilter, onRunAgain }: Props) {
-	const [engine, setEngine] = useState("all");
-	const ids = [...new Set(answers.map((a) => a.engine))];
+function Answer({ answer, question, brand, animate, onSeen, onNavigate }: { answer: AnswerView; question: string; brand: string[]; animate: boolean; onSeen: () => void; onNavigate: (page: PageId) => void }) {
+	const [streamed] = useState(animate);
+	useEffect(() => {
+		onSeen();
+	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+	const markup = useMemo(() => toAnswerMarkup(answer.text, answer.citations, brand), [answer, brand]);
+	return (
+		<AIAnswer
+			framed
+			className="oa-answer-card"
+			question={question}
+			sources={markup.sources.map((s) => ({ ...s, icon: <Favicon href={s.href} /> }))}
+			answer={markup.answer}
+			animate={streamed}
+			tookSeconds={seconds(answer.durationMs)}
+			followUps={NEXT.map((n) => n.label)}
+			onFollowUp={(label) => onNavigate(NEXT.find((n) => n.label === label)?.page ?? "sources")}
+			onCopy={() => toast.success("Answer copied")}
+		/>
+	);
+}
+
+export function AnswersScreen({ answers, project, engines, live, filter, onFilter, onRunAgain, onNavigate }: Props) {
 	const brand = useMemo(() => [project.name, ...project.aliases], [project]);
-	const shown = answers.filter((a) => (engine === "all" || a.engine === engine) && (!filter || a.promptText === filter));
-	const questions = [...new Set(shown.map((a) => a.promptText))];
+	const seen = useRef<Set<string> | null>(null);
+	if (seen.current === null) seen.current = new Set(answers.map((a) => a.id));
+	const known = seen.current;
+
+	const questions = [...new Set(answers.map((a) => a.promptText))];
+	const ids = [...new Set(answers.map((a) => a.engine))];
+	const question = questions.includes(filter) ? filter : (questions[0] ?? "");
+	const group = answers.filter((a) => a.promptText === question);
+	const [picked, setPicked] = useState("");
+	const engine = ids.includes(picked) ? picked : (group[0]?.engine ?? ids[0] ?? "");
+	const answer = group.find((a) => a.engine === engine);
+	const label = engineLabel(engines, engine);
+	const top = Math.max(1, ...(answer?.mentions.map((m) => m.count) ?? []));
 
 	return (
-		<Page
-			brand={project.name}
-			title="Answers"
-			actions={
-				<>
-					{filter ? (
-						<Button variant="ghost" size="sm" onClick={() => onFilter("")}>
-							Show all questions
-						</Button>
-					) : null}
-					{ids.length > 1 ? (
-						<SegmentedControl
-							aria-label="Engine"
-							size="sm"
-							value={engine}
-							onChange={setEngine}
-							options={[{ value: "all", label: "All engines" }, ...ids.map((id) => ({ value: id, label: engineLabel(engines, id) }))]}
-						/>
-					) : null}
-				</>
-			}
-		>
+		<Page brand={project.name} title="Answers" actions={live ? <Badge tone="info" live>Collecting answers</Badge> : undefined}>
 			{answers.length === 0 ? (
-				<EmptyState icon={BubbleChatIcon} title="No answers yet" text="Answers appear here after your first run, side by side for each engine, with their sources." />
-			) : shown.length === 0 ? (
-				<EmptyState bare icon={BubbleChatIcon} title="No answers match" text="Try another engine or show all questions." />
+				<EmptyState
+					icon={BubbleChatIcon}
+					title={live ? "Waiting for the first answer" : "No answers yet"}
+					text="After a run, every question shows here with what each AI engine answered, who it named and the sites it relied on."
+				/>
 			) : (
-				questions.map((question) => {
-					const group = shown.filter((a) => a.promptText === question);
-					const good = group.filter((a) => a.errorCode === null);
-					const mentioned = good.filter((a) => a.brandRank !== null).length;
-					return (
-						<section key={question} className="oa-question">
-							<header className="oa-question-head">
-								<h2>{question}</h2>
-								<Badge tone={good.length === 0 ? "danger" : mentioned === good.length ? "success" : mentioned === 0 ? "warning" : "neutral"}>
-									{good.length === 0 ? "No answers" : `${project.name} mentioned by ${mentioned} of ${good.length} ${good.length === 1 ? "engine" : "engines"}`}
-								</Badge>
-							</header>
-							<div className={group.length > 1 ? "oa-cols-2" : "oa-stack"}>
-								{group.map((answer) => {
-									const label = engineLabel(engines, answer.engine);
-									if (answer.errorCode !== null) {
-										return (
-											<Card key={answer.id}>
-												<CardHeader title={label} description="This engine could not answer." action={<Verdict answer={answer} />} />
-												<CardContent>
-													<p className="oa-quiet">{answer.errorMessage ?? "No reason was given."}</p>
-													<Button variant="secondary" size="sm" style={{ marginTop: 12 }} onClick={onRunAgain}>
-														Run again
-													</Button>
-												</CardContent>
-											</Card>
-										);
-									}
-									const markup = toAnswerMarkup(answer.text, answer.citations, brand);
-									return (
-										<div key={answer.id} className="oa-answer">
-											<span className="oa-inline">
-												<Verdict answer={answer} />
-											</span>
-											<AIAnswer framed question={label} sources={markup.sources} answer={markup.answer} animate={false} tookSeconds={answer.durationMs / 1000} onCopy={() => toast.success("Answer copied")} />
-										</div>
-									);
-								})}
-							</div>
-						</section>
-					);
-				})
+				<div className="oa-answers">
+					<Card className="oa-qlist">
+						<CardHeader title="Questions" description={`${questions.length} in the latest run`} />
+						<nav aria-label="Questions">
+							{questions.map((text) => {
+								const good = answers.filter((a) => a.promptText === text && a.errorCode === null);
+								const named = good.filter((a) => a.brandRank !== null).length;
+								return (
+									<button key={text} type="button" className="oa-q" aria-current={text === question || undefined} onClick={() => onFilter(text)}>
+										<span>{text}</span>
+										<Badge tone={good.length === 0 ? "danger" : named === good.length ? "success" : named === 0 ? "warning" : "neutral"}>{good.length === 0 ? "Failed" : `${named}/${good.length}`}</Badge>
+									</button>
+								);
+							})}
+						</nav>
+					</Card>
+
+					<div className="oa-answer-main">
+						<SegmentedControl
+							kind="tabs"
+							aria-label="Engine"
+							value={engine}
+							onChange={setPicked}
+							options={ids.map((id) => {
+								const state = standing(group.find((a) => a.engine === id));
+								return { value: id, label: engineLabel(engines, id), icon: <Avatar kind="agent" name={engineLabel(engines, id)} seed={id} size={20} />, badge: <Badge tone={state.tone}>{state.text}</Badge> };
+							})}
+						/>
+						{!answer ? (
+							<Card>
+								<CardHeader icon={live ? <Spinner /> : undefined} title={live ? `Waiting for ${label}` : `No answer from ${label}`} description={live ? "The answer appears here as soon as it arrives." : "This engine was not asked this question in the latest run."} />
+							</Card>
+						) : answer.errorCode !== null ? (
+							<Card>
+								<CardHeader title={`${label} could not answer`} description={answer.errorMessage ?? "No reason was given."} />
+								<CardContent>
+									<Button variant="secondary" size="sm" onClick={onRunAgain}>
+										Run again
+									</Button>
+								</CardContent>
+							</Card>
+						) : (
+							<Answer key={answer.id} answer={answer} question={question} brand={brand} animate={!known.has(answer.id)} onSeen={() => known.add(answer.id)} onNavigate={onNavigate} />
+						)}
+					</div>
+
+					{answer && answer.errorCode === null ? (
+						<aside className="oa-answer-rail">
+							<Card>
+								<CardHeader title={`How ${label} treated ${project.name}`} />
+								<CardContent>
+									<Facts answer={answer} brand={project.name} />
+								</CardContent>
+							</Card>
+							<Card>
+								<CardHeader title="Brands named, in order" description="The order they first appear in this answer." />
+								<CardContent>
+									<ShareList
+										empty={<p className="oa-quiet">No tracked brand is named in this answer.</p>}
+										items={[...answer.mentions]
+											.sort((a, b) => a.rank - b.rank)
+											.map((m) => ({
+												label: `${m.rank}. ${m.entity}`,
+												value: `${m.count}×`,
+												share: (m.count / top) * 100,
+												badge: brand.some((n) => n.toLowerCase() === m.entity.toLowerCase()) ? <Badge tone="success">You</Badge> : undefined,
+											}))}
+									/>
+								</CardContent>
+							</Card>
+						</aside>
+					) : null}
+				</div>
 			)}
 		</Page>
 	);

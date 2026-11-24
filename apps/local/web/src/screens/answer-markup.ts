@@ -33,6 +33,16 @@ export function toAnswerMarkup(text: string, citations: Citation[], brand: strin
 	let body = text.replace(/\r\n?/g, "\n").replace(/\[([^\]\n]+)\]\(((?:[^()\s]|\([^()\s]*\))*)\)/g, (_, label: string, url: string) => (isHttp(url) ? `${label} [${cite(url)}]` : label));
 	body = body.replace(/https?:\/\/[^\s)\]>"']+/gi, (url) => `[${cite(url.replace(/[.,;:!?]+$/, ""))}]${/[.,;:!?]+$/.exec(url)?.[0] ?? ""}`);
 
+	body = body.replace(/\*\*([^*\n]+)\*\*/g, (whole, inner: string) =>
+		/\[\d+\]/.test(inner)
+			? inner
+					.split(/\s*(\[\d+\])\s*/)
+					.filter(Boolean)
+					.map((part) => (/^\[\d+\]$/.test(part) ? part : `**${part}**`))
+					.join(" ")
+			: whole,
+	);
+
 	const names = brand.map((n) => n.trim()).filter(Boolean);
 	const brandPattern = names.length
 		? new RegExp(`(?<![\\p{L}\\p{N}*])(?:${[...names].sort((a, b) => b.length - a.length).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(?![\\p{L}\\p{N}])`, "gu")
@@ -91,6 +101,10 @@ export function toAnswerMarkup(text: string, citations: Citation[], brand: strin
 		if (previous !== undefined && previous !== "" && line !== "" && isItem !== previous.startsWith("- ")) spaced.push("");
 		spaced.push(line);
 	}
+	while (spaced.length && spaced[spaced.length - 1] === "") spaced.pop();
+	let tail = spaced.length;
+	while (tail > 0 && ((spaced[tail - 1] as string).startsWith("- ") || spaced[tail - 1] === "")) tail -= 1;
+	if (tail > 0 && tail < spaced.length && /^(?:sources|references|citations|links)\s*:?$/i.test(plain(spaced[tail - 1] as string))) spaced.length = tail - 1;
 	const answer = spaced.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 	return { answer, sources };
 }

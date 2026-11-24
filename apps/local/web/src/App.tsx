@@ -71,6 +71,7 @@ export function App() {
 		const answers = report.run ? (await api.run(report.run.id)).answers : [];
 		if (ticket !== loading.current) return;
 		setData({ competitors: detail.competitors, prompts: detail.prompts, stats: stats.stats, report, answers, audit });
+		if (!window.location.hash && !report.run) setPage("prompts");
 	}, []);
 
 	const guard = useCallback(async (work: () => Promise<void>) => {
@@ -322,7 +323,7 @@ export function App() {
 				}}
 			/>
 		) : page === "answers" ? (
-			<AnswersScreen answers={data.answers} project={project} engines={engines} filter={answerFilter} onFilter={setAnswerFilter} onRunAgain={startRun} />
+			<AnswersScreen answers={data.answers} project={project} engines={engines} live={data.report.run?.status === "running"} filter={answerFilter} onFilter={setAnswerFilter} onRunAgain={startRun} onNavigate={navigate} />
 		) : page === "sources" ? (
 			<SourcesScreen project={project} report={data.report} />
 		) : page === "competitors" ? (

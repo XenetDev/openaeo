@@ -172,9 +172,10 @@ export function AIAnswer({
   className,
 }: AIAnswerProps) {
   const { blocks, total } = useMemo(() => parse(answer, sources.length), [answer, sources.length]);
+  const instant = !animate || reducedMotion();
   const [run, setRun] = useState(0);
-  const [phase, setPhase] = useState<Phase>("reading");
-  const [shown, setShown] = useState(0);
+  const [phase, setPhase] = useState<Phase>(instant ? "done" : "reading");
+  const [shown, setShown] = useState(instant ? Infinity : 0);
   const [seconds, setSeconds] = useState(0);
   const [vote, setVote] = useState<"up" | "down" | null>(null);
   const [reason, setReason] = useState<string | null>(null);
@@ -192,7 +193,6 @@ export function AIAnswer({
   const popId = useId();
 
   const finished = phase === "done" || phase === "stopped";
-  const instant = !animate || reducedMotion();
   // A broken speed (NaN, 0, negative) would never finish – fall back to the default
   const rate = Number.isFinite(speed) && speed > 0 ? speed : 38;
 
@@ -206,16 +206,17 @@ export function AIAnswer({
   useEffect(() => {
     started.current = performance.now();
     progress.current = 0;
-    setShown(0);
     setVote(null);
     setReason(null);
     setCopied(false);
     setPop(null);
     if (instant) {
       progress.current = Infinity;
-      setPhase("writing");
+      setShown(Infinity);
+      setPhase("done");
       return;
     }
+    setShown(0);
     setPhase("reading");
     const t = window.setTimeout(() => setPhase("writing"), sources.length ? READ_MS + Math.min(sources.length, MAX_SOURCES + 1) * CARD_MS : 0);
     return () => clearTimeout(t);
@@ -335,6 +336,7 @@ export function AIAnswer({
       className={["ui-ansc", className].filter(Boolean).join(" ")}
       data-phase={phase}
       data-framed={framed || undefined}
+      data-instant={instant || undefined}
       onMouseLeave={() => setHoverSource(null)}
     >
       {/* React 19 hoists this into <head> once, no matter how many answers render */}
@@ -995,6 +997,8 @@ a.ui-ansc__source:hover { background: var(--ui-ansc-wash); }
   pointer-events: none;
 }
 
+.ui-ansc[data-instant] :is(.ui-ansc__source, .ui-ansc__label-text, .ui-ansc__w, .ui-ansc__cite, .ui-ansc__follow-label, .ui-ansc__follow-item, .ui-ansc__action, .ui-ansc__status) { animation: none; }
+.ui-ansc[data-instant] .ui-ansc__body { transition: none; }
 @keyframes ui-ansc-word { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
 @keyframes ui-ansc-card { from { opacity: 0; transform: translateY(4px) scale(0.97); } to { opacity: 1; transform: none; } }
 @keyframes ui-ansc-chip { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: none; } }

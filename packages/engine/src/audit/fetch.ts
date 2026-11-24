@@ -15,7 +15,7 @@ export class AuditFetchError extends Error {
 export type SafeFetchOptions = {
 	fetch?: typeof fetch;
 	lookup?: (host: string) => Promise<string[]>;
-	allowPrivate?: boolean;
+	allowLoopback?: boolean;
 	maxBytes?: number;
 	timeoutMs?: number;
 	maxRedirects?: number;
@@ -24,7 +24,8 @@ export type SafeFetchOptions = {
 
 export const DEFAULT_USER_AGENT = "OpenAEO-Audit/0 (+https://github.com/jdships/openaeo)";
 
-const BLOCKED_NAMES = /(^|\.)(localhost|local|internal)$/i;
+const LOOPBACK_NAMES = /(^|\.)localhost$/i;
+const BLOCKED_NAMES = /(^|\.)(local|internal)$/i;
 
 function v4Private(parts: number[]): boolean {
 	const [a, b] = parts as [number, number, number, number];
@@ -97,6 +98,23 @@ export function isPrivateAddress(ip: string): boolean {
 	return false;
 }
 
+export function isLoopbackAddress(ip: string): boolean {
+	const value = ip
+		.trim()
+		.toLowerCase()
+		.replace(/^\[|\]$/g, "")
+		.replace(/%.*$/, "");
+	const v4 = parseV4(value);
+	if (v4) return v4[0] === 127;
+	const g = parseV6(value);
+	if (!g) return false;
+	const head = g.slice(0, 5).every((n) => n === 0);
+	if (head && g[5] === 0 && g[6] === 0) return g[7] === 1;
+	return head && g[5] === 0xffff && (g[6] as number) >> 8 === 127;
+}
+
+type Reach = "public" | "loopback" | "private";
+
 async function defaultLookup(host: string): Promise<string[]> {
 	const dns = await import("node:dns/promises");
 	const records = await dns.lookup(host, { all: true });
@@ -111,7 +129,7 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 	const maxRedirects = o.maxRedirects ?? 5;
 	const userAgent = o.userAgent ?? DEFAULT_USER_AGENT;
 
-	async function vet(raw: string, allowPrivateHere: boolean, base?: string): Promise<{ url: URL; isPrivate: boolean }> {
+	async function vet(raw: string, allowLoopbackHere: boolean, base?: string): Promise<{ url: URL; reach: Reach }> {
 		let url: URL;
 		try {
 			url = base ? new URL(raw, base) : new URL(raw);
@@ -126,8 +144,10 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 		url.hash = "";
 		const host = url.hostname.replace(/^\[|\]$/g, "").replace(/\.$/, "");
 		const literal = parseV4(host) !== null || host.includes(":");
-		let isPrivate = BLOCKED_NAMES.test(host);
-		if (!isPrivate) {
+		let reach: Reach;
+		if (LOOPBACK_NAMES.test(host)) reach = "loopback";
+		else if (BLOCKED_NAMES.test(host)) reach = "private";
+		else {
 			let addresses: string[];
 			if (literal) {
 				addresses = [host];
@@ -139,15 +159,16 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 				}
 				if (addresses.length === 0) throw new AuditFetchError("network", "The site's address could not be found.");
 			}
-			isPrivate = addresses.some(isPrivateAddress);
+			if (addresses.every(isLoopbackAddress)) reach = "loopback";
+			else reach = addresses.some(isPrivateAddress) ? "private" : "public";
 		}
-		if (isPrivate && !allowPrivateHere) {
+		if (reach === "private" || (reach === "loopback" && !allowLoopbackHere)) {
 			throw new AuditFetchError(
 				"blocked",
 				"That address points to a private or internal network, which OpenAEO will not fetch.",
 			);
 		}
-		return { url, isPrivate };
+		return { url, reach };
 	}
 
 	async function read(response: Response, signal: AbortSignal): Promise<string> {
@@ -186,8 +207,8 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 	return async function get(raw: string): Promise<Fetched> {
 		const signal = AbortSignal.timeout(timeoutMs);
 		const redirects: string[] = [];
-		const first = await vet(raw, o.allowPrivate === true);
-		const allowPrivateHops = o.allowPrivate === true && first.isPrivate;
+		const first = await vet(raw, o.allowLoopback === true);
+		const allowLoopbackHops = first.reach === "loopback";
 		let url = first.url;
 		for (let hop = 0; ; hop += 1) {
 			let response: Response;
@@ -210,7 +231,7 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 			if (response.status >= 300 && response.status < 400 && location) {
 				await response.body?.cancel().catch(() => {});
 				if (hop >= maxRedirects) throw new AuditFetchError("too_many_redirects", "The page redirected too many times.");
-				url = (await vet(location, allowPrivateHops, url.toString())).url;
+				url = (await vet(location, allowLoopbackHops, url.toString())).url;
 				redirects.push(url.toString());
 				continue;
 			}

@@ -1,13 +1,14 @@
 import { expect, test } from "bun:test";
 import type { EngineStatus } from "../src/engines";
+import type { Log } from "../src/log";
 import { createRunService } from "../src/runs";
 import { createHandler } from "../src/server/handler";
-import { fakeProvider, freshStore } from "./helpers";
+import { fakeProvider, freshStore, recordLog } from "./helpers";
 
 const TOKEN = "test-token";
 const PORT = 4747;
 
-function setup(opts: { delayMs?: number } = {}) {
+function setup(opts: { delayMs?: number; log?: Log } = {}) {
 	const store = freshStore();
 	const claude = fakeProvider("claude-cli", () => "Pipedrive is best, HubSpot second.", opts.delayMs ?? 0);
 	const runs = createRunService({ store, providers: () => [claude.provider] });
@@ -25,6 +26,7 @@ function setup(opts: { delayMs?: number } = {}) {
 		token: TOKEN,
 		port: PORT,
 		assets,
+		log: opts.log,
 		suggest: async (context) => ({
 			prompts: [`Best alternative to ${context.competitors[0] ?? context.brand}?`],
 			fallback: false,
@@ -235,14 +237,17 @@ test("non-api paths serve the app with the token and safe headers", async () => 
 	}
 });
 
-test("an unexpected error is a 500 without internals", async () => {
-	const { call, store } = setup();
+test("an unexpected error is logged and answered as a 500 without internals", async () => {
+	const { log, entries } = recordLog();
+	const { call, store } = setup({ log });
 	store.projects.list = () => {
 		throw new Error("SQLITE_CORRUPT: secret path /Users/x");
 	};
 	const response = await call("GET", "/api/state");
 	expect(response.status).toBe(500);
 	expect(response.text).not.toContain("SQLITE_CORRUPT");
+	expect(entries.map((entry) => entry.context)).toEqual(["GET /api/state"]);
+	expect(String(entries[0]?.error)).toContain("SQLITE_CORRUPT");
 });
 
 test("suggestions are offered for a project without being saved", async () => {

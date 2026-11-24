@@ -1,4 +1,5 @@
 import type { Provider } from "@openaeo/engine";
+import { type Log, logError } from "./log";
 
 export type SuggestContext = {
 	brand: string;
@@ -61,6 +62,7 @@ export function fallbackPrompts(context: SuggestContext): string[] {
 export async function suggestPrompts(
 	provider: Provider | null,
 	context: SuggestContext,
+	log: Log = logError,
 ): Promise<{ prompts: string[]; fallback: boolean }> {
 	if (provider) {
 		const request = [
@@ -92,7 +94,9 @@ export async function suggestPrompts(
 			const answer = await provider.ask(request, { timeoutMs: 120_000 });
 			const prompts = parsePromptList(answer.text);
 			if (prompts.length >= 1) return { prompts, fallback: false };
-		} catch {}
+		} catch (error) {
+			log("suggesting questions", error);
+		}
 	}
 	return { prompts: fallbackPrompts(context), fallback: true };
 }

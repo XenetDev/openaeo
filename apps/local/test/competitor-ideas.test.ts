@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { buildCompetitorPrompt, parseCompetitors, suggestCompetitors } from "../src/competitor-ideas";
-import { fakeProvider } from "./helpers";
+import { fakeProvider, recordLog } from "./helpers";
 
 test("a JSON list becomes names with clean website domains", () => {
 	const out = parseCompetitors(
@@ -53,7 +53,9 @@ test("site text, tracked questions and engine answers reach the model only as qu
 
 test("an engine that fails or returns nothing useful yields an empty list, not an error", async () => {
 	const context = { brand: "Nimbo Labs", domains: [], about: null, questions: [], answers: [], existing: [] };
-	expect(await suggestCompetitors(fakeProvider("claude-cli", () => "rate_limited").provider, context)).toEqual([]);
+	const { log, entries } = recordLog();
+	expect(await suggestCompetitors(fakeProvider("claude-cli", () => "rate_limited").provider, context, log)).toEqual([]);
+	expect(entries.map((entry) => entry.context)).toEqual(["finding competitors"]);
 	expect(await suggestCompetitors(null, context)).toEqual([]);
 	expect(
 		await suggestCompetitors(

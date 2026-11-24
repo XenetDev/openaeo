@@ -52,7 +52,7 @@ const store = createStore(openDb(dbPath(dataDir())));
 store.runs.interruptStale();
 store.audits.interruptStale();
 const get = createSafeFetch({
-	allowPrivate: true,
+	allowLoopback: true,
 	userAgent: `OpenAEO-Audit/${pkg.version} (+https://github.com/jdships/openaeo)`,
 });
 const audits = createAuditService({ store, get });

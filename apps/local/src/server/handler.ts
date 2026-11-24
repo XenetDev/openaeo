@@ -5,6 +5,7 @@ import { askContext, buildAskPrompt, splitActions } from "../ask";
 import { AuditError, type AuditService } from "../audits";
 import type { CompetitorContext, CompetitorIdea } from "../competitor-ideas";
 import type { EngineStatus } from "../engines";
+import { type Log, logError } from "../log";
 import { buildOpportunities } from "../opportunities";
 import { buildReport, promptStats } from "../report";
 import { RunError, type RunService } from "../runs";
@@ -37,6 +38,7 @@ export type HandlerDeps = {
 	askProvider?: (engine?: string) => Provider | null;
 	describeSite?: (domain: string) => Promise<string | null>;
 	competitorIdeas?: (context: CompetitorContext) => Promise<CompetitorIdea[]>;
+	log?: Log;
 };
 
 class HttpError extends Error {
@@ -88,6 +90,7 @@ export function resultOf(audit: StoredAudit, findings: Finding[]): AuditResult {
 
 export function createHandler(deps: HandlerDeps) {
 	const { store, runs } = deps;
+	const log = deps.log ?? logError;
 
 	function project(id: string) {
 		const found = store.projects.get(id);
@@ -151,8 +154,10 @@ export function createHandler(deps: HandlerDeps) {
 			}
 			if (method === "DELETE") {
 				project(b);
-				const active = store.runs.active(b);
-				if (active) runs.cancel(active.id);
+				const run = store.runs.active(b);
+				if (run) runs.cancel(run.id);
+				const audit = store.audits.active(b);
+				if (audit) deps.audits?.cancel(audit.id);
 				store.projects.remove(b);
 				return json({ ok: true });
 			}
@@ -379,7 +384,7 @@ export function createHandler(deps: HandlerDeps) {
 			return await api(request, path);
 		} catch (error) {
 			if (error instanceof HttpError) return json({ error: error.message }, error.status);
-			if (error instanceof Error && /needs a name/.test(error.message)) return json({ error: error.message }, 400);
+			log(`${request.method} ${path}`, error);
 			return json({ error: "Something went wrong inside OpenAEO. Try again." }, 500);
 		}
 	};

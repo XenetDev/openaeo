@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { createRunService } from "../src/runs";
 import { labelSentiment, parseSentiment } from "../src/sentiment";
-import { fakeProvider, freshStore, seed } from "./helpers";
+import { fakeProvider, freshStore, recordLog, seed } from "./helpers";
 
 test("labels come back keyed by answer", async () => {
 	const p = fakeProvider("claude-cli", () => '{"1": "positive", "2": "negative"}');
@@ -50,7 +50,9 @@ test("no answers means no call, and a failing engine gives no labels", async () 
 	expect(await labelSentiment(p.provider, "X", [])).toEqual(new Map());
 	expect(p.calls.length).toBe(0);
 	const broken = fakeProvider("claude-cli", () => "rate_limited");
-	expect(await labelSentiment(broken.provider, "X", [{ id: "a", text: "X is fine" }])).toEqual(new Map());
+	const { log, entries } = recordLog();
+	expect(await labelSentiment(broken.provider, "X", [{ id: "a", text: "X is fine" }], { log })).toEqual(new Map());
+	expect(entries.map((entry) => entry.context)).toEqual(["labelling sentiment"]);
 });
 
 test("a run stores sentiment for answers that mention the brand", async () => {
@@ -77,7 +79,13 @@ test("a sentiment failure does not fail the run", async () => {
 	const provider = fakeProvider("claude-cli", (prompt) =>
 		prompt.includes("Classify") ? "rate_limited" : "Pipedrive is great.",
 	);
-	const runs = createRunService({ store, providers: () => [provider.provider], sentiment: true, retries: 0 });
+	const runs = createRunService({
+		store,
+		providers: () => [provider.provider],
+		sentiment: true,
+		retries: 0,
+		log: recordLog().log,
+	});
 	const run = await runs.wait(runs.start(project.id).id);
 	expect(run.status).toBe("done");
 	expect(store.answers.listByRun(run.id)[0]?.sentiment).toBeNull();

@@ -234,12 +234,41 @@ test("network and lookup failures are reported as network errors", async () => {
 	);
 });
 
-test("allowPrivate lets the local app audit a site on this machine", async () => {
+test("allowLoopback still refuses private networks and cloud metadata addresses", async () => {
+	const { fetcher, lookup, requested } = site(
+		{},
+		{ "intranet.example": ["10.0.0.5"], "rebind.example": ["127.0.0.1", "10.0.0.5"] },
+	);
+	const get = createSafeFetch({ fetch: fetcher, lookup, allowLoopback: true });
+	for (const url of [
+		"http://169.254.169.254/latest/meta-data/",
+		"http://10.0.0.5/",
+		"http://192.168.1.1/",
+		"http://[fd00::1]/",
+		"http://printer.local/",
+		"http://intranet.example/",
+		"http://rebind.example/",
+	]) {
+		expect(await codeOf(get(url))).toBe("blocked");
+	}
+	expect(requested).toEqual([]);
+});
+
+test("allowLoopback does not follow a redirect from this machine into a private network", async () => {
+	const { fetcher, lookup, requested } = site({
+		"http://127.0.0.1:3000/": { status: 302, headers: { location: "http://169.254.169.254/latest/meta-data/" } },
+	});
+	const get = createSafeFetch({ fetch: fetcher, lookup, allowLoopback: true });
+	expect(await codeOf(get("http://127.0.0.1:3000/"))).toBe("blocked");
+	expect(requested.map((r) => r.url)).toEqual(["http://127.0.0.1:3000/"]);
+});
+
+test("allowLoopback lets the local app audit a site on this machine", async () => {
 	const { fetcher, lookup } = site({
 		"http://127.0.0.1:3000/": { body: "dev" },
 		"http://localhost:3000/": { body: "dev2" },
 	});
-	const get = createSafeFetch({ fetch: fetcher, lookup, allowPrivate: true });
+	const get = createSafeFetch({ fetch: fetcher, lookup, allowLoopback: true });
 	expect((await get("http://127.0.0.1:3000/")).text).toBe("dev");
 	expect((await get("http://localhost:3000/")).text).toBe("dev2");
 	expect(await codeOf(get("file:///etc/passwd"))).toBe("bad_url");

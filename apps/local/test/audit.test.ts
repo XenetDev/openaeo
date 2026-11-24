@@ -123,6 +123,32 @@ test("deleting a project removes its audits and findings", async () => {
 	expect(store.audits.findings(done.id)).toEqual([]);
 });
 
+test("deleting a project stops its running audit", async () => {
+	const store = freshStore();
+	const project = seed(store);
+	const service = createAuditService({ store, get: site(20).get });
+	const cancelled: string[] = [];
+	const audits = {
+		...service,
+		cancel(id: string) {
+			cancelled.push(id);
+			service.cancel(id);
+		},
+	};
+	const runs = createRunService({ store, providers: () => [] });
+	const handler = createHandler({ store, runs, audits, engines: () => [], token: "t", port: 4747, assets: () => null });
+	const started = audits.start(project.id);
+	const response = await handler(
+		new Request(`http://127.0.0.1:4747/api/projects/${project.id}`, {
+			method: "DELETE",
+			headers: { host: "127.0.0.1:4747", "x-openaeo-token": "t" },
+		}),
+	);
+	expect(response.status).toBe(200);
+	expect(cancelled).toEqual([started.id]);
+	expect((await service.wait(started.id)).status).toBe("interrupted");
+});
+
 function api() {
 	const store = freshStore();
 	const project = seed(store);

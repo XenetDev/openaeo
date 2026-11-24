@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { createRunService, RunError } from "../src/runs";
-import { fakeProvider, freshStore, seed } from "./helpers";
+import { fakeProvider, freshStore, recordLog, seed } from "./helpers";
 
 function codeOf(run: () => unknown) {
 	try {
@@ -123,7 +123,8 @@ test("wait on an unknown or finished run resolves", async () => {
 test("a store failure while saving does not leave the run stuck", async () => {
 	const store = freshStore();
 	const project = seed(store, ["q"]);
-	const runs = createRunService({ store, providers: () => [fakeProvider("claude-cli", () => "x").provider] });
+	const { log, entries } = recordLog();
+	const runs = createRunService({ store, providers: () => [fakeProvider("claude-cli", () => "x").provider], log });
 	const original = store.answers.save;
 	store.answers.save = () => {
 		throw new Error("disk full");
@@ -132,4 +133,5 @@ test("a store failure while saving does not leave the run stuck", async () => {
 	store.answers.save = original;
 	expect(run.status).toBe("interrupted");
 	expect(store.runs.active(project.id)).toBeNull();
+	expect(String(entries[0]?.error)).toContain("disk full");
 });

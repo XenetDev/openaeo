@@ -1,4 +1,5 @@
 import { type Fetched, runAudit, sameSite, toDomain } from "@openaeo/engine";
+import { type Log, logError } from "./log";
 import type { Store, StoredAudit } from "./store/store";
 
 export type AuditErrorCode = "already_running" | "no_url" | "bad_url" | "not_found";
@@ -26,8 +27,14 @@ export function toOrigin(input: string): string | null {
 	}
 }
 
-export function createAuditService(deps: { store: Store; get: (url: string) => Promise<Fetched>; maxPages?: number }) {
+export function createAuditService(deps: {
+	store: Store;
+	get: (url: string) => Promise<Fetched>;
+	maxPages?: number;
+	log?: Log;
+}) {
 	const { store } = deps;
+	const log = deps.log ?? logError;
 	const active = new Map<string, { controller: AbortController; done: Promise<StoredAudit> }>();
 
 	async function execute(created: StoredAudit, controller: AbortController): Promise<StoredAudit> {
@@ -44,10 +51,13 @@ export function createAuditService(deps: { store: Store; get: (url: string) => P
 				controller.signal.aborted ? "interrupted" : "done",
 				controller.signal.aborted ? null : result,
 			);
-		} catch {
+		} catch (error) {
+			if (!controller.signal.aborted) log(`audit ${created.id}`, error);
 			try {
 				finished = store.audits.finish(created.id, "interrupted", null);
-			} catch {}
+			} catch (finishError) {
+				if (!controller.signal.aborted) log(`finishing audit ${created.id}`, finishError);
+			}
 		}
 		active.delete(created.id);
 		return finished ?? { ...created, status: "interrupted", finishedAt: Date.now() };

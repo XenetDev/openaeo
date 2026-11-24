@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { fallbackPrompts, parsePromptList, suggestPrompts } from "../src/suggest";
-import { fakeProvider } from "./helpers";
+import { fakeProvider, recordLog } from "./helpers";
 
 const context = { brand: "Pipedrive", domains: ["pipedrive.com"], competitors: ["HubSpot", "Attio"] };
 
@@ -44,8 +44,10 @@ test("the list is cleaned: trimmed, de-duplicated, capped, no junk", () => {
 
 test("a failing or unhelpful engine falls back to templates", async () => {
 	const broken = fakeProvider("claude-cli", () => "rate_limited");
-	const result = await suggestPrompts(broken.provider, context);
+	const { log, entries } = recordLog();
+	const result = await suggestPrompts(broken.provider, context, log);
 	expect(result.fallback).toBe(true);
+	expect(entries.map((entry) => entry.context)).toEqual(["suggesting questions"]);
 	expect(result.prompts.length).toBeGreaterThanOrEqual(4);
 	expect(result.prompts.join(" ")).toContain("HubSpot");
 	const vague = fakeProvider("claude-cli", () => "I cannot help with that.");

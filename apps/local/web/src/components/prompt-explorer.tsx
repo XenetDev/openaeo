@@ -34,7 +34,7 @@ import { EmptyState, Icon, Loading, Skeleton, rove, useToast, type AppShellProps
 /* ---------- Types ---------- */
 
 /** A prompt or keyword with how many times a month people ask it, and how much that changed since last month */
-export type PexKeyword = { id: string; text: string; volume: number; change: number; /** Not measured yet – shown in words, not as 0 */ pending?: boolean; /** Twelve months, oldest first – the sparkline */ trend?: number[] };
+export type PexKeyword = { id: string; text: string; volume: number; change: number; /** Not measured yet – shown in words, not as 0 */ pending?: boolean; paused?: boolean; /** Twelve months, oldest first – the sparkline */ trend?: number[] };
 /** What Analyse found for one prompt */
 export type PexResult = { text: string; volume: number; change: number; pending?: boolean; trend: number[]; /** Share of answers that mention you, 0–1 */ share: number };
 export type PexMode = "keyword" | "url";
@@ -176,6 +176,8 @@ export type PromptExplorerScreenProps = Pick<AppShellProps, "className"> & {
   onOpen?: (text: string) => void;
   /** A line under the field, e.g. what was just added */
   note?: ReactNode;
+  /** A menu at the end of each row of Your questions */
+  rowMenu?: (k: PexKeyword) => ReactNode;
   /** More cards under the lists, in the same scroll area */
   after?: ReactNode;
   /** The workspace in the sidebar */
@@ -217,6 +219,7 @@ export function PromptExplorerScreen({
   note,
   after,
   onOpen,
+  rowMenu,
 }: PromptExplorerScreenProps) {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<PexMode>("keyword");
@@ -461,7 +464,7 @@ export function PromptExplorerScreen({
             <header className="ui-pex-col__head">
               <h3>Your questions</h3>
             </header>
-            <KeywordList items={popular} loading={loading} empty={empty} label="Your questions" onPick={open1} />
+            <KeywordList items={popular} loading={loading} empty={empty} label="Your questions" onPick={open1} rowMenu={rowMenu} />
           </div>
           <div className="ui-pex-col">
             <header className="ui-pex-col__head">
@@ -490,7 +493,7 @@ export function PromptExplorerScreen({
 }
 
 /** Keywords as rows: the keyword, maybe its year as a sparkline, the change and the volume – a click analyses it */
-function KeywordList({ items, loading, empty, label, spark, none, onPick }: { items: PexKeyword[]; loading?: boolean; empty?: boolean; label: string; spark?: boolean; /** What an empty list says while there is data elsewhere */ none?: string; onPick: (text: string) => void }) {
+function KeywordList({ items, loading, empty, label, spark, none, onPick, rowMenu }: { rowMenu?: (k: PexKeyword) => ReactNode; items: PexKeyword[]; loading?: boolean; empty?: boolean; label: string; spark?: boolean; /** What an empty list says while there is data elsewhere */ none?: string; onPick: (text: string) => void }) {
   if (loading)
     return (
       <Loading label={`Loading ${label.toLowerCase()}`} className="ui-pex-kws">
@@ -509,15 +512,16 @@ function KeywordList({ items, loading, empty, label, spark, none, onPick }: { it
   return (
     <ul className="ui-pex-kws" aria-label={label}>
       {items.map((k) => (
-        <li key={k.id}>
+        <li key={k.id} className={rowMenu ? "oa-kwrow" : undefined} data-paused={k.paused || undefined}>
           <button type="button" className="ui-pex-kw" data-spark={spark || undefined} aria-label={`${k.text}, ${short(k.volume)} of answers mention you${k.pending ? " (not run yet)" : ""}, ${k.change >= 0 ? "up" : "down"} ${short(k.change)} – analyse`} onClick={() => onPick(k.text)}>
             <span className="ui-pex-kw__text" dir="auto" title={k.text}>
               {k.text}
             </span>
             {spark && <Sparkline values={k.trend ?? []} />}
             {k.change !== 0 ? <Change value={k.change} /> : <span />}
-            <span className="ui-pex-kw__vol ui-pex-num">{k.pending ? "Not run yet" : short(k.volume)}</span>
+            <span className="ui-pex-kw__vol ui-pex-num">{k.paused ? "Paused" : k.pending ? "Not run yet" : short(k.volume)}</span>
           </button>
+          {rowMenu?.(k)}
         </li>
       ))}
     </ul>

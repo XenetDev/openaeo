@@ -1,4 +1,4 @@
-import type { PromptView, Suggestions } from "@openaeo/ui";
+import type { PromptView, Suggestions } from "@/types";
 import { PromptExplorerScreen, type PexKeyword, type PexResult } from "@/components/prompt-explorer";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";

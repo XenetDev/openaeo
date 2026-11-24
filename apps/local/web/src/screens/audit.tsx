@@ -1,4 +1,4 @@
-import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@openaeo/ui";
+import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@/types";
 import { CheckListIcon, Copy01Icon, Globe02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";

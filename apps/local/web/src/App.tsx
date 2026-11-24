@@ -1,4 +1,4 @@
-import type { OpportunitiesView, AnswerView, ArtefactsView, AuditView, EngineInfo, EntityView, FindingView, PageId, ProjectView, PromptView, ReportView, Suggestions } from "@openaeo/ui";
+import type { OpportunitiesView, AnswerView, ArtefactsView, AuditView, EngineInfo, EntityView, FindingView, PageId, ProjectView, PromptView, ReportView, Suggestions } from "@/types";
 import { AiChat02Icon, BubbleChatIcon, CheckListIcon, Clock01Icon, ComputerIcon, DashboardSquare01Icon, Globe02Icon, Moon02Icon, News01Icon, PaintBoardIcon, Plug01Icon, PlusSignIcon, Search01Icon, Settings01Icon, Sun03Icon, Target02Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, Icon, type ShellNavItem } from "@/components/app-shell";

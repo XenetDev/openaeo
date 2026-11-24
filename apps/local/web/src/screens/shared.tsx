@@ -1,4 +1,4 @@
-import type { EngineInfo } from "@openaeo/ui";
+import type { EngineInfo } from "@/types";
 import type { ReactNode } from "react";
 import { css as pageCss } from "@/components/analytics";
 import { Avatar } from "@/components/ui/avatar-clean";

@@ -1,4 +1,4 @@
-import type { EntityView, ProjectView, ReportView } from "@openaeo/ui";
+import type { EntityView, ProjectView, ReportView } from "@/types";
 import { Add01Icon, News01Icon, SparklesIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";

@@ -1,4 +1,4 @@
-import type { OpportunitiesView, ArtefactsView, AuditView, FindingView, AnswerView, EngineInfo, EntityView, NewProject, ProjectView, PromptView, ReportView, RunView, Suggestions } from "@openaeo/ui";
+import type { OpportunitiesView, ArtefactsView, AuditView, FindingView, AnswerView, EngineInfo, EntityView, NewProject, ProjectView, PromptView, ReportView, RunView, Suggestions } from "@/types";
 
 const token = document.querySelector<HTMLMetaElement>('meta[name="openaeo-token"]')?.content ?? "";
 

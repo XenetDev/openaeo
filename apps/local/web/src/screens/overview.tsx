@@ -1,5 +1,5 @@
 import type { EngineInfo, PageId, ProjectView, ReportView } from "@openaeo/ui";
-import { Analytics01Icon } from "@hugeicons/core-free-icons";
+import { Analytics01Icon, ChartIncreaseIcon, News01Icon } from "@hugeicons/core-free-icons";
 import { EmptyState } from "@/components/app-shell";
 import { ChartCard } from "@/components/analytics";
 import { Badge } from "@/components/ui/badge-clean";
@@ -215,7 +215,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 						/>
 					</CardContent>
 				</Card>
-				<Card>
+				<Card className="oa-card-fill">
 					<CardHeader title="Most cited sites" description="Links in the latest answers" />
 					<CardContent>
 						<ShareList
@@ -225,15 +225,18 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 								share: (d.citations / Math.max(1, report.topDomains[0]?.citations ?? 1)) * 100,
 								badge: d.isBrand ? <Badge>Yours</Badge> : undefined,
 							}))}
-							empty={<EmptyState bare icon={null} title="No links cited" text="The engines answered this run without linking to any site." />}
+							empty={<EmptyState bare icon={News01Icon} title="No links cited" text="The engines answered this run without linking to any site." />}
 						/>
 					</CardContent>
 				</Card>
 				{changes.length > 0 ? (
 					<ChangeSummary title="Since the last run" period={previous ? when(previous.startedAt) : ""} changes={changes} />
 				) : (
-					<Card>
-						<CardHeader title="Since the last run" description="What moved between runs shows here after a second run." />
+					<Card className="oa-card-fill">
+						<CardHeader title="Since the last run" />
+						<CardContent>
+							<EmptyState bare icon={ChartIncreaseIcon} title="Nothing to compare yet" text="After a second run, this shows what went up and what went down." />
+						</CardContent>
 					</Card>
 				)}
 			</div>

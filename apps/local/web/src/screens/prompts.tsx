@@ -126,7 +126,7 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 						/>
 						<CardContent>
 							{fresh.length === 0 ? (
-								<EmptyState bare icon={null} title="You already track all of these" text="Press Suggest questions again for a fresh set." />
+								<EmptyState bare icon={BubbleChatIcon} title="You already track all of these" text="Press Suggest questions again for a fresh set." />
 							) : (
 								<div className="oa-suggest">
 									{fresh.map((text) => (

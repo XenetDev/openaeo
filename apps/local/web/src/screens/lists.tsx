@@ -146,7 +146,7 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 					/>
 					<CardContent>
 						{fresh.length === 0 ? (
-							<EmptyState bare icon={null} title={ideas.length ? "You already track all of these" : "No competitors found"} text={ideas.length ? "Press Find competitors again after your next run." : "The engine could not tell who you compete with. Add them yourself, or try again after a run."} />
+							<EmptyState bare icon={UserMultipleIcon} title={ideas.length ? "You already track all of these" : "No competitors found"} text={ideas.length ? "Press Find competitors again after your next run." : "The engine could not tell who you compete with. Add them yourself, or try again after a run."} />
 						) : (
 							<div className="oa-suggest">
 								{fresh.map((idea) => (

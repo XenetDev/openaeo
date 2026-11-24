@@ -901,3 +901,19 @@ body,
 	gap: 8px;
 	width: min(420px, 55%);
 }
+
+.oa-card-fill {
+	display: flex;
+	flex-direction: column;
+}
+
+.oa-card-fill > :last-child {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.oa-card-fill > :last-child > :not(.ui-as-empty) {
+	margin-bottom: auto;
+}

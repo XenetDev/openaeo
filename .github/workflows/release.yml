@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - name: Check the tag matches the version
+        run: test "v$(bun -e 'console.log(require("./apps/local/package.json").version)')" = "$GITHUB_REF_NAME"
+      - run: bun run lint
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run release
+        working-directory: apps/local
+      - run: sh deploy/installer/test.sh apps/local/dist/release
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" apps/local/dist/release/* --title "$GITHUB_REF_NAME" --generate-notes

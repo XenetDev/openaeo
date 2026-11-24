@@ -24,9 +24,10 @@ const PAGES: { id: PageId; label: string; icon: ShellNavItem["icon"] }[] = [
 	{ id: "competitors", label: "Competitors", icon: UserMultipleIcon },
 	{ id: "audit", label: "Audit", icon: CheckListIcon },
 	{ id: "runs", label: "Runs", icon: Clock01Icon },
-	{ id: "ask", label: "Ask OpenAEO", icon: AiChat02Icon },
+	{ id: "ask", label: "Ask Aeo", icon: AiChat02Icon },
 	{ id: "settings", label: "Settings", icon: Settings01Icon },
 ];
+const NAV = PAGES.filter((p) => p.id !== "settings");
 const NEW_BRAND = "Track another brand";
 const pageFromHash = (): PageId => PAGES.find((p) => p.id === window.location.hash.slice(1))?.id ?? "overview";
 const EMPTY_REPORT: ReportView = {
@@ -141,7 +142,7 @@ export function App() {
 			workspace={project?.name ?? "OpenAEO"}
 			workspaceMeta="Local"
 			user={{ name: "This computer" }}
-			nav={project ? PAGES.map((p) => ({ label: p.label, icon: p.icon })) : []}
+			nav={project ? NAV.map((p) => ({ label: p.label, icon: p.icon })) : []}
 			groups={
 				projects && projects.length > 0
 					? [{ label: "Brands", items: [...projects.map((p) => ({ label: p.name, icon: Globe02Icon })), { label: NEW_BRAND, icon: PlusSignIcon }] }]
@@ -218,7 +219,7 @@ export function App() {
 		</AppShell>
 	);
 
-	const nav = PAGES.map((p) => ({ label: p.label, icon: p.icon }));
+	const nav = NAV.map((p) => ({ label: p.label, icon: p.icon }));
 
 	if (projects === null) return shell(<div className="ui-as-page">{error ? <p className="ui-as-page-sub">{error}</p> : null}</div>, "");
 

@@ -55,7 +55,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear }: Props) {
 	return (
 		<Page
 			brand={project.name}
-			title="Ask OpenAEO"
+			title="Ask Aeo"
 			actions={
 				turns.length > 0 && !busy ? (
 					<Button variant="ghost" size="sm" onClick={onClear}>
@@ -67,7 +67,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear }: Props) {
 			{ready.length === 0 ? (
 				<div className="oa-ask">
 					<Card>
-						<CardHeader title="No AI engine is ready" description="Ask OpenAEO uses your own Claude Code or Codex. Install and sign in to one, then check Settings." />
+						<CardHeader title="No AI engine is ready" description="Aeo uses your own Claude Code or Codex. Install and sign in to one, then check Settings." />
 					</Card>
 				</div>
 			) : turns.length === 0 ? (

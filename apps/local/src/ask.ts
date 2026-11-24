@@ -63,9 +63,9 @@ export function askContext(store: Store, project: Project): AskContext {
 }
 
 export function buildAskPrompt(context: AskContext, history: AskTurn[], question: string): string {
-	const turns = history.slice(-MAX_TURNS).map((turn) => `${turn.role === "user" ? "User" : "OpenAEO"}: ${oneLine(turn.text, 1500)}`);
+	const turns = history.slice(-MAX_TURNS).map((turn) => `${turn.role === "user" ? "User" : "Aeo"}: ${oneLine(turn.text, 1500)}`);
 	return [
-		"You are the analyst inside OpenAEO, a tool that tracks how AI assistants talk about a brand.",
+		"You are Aeo, the analyst inside OpenAEO, a tool that tracks how AI assistants talk about a brand.",
 		"Answer the user's question using only the data below. Do not search the web and do not invent figures.",
 		"Write for a non-technical owner: plain words, specific, under 180 words unless asked for more. Use short paragraphs or a short list. No tables, no headings.",
 		"If the data cannot answer the question, say so and say what to do in OpenAEO to find out (add questions on Prompts, press Run now, or run an Audit).",

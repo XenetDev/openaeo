@@ -1,14 +1,13 @@
 import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@openaeo/ui";
-import { CheckListIcon } from "@hugeicons/core-free-icons";
+import { CheckListIcon, Globe02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
-import { EmptyState } from "@/components/app-shell";
+import { EmptyState, Icon } from "@/components/app-shell";
 import { AgentFindings, type Finding, type FindingAgent } from "@/components/ui/agent-findings-clean";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { CodeBlock } from "@/components/ui/code-block-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
-import { TextField } from "@/components/ui/text-field-clean";
 import { AgentMark, FilesMark, HighMark, LowMark, MediumMark, SkippedMark } from "./command-icons";
 import { EngineLogo, Page, when } from "./shared";
 import { SegmentedControl } from "@/components/ui/segmented-control-clean";
@@ -146,35 +145,44 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 			brand={project.name}
 			title="Audit"
 		>
-			<Card>
-				<CardHeader title="Can AI engines read and quote your site?" description="Reads up to 25 pages in a few seconds and uses no AI calls." action={running ? <Badge tone="info" live>Reading the site</Badge> : undefined} />
-				<CardContent>
-					<form
-						className="oa-inline-end"
-						onSubmit={(e) => {
-							e.preventDefault();
-							if (!running) onRun(url.trim());
-						}}
-					>
-						<div className="oa-grow" style={{ maxWidth: 420 }}>
-							<TextField label="Website to check" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="example.com" disabled={running} />
-						</div>
-						{running ? (
-							<Button type="button" variant="secondary" size="lg" onClick={onCancel}>
-								Stop
-							</Button>
-						) : (
-							<Button type="submit" size="lg" disabled={url.trim() === ""}>
-								Run audit
-							</Button>
-						)}
-					</form>
-				</CardContent>
-			</Card>
+			<section className="oa-audit-hero" data-tall={!audit || undefined}>
+				<h2>Can AI read your website?</h2>
+				<p>OpenAEO reads up to 25 pages the way an AI crawler does and lists what stops engines quoting you. No AI calls, a few seconds.</p>
+				<form
+					className="oa-search"
+					onSubmit={(e) => {
+						e.preventDefault();
+						if (!running) onRun(url.trim());
+					}}
+				>
+					<Icon icon={Globe02Icon} size={18} />
+					<input aria-label="Website to check" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="yourwebsite.com" disabled={running} spellCheck={false} autoCapitalize="off" autoCorrect="off" />
+					{running ? (
+						<Button type="button" variant="secondary" onClick={onCancel}>
+							Stop
+						</Button>
+					) : (
+						<Button type="submit" disabled={url.trim() === ""}>
+							{audit ? "Check again" : "Check my site"}
+						</Button>
+					)}
+				</form>
+				{running ? (
+					<Badge tone="info" live>
+						Reading the site
+					</Badge>
+				) : (
+					<div className="oa-crawlers" aria-label="Crawlers checked">
+						<span>Checks access for</span>
+						{["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"].map((bot) => (
+							<Badge key={bot}>{bot}</Badge>
+						))}
+						<span>and 7 more</span>
+					</div>
+				)}
+			</section>
 
-			{!audit ? (
-				<EmptyState icon={CheckListIcon} title="No audit yet" text="An audit checks what AI engines need: access for their crawlers, content present without JavaScript, structured data and direct answers." />
-			) : running ? (
+			{!audit ? null : running ? (
 				<div className="oa-cols-3">
 					{["Audit score", "Pages read", "Findings"].map((label) => (
 						<StatCard key={label} label={label} value="" change={0} loading />

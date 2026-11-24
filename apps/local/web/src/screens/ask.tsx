@@ -5,7 +5,6 @@ import {
 	ArrowRight02Icon,
 	CheckListIcon,
 	News01Icon,
-	PencilEdit02Icon,
 	PlayIcon,
 	Refresh01Icon,
 	Search01Icon,
@@ -147,7 +146,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 			title="Ask Aeo"
 			actions={
 				turns.length > 0 && !busy ? (
-					<Button variant="ghost" size="sm" onClick={onClear} icon={<Icon icon={PencilEdit02Icon} size={14} />}>
+					<Button variant="ghost" size="sm" onClick={onClear} icon={<Icon icon={Add01Icon} size={14} />}>
 						New chat
 					</Button>
 				) : undefined

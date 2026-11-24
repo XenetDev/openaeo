@@ -1,31 +1,10 @@
 "use client";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
+import { AnswerText } from "./AnswerText";
 import { engineLabel, isHttp, ordinal } from "./format";
 import type { AnswerView, EngineInfo, ProjectView } from "./types";
 
 export type AnswersPageProps = { answers: AnswerView[]; project: ProjectView; competitors: string[]; engines: EngineInfo[] };
-
-function highlight(text: string, brand: string[], others: string[]): ReactNode[] {
-	const names = [...brand, ...others].map((n) => n.trim()).filter(Boolean);
-	if (names.length === 0) return [text];
-	const escaped = [...names].sort((a, b) => b.length - a.length).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-	const pattern = new RegExp(`(?<![\\p{L}\\p{N}])(${escaped.join("|")})(?![\\p{L}\\p{N}])`, "giu");
-	const brandKeys = new Set(brand.map((n) => n.trim().toLowerCase()));
-	const parts: ReactNode[] = [];
-	let cursor = 0;
-	for (const hit of text.matchAll(pattern)) {
-		const start = hit.index;
-		if (start > cursor) parts.push(text.slice(cursor, start));
-		parts.push(
-			<mark key={start} className="oa-mark" data-brand={brandKeys.has(hit[0].toLowerCase()) ? "true" : "false"}>
-				{hit[0]}
-			</mark>,
-		);
-		cursor = start + hit[0].length;
-	}
-	if (cursor < text.length) parts.push(text.slice(cursor));
-	return parts;
-}
 
 export function AnswersPage({ answers, project, competitors, engines }: AnswersPageProps) {
 	const [engine, setEngine] = useState("all");
@@ -76,7 +55,7 @@ export function AnswersPage({ answers, project, competitors, engines }: AnswersP
 							<p className="oa-alert">{answer.errorMessage ?? "This engine could not answer."}</p>
 						) : (
 							<>
-								<p className="oa-answer-text">{highlight(answer.text, [project.name, ...project.aliases], competitors)}</p>
+								<AnswerText text={answer.text} brand={[project.name, ...project.aliases]} others={competitors} />
 								{answer.citations.length > 0 ? (
 									<ol className="oa-cites">
 										{answer.citations.map((c) => (

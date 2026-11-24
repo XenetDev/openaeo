@@ -561,13 +561,73 @@ textarea.oa-input {
 }
 
 .oa-answer-text {
-	max-width: 76ch;
+	max-width: 78ch;
 	margin: 0 0 12px;
 	color: var(--oa-ink-2);
-	white-space: pre-wrap;
 	overflow-wrap: anywhere;
-	max-height: 320px;
+	max-height: 420px;
 	overflow: auto;
+}
+
+.oa-answer-text p,
+.oa-answer-text ul,
+.oa-answer-text ol {
+	margin: 0 0 10px;
+}
+
+.oa-answer-text ul,
+.oa-answer-text ol {
+	padding-left: 20px;
+}
+
+.oa-answer-text strong {
+	color: var(--oa-ink);
+	font-weight: 600;
+}
+
+.oa-answer-text code {
+	font-family: var(--oa-font-mono);
+	font-size: 0.9em;
+}
+
+.oa-answer-text a {
+	color: var(--oa-ink);
+	text-underline-offset: 3px;
+}
+
+.oa-answer-h {
+	margin: 14px 0 6px;
+	font-family: var(--oa-font-body);
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--oa-ink);
+}
+
+.oa-answer-table {
+	margin: 0 0 12px;
+	overflow-x: auto;
+}
+
+.oa-answer-table table {
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.oa-answer-table th,
+.oa-answer-table td {
+	padding: 6px 14px 6px 0;
+	border-bottom: 1px solid var(--oa-rule);
+	text-align: left;
+	vertical-align: top;
+}
+
+.oa-answer-table th {
+	font-family: var(--oa-font-mono);
+	font-size: 10px;
+	font-weight: 500;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--oa-ink-3);
 }
 
 .oa-mark {

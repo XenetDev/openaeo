@@ -1,3 +1,4 @@
+export { AnswerText } from "./AnswerText";
 export { AnswersPage, type AnswersPageProps } from "./AnswersPage";
 export { AppShell, type AppShellProps } from "./AppShell";
 export { CompetitorsPage, type CompetitorsPageProps } from "./CompetitorsPage";

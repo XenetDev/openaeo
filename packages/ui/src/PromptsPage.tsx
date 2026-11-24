@@ -47,7 +47,7 @@ export function PromptsPage({ prompts, onAdd, onToggle, onRemove, onSuggest, sug
 				<textarea
 					id="oa-new-prompts"
 					className="oa-input"
-					rows={3}
+					rows={Math.min(12, Math.max(3, draft.split("\n").length + 1))}
 					value={draft}
 					onChange={(e) => setDraft(e.target.value)}
 					placeholder="What is the best CRM for a small marketing agency?"

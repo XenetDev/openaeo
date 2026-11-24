@@ -11,6 +11,7 @@ import { OverviewScreen } from "../screens/overview";
 import { PromptsScreen } from "../screens/prompts";
 import { RunsScreen } from "../screens/runs";
 import { SettingsScreen } from "../screens/settings";
+import { TagFilter } from "../screens/shared";
 import { isPage } from "./pages";
 import type { useAsk } from "./use-ask";
 import type { useCompetitorIdeas } from "./use-competitor-ideas";
@@ -19,6 +20,7 @@ import { messageOf, type ProjectData, type Workspace } from "./use-workspace";
 
 const EMPTY_REPORT: ReportView = {
 	run: null,
+	basedOnRunId: null,
 	overall: {
 		metrics: { answers: 0, mentionRate: 0, averageRank: null, rankScore: 0, shareOfVoice: 0, citationRate: 0 },
 		visibility: 0,
@@ -50,6 +52,8 @@ export type ScreenContext = {
 
 type Loaded = ScreenContext & { data: ProjectData };
 
+const tagFilter = ({ tags, tag, setTag }: Workspace) => <TagFilter tags={tags} tag={tag} onTag={setTag} />;
+
 const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNode> = {
 	prompts: ({ workspace, project, data, suggestions, act, navigate, setAnswerFilter }) => (
 		<PromptsScreen
@@ -72,6 +76,8 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 			}}
 			onToggle={(promptId, active) => act(() => api.setPromptActive(promptId, active))}
 			onRemove={(promptId) => act(() => api.removePrompt(promptId))}
+			tag={workspace.tag}
+			filter={tagFilter(workspace)}
 			onTags={(promptId, tags) =>
 				act(async () => {
 					await api.setPromptTags(promptId, tags);
@@ -90,6 +96,8 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 		<AnswersScreen
 			answers={data.answers}
 			prompts={data.prompts}
+			tag={workspace.tag}
+			tagControl={tagFilter(workspace)}
 			project={project}
 			engines={workspace.engines}
 			live={data.report.run?.status === "running"}
@@ -109,13 +117,16 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 			}
 		/>
 	),
-	sources: ({ project, data }) => <SourcesScreen project={project} report={data.report} />,
+	sources: ({ workspace, project, data }) => (
+		<SourcesScreen project={project} report={data.report} filter={tagFilter(workspace)} />
+	),
 	competitors: ({ workspace, project, data, rivals, act }) => (
 		<CompetitorsScreen
 			key={data.competitors.map((c) => c.name).join("|")}
 			project={project}
 			report={data.report}
 			competitors={data.competitors}
+			filter={tagFilter(workspace)}
 			onSave={(next) =>
 				act(async () => {
 					await api.saveCompetitors(project.id, next);
@@ -233,6 +244,7 @@ export function Screen({ page, context }: { page: PageId; context: ScreenContext
 				report={data?.report ?? EMPTY_REPORT}
 				engines={workspace.engines}
 				loading={!data}
+				filter={tagFilter(workspace)}
 				onNavigate={context.navigate}
 				onRun={context.startRun}
 				onCancel={context.cancelRun}

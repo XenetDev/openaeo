@@ -22,6 +22,7 @@ export type EngineReport = {
 export type Report = {
 	projectId: string;
 	run: Run | null;
+	basedOnRunId: string | null;
 	overall: { metrics: Metrics; visibility: number; sentiment: Sentiment };
 	engines: EngineReport[];
 	competitors: { name: string; mentionRate: number; averageRank: number | null; isBrand: boolean }[];
@@ -83,7 +84,12 @@ export function buildReport(
 		const all = store.answers.listByRun(runId);
 		return tagged ? all.filter((answer) => tagged.has(answer.promptId)) : all;
 	};
-	const answers = run && run.projectId === projectId ? answersOf(run.id) : [];
+	const finished =
+		run?.status === "running" && !opts.runId
+			? store.runs.list(projectId, 30).find((r) => r.status !== "running")
+			: undefined;
+	const source = finished ?? run;
+	const answers = source && source.projectId === projectId ? answersOf(source.id) : [];
 	const good = ok(answers);
 
 	const engineIds = [...new Set(answers.map((a) => a.engine))];
@@ -142,6 +148,7 @@ export function buildReport(
 	return {
 		projectId,
 		run: answers.length || run ? run : null,
+		basedOnRunId: source?.id ?? null,
 		overall: summarise(answers),
 		engines,
 		competitors,

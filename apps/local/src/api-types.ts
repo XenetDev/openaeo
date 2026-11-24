@@ -43,6 +43,7 @@ export type SentimentView = { score: number | null; positive: number; neutral: n
 
 export type ReportView = {
 	run: RunView | null;
+	basedOnRunId: string | null;
 	overall: { metrics: MetricsView; visibility: number; sentiment: SentimentView };
 	engines: { engine: string; metrics: MetricsView; visibility: number; sentiment: SentimentView; errors: number }[];
 	competitors: { name: string; mentionRate: number; averageRank: number | null; isBrand: boolean }[];
@@ -125,6 +126,10 @@ export type AskAction =
 	| { type: "open"; page: string };
 
 export type Ok = { ok: true };
+export type Progress = {
+	run: RunView | null;
+	audit: Pick<AuditView, "id" | "status"> | null;
+};
 export type StateResponse = { projects: ProjectView[]; engines: EngineView[] };
 export type ProjectDetail = { project: ProjectView; competitors: EntityView[]; prompts: PromptView[] };
 export type RunDetail = { run: RunView; answers: AnswerView[] };

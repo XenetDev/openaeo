@@ -1,4 +1,4 @@
-import type { Ok, OpportunitiesView, ReportView, RunDetail, RunView } from "../../api-types";
+import type { Ok, OpportunitiesView, Progress, ReportView, RunDetail, RunView } from "../../api-types";
 import { answersCsv } from "../../export";
 import { buildOpportunities } from "../../opportunities";
 import { buildReport } from "../../report";
@@ -29,6 +29,15 @@ export function runRoutes({ store, runs }: HandlerDeps): Route[] {
 				if (error instanceof RunError) throw new HttpError(STATUS[error.code] ?? 400, error.message);
 				throw error;
 			}
+		}),
+		route("GET", "/api/projects/:id/progress", ({ params }) => {
+			const id = params.id as string;
+			requireProject(store, id);
+			const audit = store.audits.latest(id);
+			return json<Progress>({
+				run: store.runs.latest(id),
+				audit: audit ? { id: audit.id, status: audit.status } : null,
+			});
 		}),
 		route("GET", "/api/projects/:id/report", ({ request, params }) => {
 			const id = params.id as string;

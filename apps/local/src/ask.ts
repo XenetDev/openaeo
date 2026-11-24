@@ -56,7 +56,9 @@ const GUIDE = [
 	"Prompts page: add the questions buyers ask AI assistants; Suggest questions drafts some. Each question is asked on every run.",
 	"Run now (search bar or Runs page) asks every enabled engine each question once. Runs page: history, a timeline of each run, and a daily or weekly schedule that works while OpenAEO is open.",
 	"Overview: visibility score (0 to 100, from how often the brand is named, how early, share against competitors and how often its own site is linked), trend and problems.",
-	"Answers page: what each engine said per question, where the brand ranked, and the sources it linked.",
+	"Overview also shows a sentiment score (0 to 100) with its trend and a positive, neutral and negative split.",
+	"Answers page: what each engine said per question, where the brand ranked, the tone, and the sources it linked. Export CSV downloads every answer from the run.",
+	"Tags: on the Prompts page, Edit tags in a question's menu groups questions by topic. The tag filter at the top of Overview, Prompts, Answers, Sources and Competitors limits every figure to questions with that tag.",
 	"Opportunities page: questions where competitors are named and the brand is not, sites worth getting mentioned on, and the top website fixes.",
 	"Sources page: the sites engines cite most; getting mentioned on those is how a brand gets named. Competitors page: add rivals and compare how often each is named.",
 	"Audit page: reads up to 25 pages of a website without AI and lists what stops AI engines reading or quoting it, with a fix for each.",
@@ -86,6 +88,11 @@ export function askContext(store: Store, project: Project): AskContext {
 		facts.push(
 			`Latest run: ${new Date(run.startedAt).toISOString().slice(0, 10)}, ${m.answers} answers. Visibility score ${Math.round(report.overall.visibility)} of 100. Named in ${pct(m.mentionRate)} of answers${m.averageRank === null ? "" : `, average position ${m.averageRank.toFixed(1)}`}. Own site linked in ${pct(m.citationRate)}.`,
 		);
+		const tone = report.overall.sentiment;
+		if (tone.score !== null)
+			facts.push(
+				`Sentiment score ${tone.score} of 100 (how positively the engines talk about the brand when they name it): ${tone.positive} positive, ${tone.neutral} neutral, ${tone.negative} negative answers. By engine: ${report.engines.map((e) => `${e.engine} ${e.sentiment.score ?? "not scored"}`).join(", ")}.`,
+			);
 		for (const e of report.engines)
 			facts.push(
 				`Engine ${e.engine}: named in ${pct(e.metrics.mentionRate)} of ${e.metrics.answers} answers, own site linked in ${pct(e.metrics.citationRate)}${e.errors ? `, ${e.errors} failed` : ""}.`,

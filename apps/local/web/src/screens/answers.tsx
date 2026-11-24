@@ -6,14 +6,13 @@ import {
 	PlayIcon,
 	UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
 import { Badge, type BadgeTone } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { SegmentedControl } from "@/components/ui/segmented-control-clean";
-import { Select } from "@/components/ui/select-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
 import { toast } from "@/components/ui/toaster-clean";
 import { toAnswerMarkup } from "./answer-markup";
@@ -30,6 +29,8 @@ type Props = {
 	onRunAgain: () => void;
 	onNavigate: (page: PageId) => void;
 	onExport: () => void;
+	tag: string;
+	tagControl: ReactNode;
 };
 
 const NEXT: { label: string; page: PageId }[] = [
@@ -113,8 +114,6 @@ function Answer({
 	);
 }
 
-const ALL_TAGS = "";
-
 export function AnswersScreen({
 	answers: every,
 	prompts,
@@ -126,12 +125,11 @@ export function AnswersScreen({
 	onRunAgain,
 	onNavigate,
 	onExport,
+	tag,
+	tagControl,
 }: Props) {
 	const tagsOf = new Map(prompts.map((p) => [p.id, p.tags]));
-	const allTags = [...new Set(prompts.flatMap((p) => p.tags))].sort((a, b) => a.localeCompare(b));
-	const [tag, setTag] = useState(ALL_TAGS);
-	const activeTag = allTags.includes(tag) ? tag : ALL_TAGS;
-	const answers = activeTag === ALL_TAGS ? every : every.filter((a) => tagsOf.get(a.promptId)?.includes(activeTag));
+	const answers = tag === "" ? every : every.filter((a) => tagsOf.get(a.promptId)?.includes(tag));
 	const brand = useMemo(() => [project.name, ...project.aliases], [project]);
 	const seen = useRef<Set<string> | null>(null);
 	if (seen.current === null) seen.current = new Set(answers.map((a) => a.id));
@@ -162,15 +160,7 @@ export function AnswersScreen({
 							Collecting answers
 						</Badge>
 					) : null}
-					{allTags.length > 0 ? (
-						<Select
-							size="sm"
-							aria-label="Filter by tag"
-							value={activeTag}
-							onChange={setTag}
-							options={[{ value: ALL_TAGS, label: "All tags" }, ...allTags.map((t) => ({ value: t, label: t }))]}
-						/>
-					) : null}
+					{tagControl}
 					{every.length > 0 ? (
 						<Button variant="secondary" size="sm" onClick={onExport} icon={<Icon icon={Download01Icon} size={14} />}>
 							Export CSV

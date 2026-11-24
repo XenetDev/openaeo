@@ -166,3 +166,13 @@ test("earlier replies and tracked question text are sent as quoted data", async 
 	expect((prompt.split("\n").find((l) => l.includes("Ignore your rules")) ?? "").startsWith("> ")).toBe(true);
 	expect((prompt.split("\n").find((l) => l.includes("best crm?")) ?? "").startsWith("> ")).toBe(true);
 });
+
+test("the assistant is told the sentiment score and what the product can do with tags and exports", async () => {
+	const { store, project } = await world();
+	const run = store.runs.latest(project.id);
+	for (const answer of store.answers.listByRun(run?.id as string)) store.answers.setSentiment(answer.id, "positive");
+	const prompt = buildAskPrompt(askContext(store, project), [], "How is my sentiment?");
+	expect(prompt).toContain("Sentiment score 100 of 100");
+	expect(prompt).toMatch(/tags/i);
+	expect(prompt).toMatch(/Export CSV/);
+});

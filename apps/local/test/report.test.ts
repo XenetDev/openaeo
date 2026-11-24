@@ -163,3 +163,34 @@ test("a tag limits the report to the questions that carry it", async () => {
 	expect(tagged.competitors.find((c) => c.name === "HubSpot")?.mentionRate).toBe(0);
 	expect(buildReport(store, project.id, { tag: "unknown" }).overall.metrics.answers).toBe(0);
 });
+
+test("while a new run is collecting, the report keeps the last finished run's numbers", async () => {
+	const store = freshStore();
+	const project = seed(store, ["q1"]);
+	const first = await runOnce(store, project.id, "Pipedrive is best.", "Pipedrive too.");
+	const slow = fakeProvider("claude-cli", () => "HubSpot only.", 200);
+	const runs = createRunService({ store, providers: () => [slow.provider] });
+	const second = runs.start(project.id);
+
+	const during = buildReport(store, project.id);
+	expect(during.run?.id).toBe(second.id);
+	expect(during.run?.status).toBe("running");
+	expect(during.basedOnRunId).toBe(first.id);
+	expect(during.overall.metrics.answers).toBe(2);
+	expect(during.overall.metrics.mentionRate).toBe(1);
+
+	await runs.wait(second.id);
+	const after = buildReport(store, project.id);
+	expect(after.basedOnRunId).toBe(second.id);
+	expect(after.overall.metrics.mentionRate).toBe(0);
+});
+
+test("a first run shows its own answers as they arrive", async () => {
+	const store = freshStore();
+	const project = seed(store, ["q1"]);
+	const slow = fakeProvider("claude-cli", () => "Pipedrive.", 60);
+	const runs = createRunService({ store, providers: () => [slow.provider] });
+	const run = runs.start(project.id);
+	expect(buildReport(store, project.id).basedOnRunId).toBe(run.id);
+	await runs.wait(run.id);
+});

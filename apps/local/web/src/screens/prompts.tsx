@@ -9,7 +9,7 @@ import {
 	SparklesIcon,
 	Tag01Icon,
 } from "@hugeicons/core-free-icons";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { type PexKeyword, type PexResult, PromptExplorerScreen } from "@/components/prompt-explorer";
 import { Badge } from "@/components/ui/badge-clean";
@@ -18,7 +18,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { Dialog } from "@/components/ui/dialog-clean";
 import { DropdownMenu } from "@/components/ui/dropdown-menu-clean";
 import { IconButton } from "@/components/ui/icon-button-clean";
-import { Select } from "@/components/ui/select-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
 import { TagInput } from "@/components/ui/tag-input-clean";
 import { SuggestMark } from "./command-icons";
@@ -34,12 +33,12 @@ type Props = {
 	onToggle: (id: string, active: boolean) => void;
 	onRemove: (id: string) => void;
 	onTags: (id: string, tags: string[]) => void;
+	tag: string;
+	filter: ReactNode;
 	onSuggest: () => void;
 	onDismissSuggestions: () => void;
 	onOpen: (text: string) => void;
 };
-
-const ALL_TAGS = "";
 
 const toKeyword = (s: PromptStatView): PexKeyword => ({
 	id: s.promptId,
@@ -61,17 +60,16 @@ export function PromptsScreen({
 	onToggle,
 	onRemove,
 	onTags,
+	tag,
+	filter,
 	onSuggest,
 	onDismissSuggestions,
 	onOpen,
 }: Props) {
 	const tagsOf = new Map(prompts.map((p) => [p.id, p.tags]));
-	const allTags = [...new Set(prompts.flatMap((p) => p.tags))].sort((a, b) => a.localeCompare(b));
-	const [tag, setTag] = useState(ALL_TAGS);
-	const active = allTags.includes(tag) ? tag : ALL_TAGS;
 	const [editing, setEditing] = useState<{ id: string; text: string; tags: string[] } | null>(null);
 	const shown = stats
-		.filter((s) => active === ALL_TAGS || tagsOf.get(s.promptId)?.includes(active))
+		.filter((s) => tag === "" || tagsOf.get(s.promptId)?.includes(tag))
 		.map((s) => ({ ...toKeyword(s), tags: tagsOf.get(s.promptId) ?? [] }));
 	const keywords = shown.filter((k) => !k.paused);
 	const ranked = [...shown].sort((a, b) => Number(a.paused) - Number(b.paused) || b.volume - a.volume);
@@ -133,15 +131,7 @@ export function PromptsScreen({
 				}}
 				actions={
 					<span className="oa-inline">
-						{allTags.length > 0 ? (
-							<Select
-								size="sm"
-								aria-label="Filter by tag"
-								value={active}
-								onChange={setTag}
-								options={[{ value: ALL_TAGS, label: "All tags" }, ...allTags.map((t) => ({ value: t, label: t }))]}
-							/>
-						) : null}
+						{filter}
 						<Button
 							variant="ghost"
 							size="sm"

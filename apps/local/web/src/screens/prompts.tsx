@@ -2,7 +2,9 @@ import type { PromptView, Suggestions } from "@openaeo/ui";
 import { PromptExplorerScreen, type PexKeyword, type PexResult } from "@/components/prompt-explorer";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
+import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
+import { Spinner } from "@/components/ui/spinner-clean";
 
 export type PromptStat = {
 	promptId: string;
@@ -42,6 +44,11 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 	const ranked = [...keywords].sort((a, b) => b.volume - a.volume);
 	const tracked = new Set(prompts.map((p) => p.text.toLowerCase()));
 	const fresh = suggestions?.prompts.filter((p) => !tracked.has(p.toLowerCase())) ?? [];
+	const spot = useRef<HTMLDivElement>(null);
+	const arrived = suggestions !== null;
+	useEffect(() => {
+		if (suggesting || arrived) spot.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+	}, [suggesting, arrived]);
 
 	return (
 			<PromptExplorerScreen
@@ -66,14 +73,19 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 				}
 				after={
 <>
-				{suggestions ? (
+				<div ref={spot} />
+				{suggesting ? (
+					<Card>
+						<CardHeader icon={<Spinner />} title={`Writing questions for ${brand}`} description="Your AI engine reads your website and the questions you already track. This takes about half a minute." />
+					</Card>
+				) : suggestions ? (
 					<Card>
 						<CardHeader
 							title="Suggested questions"
 							description={
 								suggestions.fallback
 									? "Generic starting points, because no AI engine could suggest better ones."
-									: "Suggested by your AI engine from your brand and competitors. Track the ones a real buyer would ask."
+									: "Written by your AI engine from your website and the questions you already track. Keep the ones a real buyer would ask."
 							}
 							action={
 								<span className="oa-inline">

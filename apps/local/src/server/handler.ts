@@ -21,6 +21,7 @@ export type HandlerDeps = {
 	assets: (path: string) => Response | null;
 	suggest?: (context: SuggestContext) => Promise<{ prompts: string[]; fallback: boolean }>;
 	askProvider?: (engine?: string) => Provider | null;
+	describeSite?: (domain: string) => Promise<string | null>;
 };
 
 class HttpError extends Error {
@@ -147,7 +148,8 @@ export function createHandler(deps: HandlerDeps) {
 			}
 			if (c === "suggestions" && method === "POST") {
 				const found = project(b);
-				const context = { brand: found.name, domains: found.domains, competitors: store.competitors.list(b).map((x) => x.name) };
+				const about = found.domains[0] && deps.describeSite ? await deps.describeSite(found.domains[0]).catch(() => null) : null;
+				const context = { brand: found.name, domains: found.domains, competitors: store.competitors.list(b).map((x) => x.name), existing: store.prompts.list(b).map((x) => x.text), about };
 				return json(deps.suggest ? await deps.suggest(context) : { prompts: fallbackPrompts(context), fallback: true });
 			}
 			if (c === "ask" && method === "POST") {

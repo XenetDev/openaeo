@@ -246,9 +246,13 @@ export function PromptExplorerScreen({
     if (!clean.length) return showToast("Type a question first");
     setOpen(false);
     setBusy(true);
-    const out = onAnalyse ? await onAnalyse(clean, mode) : clean.map((t) => analyse(t, prompts));
-    setResults(out);
-    setBusy(false);
+    try {
+      const out = onAnalyse ? await onAnalyse(clean, mode) : clean.map((t) => analyse(t, prompts));
+      setResults(out);
+      setQuery("");
+    } finally {
+      setBusy(false);
+    }
   };
   const analyseNow = () => run(bulk ? query.split("\n") : [query]);
   /** A suggestion or a keyword: into the field (on the line you're on in bulk), then analysed */
@@ -641,12 +645,12 @@ const css = /* css */ `
 .ui-pex-col .ui-as-empty[data-bare] { padding: 32px 8px; }
 .ui-pex-kws { display: grid; margin: 0 -8px; padding: 0; list-style: none; }
 .ui-pex-kws > li + li, .ui-pex-kws > .ui-pex-kw + .ui-pex-kw { box-shadow: inset 0 0.5px 0 var(--line); }
-.ui-pex-kw { display: grid; grid-template-columns: minmax(0, 1fr) 72px 52px; align-items: center; gap: 16px; width: 100%; height: 44px; padding: 0 8px; border-radius: calc(var(--aui-radius, 7px) - 1px); font-size: 13px; text-align: left; color: var(--ink); transition: background-color 120ms ease; }
+.ui-pex-kw { display: grid; grid-template-columns: minmax(0, 1fr) max-content 52px; align-items: center; gap: 16px; width: 100%; height: 44px; padding: 0 8px; border-radius: calc(var(--aui-radius, 7px) - 1px); font-size: 13px; text-align: left; color: var(--ink); transition: background-color 120ms ease; }
 .ui-pex-kw[data-spark] { grid-template-columns: minmax(0, 1fr) 56px 72px 52px; }
 button.ui-pex-kw:hover { background: var(--hover); }
 button.ui-pex-kw:focus-visible { outline-offset: -2px; }
 .ui-pex-kw__text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.ui-pex-kw__vol { text-align: right; color: var(--ink); }
+.ui-pex-kw__vol { text-align: right; white-space: nowrap; color: var(--ink); }
 .ui-pex-kw[data-skel] > :nth-child(n + 2) { justify-self: end; }
 .ui-pex-spark { justify-self: center; overflow: visible; }
 .ui-pex-spark path { fill: none; stroke: var(--faint); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }

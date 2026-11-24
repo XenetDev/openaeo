@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { writeSync } from "node:fs";
 import pkg from "../package.json" with { type: "json" };
 import { diskAssets, embeddedAssets } from "./assets";
-import { createSafeFetch } from "@openaeo/engine";
+import { createSafeFetch, parsePage } from "@openaeo/engine";
 import { createAuditService } from "./audits";
 import { auditOnce, HELP, parseArgs, runOnce } from "./cli";
 import { embedded } from "./embedded";
@@ -102,6 +102,12 @@ let server: ReturnType<typeof Bun.serve> | null = null;
 for (let port = first; port < first + (args.port ? 1 : 20) && !server; port += 1) {
 	try {
 		const handler = createHandler({ store, runs, audits, engines: () => detectEngines(engineDeps), token, port, assets, suggest: (context) => suggestPrompts(buildProviders(engineDeps)[0] ?? null, context),
+			describeSite: async (domain) => {
+				const page = await get(/^https?:\/\//i.test(domain) ? domain : `https://${domain}`);
+				const model = parsePage(page.url, page.text);
+				const lines = [model.title, model.description, model.h1 ?? "", ...model.headings.slice(0, 8).map((h) => h.text)].map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+				return [...new Set(lines)].join("\n") || null;
+			},
 			askProvider: (engine) => {
 				const ready = buildProviders(engineDeps);
 				return ready.find((p) => p.id === engine) ?? ready[0] ?? null;

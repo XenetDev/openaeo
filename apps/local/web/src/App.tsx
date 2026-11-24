@@ -312,9 +312,14 @@ export function App() {
 				suggestions={suggestions}
 				suggesting={suggesting}
 				onAdd={async (texts) => {
-					await api.addPrompts(id, texts);
-					await refresh();
-					toast.success(texts.length === 1 ? "Question tracked" : `${texts.length} questions tracked`);
+					try {
+						await api.addPrompts(id, texts);
+						await refresh();
+						toast.success(texts.length === 1 ? "Question tracked" : `${texts.length} questions tracked`, { description: "Press Run now to ask the AI engines." });
+					} catch (caught) {
+						toast.error("That question was not tracked", { description: messageOf(caught) });
+						throw caught;
+					}
 				}}
 				onToggle={(promptId, active) => act(() => api.setPromptActive(promptId, active))}
 				onRemove={(promptId) => act(() => api.removePrompt(promptId))}

@@ -48,7 +48,34 @@ function Step({
 				icon={MARKS[step.severity]}
 				title={`${number}. ${step.title}`}
 				description={step.why}
-				action={step.done ? <Badge tone="success">Done</Badge> : undefined}
+				action={
+					<>
+						{step.done ? <Badge tone="success">Done</Badge> : null}
+						{step.ask ? (
+							<Button size="sm" onClick={() => onAsk(step.ask as string)} icon={<Icon icon={AiChat02Icon} size={14} />}>
+								Ask Aeo to help
+							</Button>
+						) : null}
+						{step.page && PAGE_LABEL[step.page] ? (
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() => onNavigate(step.page as PageId)}
+								iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
+							>
+								{PAGE_LABEL[step.page]}
+							</Button>
+						) : null}
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => onDone(step.id, !step.done)}
+							icon={<Icon icon={CheckmarkCircle02Icon} size={14} />}
+						>
+							{step.done ? "Mark as not done" : "Mark as done"}
+						</Button>
+					</>
+				}
 			/>
 			<CardContent>
 				<div className="oa-step-body">
@@ -88,31 +115,6 @@ function Step({
 							</span>
 						</section>
 					) : null}
-					<span className="oa-inline">
-						{step.ask ? (
-							<Button size="sm" onClick={() => onAsk(step.ask as string)} icon={<Icon icon={AiChat02Icon} size={14} />}>
-								Ask Aeo to help
-							</Button>
-						) : null}
-						{step.page && PAGE_LABEL[step.page] ? (
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={() => onNavigate(step.page as PageId)}
-								iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
-							>
-								{PAGE_LABEL[step.page]}
-							</Button>
-						) : null}
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => onDone(step.id, !step.done)}
-							icon={<Icon icon={CheckmarkCircle02Icon} size={14} />}
-						>
-							{step.done ? "Mark as not done" : "Mark as done"}
-						</Button>
-					</span>
 				</div>
 			</CardContent>
 		</Card>

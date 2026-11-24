@@ -1294,6 +1294,18 @@ body,
 	opacity: 0.6;
 }
 
+@media (max-width: 900px) {
+	.oa-step > .ui-crdc__head {
+		flex-wrap: wrap;
+	}
+
+	.oa-step > .ui-crdc__head > .ui-crdc__action {
+		flex: 1 0 100%;
+		flex-wrap: wrap;
+		height: auto;
+	}
+}
+
 .oa-step-body {
 	display: grid;
 	gap: 14px;

@@ -1,5 +1,5 @@
 import type { AnswerView, EngineInfo, PageId, ProjectView } from "@openaeo/ui";
-import { BubbleChatIcon } from "@hugeicons/core-free-icons";
+import { BubbleChatIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/app-shell";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
@@ -83,10 +83,14 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 	if (seen.current === null) seen.current = new Set(answers.map((a) => a.id));
 	const known = seen.current;
 
-	const questions = [...new Set(answers.map((a) => a.promptText))];
+	const keyOf = (a: AnswerView) => a.promptId ?? a.promptText;
+	const labels = new Map(answers.map((a) => [keyOf(a), a.promptText]));
+	const questions = [...labels.keys()];
 	const ids = [...new Set(answers.map((a) => a.engine))];
-	const question = questions.includes(filter) ? filter : (questions[0] ?? "");
-	const group = answers.filter((a) => a.promptText === question);
+	const wanted = answers.find((a) => a.promptText === filter);
+	const key = wanted ? keyOf(wanted) : (questions[0] ?? "");
+	const question = labels.get(key) ?? "";
+	const group = answers.filter((a) => keyOf(a) === key);
 	const [picked, setPicked] = useState("");
 	const engine = ids.includes(picked) ? picked : (group[0]?.engine ?? ids[0] ?? "");
 	const answer = group.find((a) => a.engine === engine);
@@ -100,17 +104,25 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 					icon={BubbleChatIcon}
 					title={live ? "Waiting for the first answer" : "No answers yet"}
 					text="After a run, every question shows here with what each AI engine answered, who it named and the sites it relied on."
+					action={
+						live ? undefined : (
+							<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")}>
+								Go to Prompts
+							</Button>
+						)
+					}
 				/>
 			) : (
 				<div className="oa-answers">
 					<Card className="oa-qlist">
 						<CardHeader title="Questions" description={`${questions.length} in the latest run`} />
 						<nav aria-label="Questions">
-							{questions.map((text) => {
-								const good = answers.filter((a) => a.promptText === text && a.errorCode === null);
+							{questions.map((id) => {
+								const text = labels.get(id) ?? "";
+								const good = answers.filter((a) => keyOf(a) === id && a.errorCode === null);
 								const named = good.filter((a) => a.brandRank !== null).length;
 								return (
-									<button key={text} type="button" className="oa-q" aria-current={text === question || undefined} onClick={() => onFilter(text)}>
+									<button key={id} type="button" className="oa-q" aria-current={id === key || undefined} onClick={() => onFilter(text)}>
 										<span>{text}</span>
 										<Badge tone={good.length === 0 ? "danger" : named === good.length ? "success" : named === 0 ? "warning" : "neutral"}>{good.length === 0 ? "Failed" : `${named}/${good.length}`}</Badge>
 									</button>
@@ -131,9 +143,13 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 							})}
 						/>
 						{!answer ? (
-							<Card>
-								<CardHeader icon={live ? <Spinner /> : undefined} title={live ? `Waiting for ${label}` : `No answer from ${label}`} description={live ? "The answer appears here as soon as it arrives." : "This engine was not asked this question in the latest run."} />
-							</Card>
+							live ? (
+								<Card>
+									<CardHeader icon={<Spinner />} title={`Waiting for ${label}`} description="The answer appears here as soon as it arrives." />
+								</Card>
+							) : (
+								<EmptyState icon={BubbleChatIcon} title={`No answer from ${label}`} text="This engine was not asked this question in the latest run." />
+							)
 						) : answer.errorCode !== null ? (
 							<Card>
 								<CardHeader title={`${label} could not answer`} description={answer.errorMessage ?? "No reason was given."} />
@@ -160,7 +176,7 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 								<CardHeader title="Brands named, in order" description="The order they first appear in this answer." />
 								<CardContent>
 									<ShareList
-										empty={<p className="oa-quiet">No tracked brand is named in this answer.</p>}
+										empty={<EmptyState bare icon={UserMultipleIcon} title="No tracked brand named" text="This answer names neither you nor a competitor you track." />}
 										items={[...answer.mentions]
 											.sort((a, b) => a.rank - b.rank)
 											.map((m) => ({

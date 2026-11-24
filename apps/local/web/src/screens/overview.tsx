@@ -225,7 +225,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 								share: (d.citations / Math.max(1, report.topDomains[0]?.citations ?? 1)) * 100,
 								badge: d.isBrand ? <Badge>Yours</Badge> : undefined,
 							}))}
-							empty={<p className="oa-quiet">No links were cited in this run.</p>}
+							empty={<EmptyState bare icon={null} title="No links cited" text="The engines answered this run without linking to any site." />}
 						/>
 					</CardContent>
 				</Card>

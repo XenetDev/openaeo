@@ -92,7 +92,13 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 			}
 		>
 			{runs === null ? null : runs.length === 0 ? (
-				<EmptyState icon={Clock01Icon} title="No runs yet" text="A run asks every AI engine each of your questions once. Every run is kept here, so you can see how the answers change over time." />
+				<EmptyState icon={Clock01Icon} title="No runs yet" text="A run asks every AI engine each of your questions once. Every run is kept here, so you can see how the answers change over time."
+					action={
+						<Button variant="secondary" size="sm" onClick={onStart}>
+							Run now
+						</Button>
+					}
+				/>
 			) : (
 				<div className="oa-answers">
 					<Card className="oa-qlist">
@@ -117,9 +123,7 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 					<div className="oa-answer-main">
 						{shown ? (
 							shown.answers.length === 0 ? (
-								<Card>
-									<CardHeader title={shown.run.status === "running" ? "Waiting for the first answer" : "This run has no answers"} description={shown.run.status === "running" ? "Each answer shows here as it arrives." : "It was stopped before any engine answered."} />
-								</Card>
+								<EmptyState icon={Clock01Icon} title={shown.run.status === "running" ? "Waiting for the first answer" : "This run has no answers"} text={shown.run.status === "running" ? "Each answer shows here as it arrives." : "It was stopped before any engine answered."} />
 							) : (
 								<TraceWaterfall className="oa-trace" title="Timeline" root={withMarks(runTree(shown.run, shown.answers, (id) => engineLabel(engines, id)))} startedAt={shown.run.status === "running" ? shown.run.startedAt : undefined} />
 							)

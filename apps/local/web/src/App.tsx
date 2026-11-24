@@ -1,5 +1,5 @@
-import type { AnswerView, ArtefactsView, AuditView, EngineInfo, EntityView, FindingView, PageId, ProjectView, PromptView, ReportView, Suggestions } from "@openaeo/ui";
-import { AiChat02Icon, BubbleChatIcon, CheckListIcon, Clock01Icon, ComputerIcon, DashboardSquare01Icon, Globe02Icon, Moon02Icon, News01Icon, PaintBoardIcon, Plug01Icon, PlusSignIcon, Search01Icon, Settings01Icon, Sun03Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import type { OpportunitiesView, AnswerView, ArtefactsView, AuditView, EngineInfo, EntityView, FindingView, PageId, ProjectView, PromptView, ReportView, Suggestions } from "@openaeo/ui";
+import { AiChat02Icon, BubbleChatIcon, CheckListIcon, Clock01Icon, ComputerIcon, DashboardSquare01Icon, Globe02Icon, Moon02Icon, News01Icon, PaintBoardIcon, Plug01Icon, PlusSignIcon, Search01Icon, Settings01Icon, Sun03Icon, Target02Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, Icon, type ShellNavItem } from "@/components/app-shell";
 import { AgentMark, AuditMark, BrandMark, BriefMark, RunMark, SuggestMark } from "./screens/command-icons";
@@ -9,6 +9,7 @@ import { AnswersScreen } from "./screens/answers";
 import { AuditScreen } from "./screens/audit";
 import { CompetitorsScreen, SourcesScreen } from "./screens/lists";
 import { AskScreen, type Turn } from "./screens/ask";
+import { OpportunitiesScreen } from "./screens/opportunities";
 import { RunsScreen } from "./screens/runs";
 import { OverviewScreen } from "./screens/overview";
 import { type PromptStat, PromptsScreen } from "./screens/prompts";
@@ -22,6 +23,7 @@ const PAGES: { id: PageId; label: string; icon: ShellNavItem["icon"] }[] = [
 	{ id: "answers", label: "Answers", icon: BubbleChatIcon },
 	{ id: "sources", label: "Sources", icon: News01Icon },
 	{ id: "competitors", label: "Competitors", icon: UserMultipleIcon },
+	{ id: "opportunities", label: "Opportunities", icon: Target02Icon },
 	{ id: "audit", label: "Audit", icon: CheckListIcon },
 	{ id: "runs", label: "Runs", icon: Clock01Icon },
 	{ id: "ask", label: "Ask Aeo", icon: AiChat02Icon },
@@ -41,7 +43,7 @@ const EMPTY_REPORT: ReportView = {
 const messageOf = (error: unknown) => (error instanceof ApiError ? error.message : "Something went wrong. Try again.");
 
 type AuditData = { audit: AuditView | null; findings: FindingView[]; artefacts: ArtefactsView };
-type Data = { competitors: EntityView[]; prompts: PromptView[]; stats: PromptStat[]; report: ReportView; answers: AnswerView[]; audit: AuditData };
+type Data = { competitors: EntityView[]; prompts: PromptView[]; stats: PromptStat[]; report: ReportView; answers: AnswerView[]; audit: AuditData; found: OpportunitiesView };
 
 export function App() {
 	const [projects, setProjects] = useState<ProjectView[] | null>(null);
@@ -60,9 +62,11 @@ export function App() {
 	const [theme, setTheme] = useState<Theme>(storedTheme);
 	const commandRef = useRef<(id: string, text?: string) => void>(() => {});
 	const loading = useRef(0);
+	const liveId = useRef<string | null>(null);
 
 	const project = projects?.find((p) => p.id === projectId) ?? projects?.[0] ?? null;
 	const currentId = project?.id ?? null;
+	liveId.current = currentId;
 
 	const loadState = useCallback(async () => {
 		const [state, stored] = await Promise.all([api.state(), api.settings()]);
@@ -73,10 +77,10 @@ export function App() {
 
 	const loadProject = useCallback(async (id: string) => {
 		const ticket = ++loading.current;
-		const [detail, report, audit, stats] = await Promise.all([api.project(id), api.report(id), api.latestAudit(id), api.promptStats(id)]);
+		const [detail, report, audit, stats, found] = await Promise.all([api.project(id), api.report(id), api.latestAudit(id), api.promptStats(id), api.opportunities(id)]);
 		const answers = report.run ? (await api.run(report.run.id)).answers : [];
 		if (ticket !== loading.current) return;
-		setData({ competitors: detail.competitors, prompts: detail.prompts, stats: stats.stats, report, answers, audit });
+		setData({ competitors: detail.competitors, prompts: detail.prompts, stats: stats.stats, report, answers, audit, found });
 		if (!window.location.hash && !report.run) setPage("prompts");
 	}, []);
 
@@ -103,6 +107,7 @@ export function App() {
 	useEffect(() => {
 		setData(null);
 		setSuggestions(null);
+		setSuggesting(false);
 		setAnswerFilter("");
 		setTurns([]);
 		if (currentId) void guard(() => loadProject(currentId));
@@ -276,7 +281,10 @@ export function App() {
 		else if (command === "suggest") {
 			navigate("prompts");
 			setSuggesting(true);
-			void guard(async () => setSuggestions(await api.suggest(id))).finally(() => setSuggesting(false));
+			void guard(async () => {
+						const result = await api.suggest(id);
+						if (liveId.current === id) setSuggestions(result);
+					}).finally(() => liveId.current === id && setSuggesting(false));
 		} else if (command === "ask" && text?.trim()) {
 			act(async () => {
 				await api.addPrompts(id, [text.trim()]);
@@ -327,7 +335,10 @@ export function App() {
 				onDismissSuggestions={() => setSuggestions(null)}
 				onSuggest={() => {
 					setSuggesting(true);
-					void guard(async () => setSuggestions(await api.suggest(id))).finally(() => setSuggesting(false));
+					void guard(async () => {
+						const result = await api.suggest(id);
+						if (liveId.current === id) setSuggestions(result);
+					}).finally(() => liveId.current === id && setSuggesting(false));
 				}}
 				onOpen={(text) => {
 					setAnswerFilter(text);
@@ -369,22 +380,43 @@ export function App() {
 					})
 				}
 			/>
+		) : page === "opportunities" ? (
+			<OpportunitiesScreen
+				project={project}
+				engines={engines}
+				found={data.found}
+				onNavigate={navigate}
+				onOpenQuestion={(text) => {
+					setAnswerFilter(text);
+					navigate("answers");
+				}}
+			/>
 		) : page === "ask" ? (
 			<AskScreen
 				project={project}
 				engines={engines}
 				turns={turns}
 				onClear={() => setTurns([])}
+				onAction={(action) => {
+					if (action.type === "run") startRun();
+					else if (action.type === "audit") navigate("audit");
+					else if (action.type === "open") navigate((PAGES.find((p) => p.id === action.page)?.id ?? "overview") as PageId);
+					else
+						act(async () => {
+							await api.addPrompts(id, [action.question]);
+							toast.success("Question tracked", { description: "Press Run now to ask the AI engines." });
+						});
+				}}
 				onAsk={(question, engine) => {
 					if (turns.some((t) => t.pending)) return;
 					const kept = turns.filter((t) => !t.failed);
 					if (kept[kept.length - 1]?.role === "user") kept.pop();
-					const history = kept.map((t) => ({ role: t.role, text: t.text }));
+					const history = kept.slice(-8).map((t) => ({ role: t.role, text: t.text }));
 					const reply = crypto.randomUUID();
 					setTurns([...kept, { id: crypto.randomUUID(), role: "user", text: question }, { id: reply, role: "assistant", text: "", engine, pending: true }]);
 					const asked = Date.now();
 					api.ask(id, { question, history, engine: engine || undefined }).then(
-						(result) => setTurns((now) => now.map((t) => (t.id === reply ? { ...t, text: result.text, engine: result.engine, pending: false, took: Math.round((Date.now() - asked) / 100) / 10 } : t))),
+						(result) => setTurns((now) => now.map((t) => (t.id === reply ? { ...t, text: result.text, engine: result.engine, actions: result.actions, pending: false, took: Math.round((Date.now() - asked) / 100) / 10 } : t))),
 						(caught) => setTurns((now) => now.map((t) => (t.id === reply ? { ...t, text: messageOf(caught), pending: false, failed: true } : t))),
 					);
 				}}

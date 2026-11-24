@@ -1,4 +1,4 @@
-export type PageId = "overview" | "prompts" | "answers" | "sources" | "competitors" | "audit" | "runs" | "ask" | "settings";
+export type PageId = "overview" | "prompts" | "answers" | "sources" | "competitors" | "opportunities" | "audit" | "runs" | "ask" | "settings";
 
 export type EngineInfo = { id: string; label: string; available: boolean; reason: string | null; enabled: boolean };
 export type EntityView = { name: string; aliases: string[]; domains: string[] };
@@ -21,6 +21,7 @@ export type ReportView = {
 export type AnswerView = {
 	id: string;
 	engine: string;
+	promptId?: string;
 	promptText: string;
 	text: string;
 	searched: boolean;
@@ -56,3 +57,10 @@ export type AuditView = {
 };
 export type FindingView = { checkId: string; severity: "high" | "medium" | "low"; url: string; title: string; evidence: string; fix: string };
 export type ArtefactsView = { robotsTxt?: string; llmsTxt?: string; organizationJsonLd?: string };
+
+export type OpportunitiesView = {
+	runId: string | null;
+	missed: { question: string; engines: string[]; named: string[] }[];
+	sites: { domain: string; citations: number; questions: number }[];
+	fixes: { title: string; severity: string; pages: number }[];
+};

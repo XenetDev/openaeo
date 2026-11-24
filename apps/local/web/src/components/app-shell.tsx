@@ -1601,7 +1601,7 @@ export function SectionHead({ title, count, left, right }: { title: string; coun
 }
 
 /** The library's Empty State. `bare`: without the frame – the page's only content, e.g. inside .ui-as-center */
-export function EmptyState({ title, text, action, icon = File02Icon, bare }: { title: string; text: string; action?: ReactNode; icon?: IconSvgElement; tall?: boolean; bare?: boolean }) {
+export function EmptyState({ title, text, action, icon = File02Icon, bare }: { title: string; text: string; action?: ReactNode; icon?: IconSvgElement | null; tall?: boolean; bare?: boolean }) {
   return <EmptyStateItem className="ui-as-empty" title={title} text={text} action={action} icon={icon} bare={bare} />;
 }
 

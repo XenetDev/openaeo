@@ -1302,7 +1302,8 @@ body,
 	opacity: 0.6;
 }
 
-.oa-step > .ui-crdc__head > .ui-crdc__action {
+.oa-step > .ui-crdc__head > .ui-crdc__action,
+.oa-flagged-card > .ui-crdc__head > .ui-crdc__action {
 	gap: 8px;
 }
 

@@ -77,11 +77,12 @@ test("an existing database gains the sentiment column", async () => {
 		const path = join(dir, "openaeo.db");
 		openDb(path).close();
 		const raw = new Database(path);
-		raw.exec("ALTER TABLE answer DROP COLUMN sentiment; PRAGMA user_version = 1");
+		raw.exec("ALTER TABLE answer DROP COLUMN sentiment; ALTER TABLE run DROP COLUMN owner_pid; PRAGMA user_version = 1");
 		raw.close();
 		const db = openDb(path);
 		const columns = db.query<{ name: string }, []>("PRAGMA table_info(answer)").all().map((c) => c.name);
 		expect(columns).toContain("sentiment");
+		expect(db.query<{ name: string }, []>("PRAGMA table_info(run)").all().map((c) => c.name)).toContain("owner_pid");
 		db.close();
 	} finally {
 		rmSync(dir, { recursive: true, force: true });

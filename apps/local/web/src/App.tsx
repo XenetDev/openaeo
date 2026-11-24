@@ -86,7 +86,18 @@ export function App() {
 	const running = data?.report.run?.status === "running";
 	useEffect(() => {
 		if (!running || !currentId) return;
-		const timer = window.setInterval(() => void loadProject(currentId).catch(() => {}), 2000);
+		let misses = 0;
+		const timer = window.setInterval(() => {
+			loadProject(currentId).then(
+				() => {
+					misses = 0;
+				},
+				() => {
+					misses += 1;
+					if (misses === 3) setError("OpenAEO stopped responding. Check that it is still running in your terminal, then reload this page.");
+				},
+			);
+		}, 2000);
 		return () => window.clearInterval(timer);
 	}, [running, currentId, loadProject]);
 
@@ -148,7 +159,6 @@ export function App() {
 		/>
 	) : page === "prompts" ? (
 		<>
-			{error ? <p className="oa-alert oa-floating">{error}</p> : null}
 			<PromptsPage
 				prompts={data.prompts}
 				onAdd={(texts) => act(() => api.addPrompts(id, texts))}
@@ -170,7 +180,6 @@ export function App() {
 		<CompetitorsPage key={data.competitors.map((c) => c.name).join("|")} report={data.report} competitors={data.competitors} onSave={(next) => act(() => api.saveCompetitors(id, next))} />
 	) : (
 		<>
-			{error ? <p className="oa-alert oa-floating">{error}</p> : null}
 			<SettingsPage
 				key={`${id}:${JSON.stringify(settings)}`}
 				engines={engines}
@@ -207,6 +216,11 @@ export function App() {
 
 	return (
 		<AppShell projects={projects} project={project} page={page} onNavigate={navigate} onSelectProject={select} onNewProject={() => setCreating(true)}>
+			{error && data && page !== "overview" ? (
+				<p className="oa-alert oa-floating" role="alert">
+					{error}
+				</p>
+			) : null}
 			{body}
 		</AppShell>
 	);

@@ -11,6 +11,7 @@ export type Report = {
 	competitors: { name: string; mentionRate: number; averageRank: number | null; isBrand: boolean }[];
 	topDomains: { domain: string; citations: number; isBrand: boolean }[];
 	trend: { runId: string; startedAt: number; visibility: number; mentionRate: number }[];
+	problems: { engine: EngineId; message: string; count: number }[];
 };
 
 const ok = (answers: StoredAnswer[]) => answers.filter((a) => a.errorCode === null);
@@ -79,5 +80,14 @@ export function buildReport(store: Store, projectId: string, opts: { runId?: str
 			return { runId: r.id, startedAt: r.startedAt, visibility: summary.visibility, mentionRate: summary.metrics.mentionRate };
 		});
 
-	return { projectId, run: answers.length || run ? run : null, overall: summarise(answers), engines, competitors, topDomains, trend };
+	const problems: Report["problems"] = [];
+	for (const answer of answers) {
+		if (answer.errorCode === null) continue;
+		const message = answer.errorMessage ?? answer.errorCode;
+		const existing = problems.find((p) => p.engine === answer.engine && p.message === message);
+		if (existing) existing.count += 1;
+		else problems.push({ engine: answer.engine, message, count: 1 });
+	}
+
+	return { projectId, run: answers.length || run ? run : null, overall: summarise(answers), engines, competitors, topDomains, trend, problems };
 }

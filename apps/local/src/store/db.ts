@@ -68,11 +68,13 @@ const MIGRATIONS = [
 	);
 	`,
 	"ALTER TABLE answer ADD COLUMN sentiment TEXT;",
+	"ALTER TABLE run ADD COLUMN owner_pid INTEGER;",
 ];
 
 export function openDb(path: string): Database {
 	const db = new Database(path, { create: true });
 	db.exec("PRAGMA foreign_keys = ON");
+	db.exec("PRAGMA busy_timeout = 5000");
 	if (path !== ":memory:") {
 		chmodSync(path, 0o600);
 		db.exec("PRAGMA journal_mode = WAL");

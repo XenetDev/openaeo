@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { lines } from "./format";
+import { byLine, lines } from "./format";
 import type { EngineInfo, NewProject } from "./types";
 
 export type OnboardingProps = { engines: EngineInfo[]; onCreate: (project: NewProject) => void; busy: boolean; error: string | null; onCancel?: () => void };
@@ -37,11 +37,8 @@ export function Onboarding({ engines, onCreate, busy, error, onCancel }: Onboard
 						name: name.trim(),
 						aliases: [],
 						domains: lines(site),
-						competitors: lines(competitors).map((c) => ({ name: c, aliases: [], domains: [] })),
-						prompts: prompts
-							.split("\n")
-							.map((p) => p.trim())
-							.filter(Boolean),
+						competitors: byLine(competitors).map((c) => ({ name: c, aliases: [], domains: [] })),
+						prompts: byLine(prompts),
 					});
 				}}
 			>
@@ -56,7 +53,7 @@ export function Onboarding({ engines, onCreate, busy, error, onCancel }: Onboard
 				<label className="oa-label" htmlFor="oa-o-comp">
 					Competitors, one per line
 				</label>
-				<textarea id="oa-o-comp" className="oa-input" rows={3} value={competitors} onChange={(e) => setCompetitors(e.target.value)} />
+				<textarea id="oa-o-comp" className="oa-input" rows={3} value={competitors} onChange={(e) => setCompetitors(e.target.value)} placeholder={"Competitor One\nCompetitor Two"} />
 				<label className="oa-label" htmlFor="oa-o-prompts">
 					Questions buyers ask, one per line
 				</label>

@@ -68,6 +68,15 @@ type AnswerRow = {
 	sentiment: StoredAnswer["sentiment"];
 };
 
+function pidAlive(pid: number): boolean {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		return typeof error === "object" && error !== null && "code" in error && error.code === "EPERM";
+	}
+}
+
 const clean = (values: string[]) => [...new Set(values.map((v) => v.trim()).filter(Boolean))];
 const list = (json: string): string[] => JSON.parse(json) as string[];
 
@@ -207,7 +216,7 @@ export function createStore(db: Database) {
 		},
 		create(projectId: string, total: number): Run {
 			const id = crypto.randomUUID();
-			db.query("INSERT INTO run (id, project_id, status, started_at, total) VALUES (?, ?, 'running', ?, ?)").run(id, projectId, Date.now(), total);
+			db.query("INSERT INTO run (id, project_id, status, started_at, total, owner_pid) VALUES (?, ?, 'running', ?, ?, ?)").run(id, projectId, Date.now(), total, process.pid);
 			return runs.get(id) as Run;
 		},
 		list: (projectId: string, limit: number): Run[] =>
@@ -224,7 +233,15 @@ export function createStore(db: Database) {
 			db.query("UPDATE run SET status = ?, finished_at = ? WHERE id = ?").run(status, Date.now(), id);
 			return runs.get(id);
 		},
-		interruptStale: (): number => db.query("UPDATE run SET status = 'interrupted', finished_at = ? WHERE status = 'running'").run(Date.now()).changes,
+		interruptStale(isAlive: (pid: number) => boolean = pidAlive): number {
+			const running = db.query<{ id: string; owner_pid: number | null }, []>("SELECT id, owner_pid FROM run WHERE status = 'running'").all();
+			let count = 0;
+			for (const row of running) {
+				if (row.owner_pid !== null && isAlive(row.owner_pid)) continue;
+				count += db.query("UPDATE run SET status = 'interrupted', finished_at = ? WHERE id = ? AND status = 'running'").run(Date.now(), row.id).changes;
+			}
+			return count;
+		},
 	};
 
 	const answers = {

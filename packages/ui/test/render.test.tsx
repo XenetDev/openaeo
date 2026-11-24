@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AnswersPage, AppShell, CompetitorsPage, Onboarding, Overview, PromptsPage, SettingsPage, SourcesPage } from "../src/index";
+import { byLine } from "../src/format";
 import { answers, emptyReport, engines, project, prompts, report } from "./sample";
 
 const html = (element: ReactElement) => renderToStaticMarkup(element);
@@ -137,4 +138,29 @@ test("suggested questions fill the box for review, with a note when they are gen
 	expect(out).toMatch(/generic starting points/i);
 	expect(out).toContain("Suggest questions");
 	expect(out).toContain("Add 2 questions");
+});
+
+test("a run where every answer failed says why instead of 'no runs yet'", () => {
+	const failed = {
+		...emptyReport,
+		run: { id: "r", status: "done" as const, startedAt: 1, finishedAt: 2, total: 2, completed: 2 },
+		problems: [{ engine: "claude-cli", message: "Claude Code is not logged in. Run `claude` and use /login, then try again.", count: 2 }],
+	};
+	const out = html(<Overview project={project} report={failed} engines={engines} onRun={noop} onCancel={noop} onNavigate={noop} />);
+	expect(out).not.toMatch(/No runs yet/);
+	expect(out).toMatch(/got no answers/i);
+	expect(out).toContain("Claude Code is not logged in.");
+	expect(out).toContain("Claude");
+});
+
+test("a partly failed run still shows results and lists what failed", () => {
+	const partial = { ...report, problems: [{ engine: "codex-cli", message: "Update the Codex CLI and try again.", count: 1 }] };
+	const out = html(<Overview project={project} report={partial} engines={engines} onRun={noop} onCancel={noop} onNavigate={noop} />);
+	expect(out).toContain("77.3");
+	expect(out).toContain("Update the Codex CLI and try again.");
+});
+
+test("competitor names keep their commas", () => {
+	expect(html(<CompetitorsPage report={report} competitors={[{ name: "Acme, Inc.", aliases: [], domains: [] }]} onSave={noop} />)).toContain("Acme, Inc.");
+	expect(byLine("Acme, Inc.\n  HubSpot \n\n")).toEqual(["Acme, Inc.", "HubSpot"]);
 });

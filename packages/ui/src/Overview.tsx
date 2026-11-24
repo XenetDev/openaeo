@@ -20,6 +20,18 @@ export function Overview({ project, report, engines, onRun, onCancel, onNavigate
 	const blocked = engines.filter((e) => !e.available && e.id !== "openai");
 	const hasData = overall.metrics.answers > 0;
 	const m = overall.metrics;
+	const problems = report.problems ?? [];
+	const problemList =
+		problems.length > 0 ? (
+			<ul>
+				{problems.map((p) => (
+					<li key={`${p.engine}:${p.message}`}>
+						<strong>{engineLabel(engines, p.engine)}:</strong> {p.message}
+						{p.count > 1 ? ` (${p.count} questions)` : ""}
+					</li>
+				))}
+			</ul>
+		) : null;
 
 	return (
 		<div className="oa-page">
@@ -65,7 +77,12 @@ export function Overview({ project, report, engines, onRun, onCancel, onNavigate
 
 			{running && run ? <progress className="oa-bar-progress" max={run.total} value={run.completed} /> : null}
 
-			{!hasData ? (
+			{!hasData && problems.length > 0 && !running ? (
+				<div className="oa-alert" role="alert">
+					<strong>The last run got no answers.</strong> Fix the problem below, then press Run now.
+					{problemList}
+				</div>
+			) : !hasData ? (
 				<section className="oa-empty">
 					<h2>No runs yet</h2>
 					<p>
@@ -130,6 +147,13 @@ export function Overview({ project, report, engines, onRun, onCancel, onNavigate
 							))}
 						</div>
 					</section>
+
+					{problemList ? (
+						<div className="oa-alert">
+							<strong>Some questions could not be answered in this run.</strong>
+							{problemList}
+						</div>
+					) : null}
 
 					<section className="oa-section">
 						<h2 className="oa-h2">Visibility over time</h2>

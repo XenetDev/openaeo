@@ -114,10 +114,10 @@ test("stale running runs are marked interrupted", () => {
 	const a = store.runs.create(p.id, 1);
 	store.runs.finish(a.id, "done");
 	const b = store.runs.create(p.id, 1);
-	expect(store.runs.interruptStale()).toBe(1);
+	expect(store.runs.interruptStale(() => false)).toBe(1);
 	expect(store.runs.get(b.id)?.status).toBe("interrupted");
 	expect(store.runs.get(a.id)?.status).toBe("done");
-	expect(store.runs.interruptStale()).toBe(0);
+	expect(store.runs.interruptStale(() => false)).toBe(0);
 });
 
 test("an answer is saved with its mentions, citations and sources", () => {
@@ -193,7 +193,7 @@ test("a file database keeps its data when reopened", () => {
 		const second = openDb(path);
 		expect(createStore(second).projects.get(p.id)?.name).toBe("Kept");
 		expect(statSync(path).mode & 0o777).toBe(0o600);
-		expect(second.query("PRAGMA user_version").get()).toEqual({ user_version: 2 });
+		expect(second.query("PRAGMA user_version").get()).toEqual({ user_version: 3 });
 		second.close();
 	} finally {
 		rmSync(dir, { recursive: true, force: true });

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { lines, percent, position } from "./format";
+import { byLine, percent, position } from "./format";
 import type { EntityView, ReportView } from "./types";
 
 export type CompetitorsPageProps = { report: ReportView; competitors: EntityView[]; onSave: (competitors: EntityView[]) => void };
@@ -34,7 +34,7 @@ export function CompetitorsPage({ report, competitors, onSave }: CompetitorsPage
 				onSubmit={(e) => {
 					e.preventDefault();
 					const known = new Map(competitors.map((c) => [c.name.toLowerCase(), c]));
-					onSave(lines(draft).map((name) => known.get(name.toLowerCase()) ?? { name, aliases: [], domains: [] }));
+					onSave(byLine(draft).map((name) => known.get(name.toLowerCase()) ?? { name, aliases: [], domains: [] }));
 				}}
 			>
 				<label className="oa-label" htmlFor="oa-competitors">

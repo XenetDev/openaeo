@@ -15,6 +15,7 @@ export type ReportView = {
 	competitors: { name: string; mentionRate: number; averageRank: number | null; isBrand: boolean }[];
 	topDomains: { domain: string; citations: number; isBrand: boolean }[];
 	trend: { runId: string; startedAt: number; visibility: number; mentionRate: number }[];
+	problems?: { engine: string; message: string; count: number }[];
 };
 
 export type AnswerView = {

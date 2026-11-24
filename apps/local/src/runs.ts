@@ -33,7 +33,9 @@ export function createRunService(deps: RunServiceDeps) {
 		}
 	}
 
-	async function execute(runId: string, projectId: string, providers: Provider[], controller: AbortController): Promise<Run> {
+	async function execute(created: Run, providers: Provider[], controller: AbortController): Promise<Run> {
+		const runId = created.id;
+		const projectId = created.projectId;
 		let failed = false;
 		try {
 			const project = store.projects.get(projectId);
@@ -64,11 +66,13 @@ export function createRunService(deps: RunServiceDeps) {
 			failed = true;
 			controller.abort();
 		}
-		const finished = store.runs.finish(runId, failed || controller.signal.aborted ? "interrupted" : "done");
+		let finished: Run | null = null;
+		try {
+			finished = store.runs.finish(runId, failed || controller.signal.aborted ? "interrupted" : "done");
+		} catch {}
 		active.delete(runId);
 		notify(runId);
-		if (!finished) throw new Error("Run was removed.");
-		return finished;
+		return finished ?? { ...created, status: "interrupted", finishedAt: Date.now() };
 	}
 
 	return {
@@ -83,7 +87,7 @@ export function createRunService(deps: RunServiceDeps) {
 			}
 			const created = store.runs.create(projectId, prompts.length * providers.length);
 			const controller = new AbortController();
-			active.set(created.id, { controller, done: execute(created.id, projectId, providers, controller) });
+			active.set(created.id, { controller, done: execute(created, providers, controller) });
 			return created;
 		},
 		cancel(runId: string): void {

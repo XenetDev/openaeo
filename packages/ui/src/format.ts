@@ -21,3 +21,9 @@ export const lines = (value: string) =>
 		.filter(Boolean);
 
 export const isHttp = (url: string) => /^https?:\/\//i.test(url);
+
+export const byLine = (value: string) =>
+	value
+		.split("\n")
+		.map((v) => v.trim())
+		.filter(Boolean);

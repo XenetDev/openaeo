@@ -26,7 +26,10 @@ const PURPOSE: Record<string, string> = {
 
 const STALE_MS = 18 * 30 * 24 * 60 * 60 * 1000;
 const ARTICLE_TYPES = new Set(["Article", "BlogPosting", "NewsArticle", "TechArticle", "HowTo"]);
-const ARTICLE_PATH = /\/(blog|articles?|guides?|news|posts?|learn|resources|wiki|docs|insights)(\/|$)/i;
+const ARTICLE_PATH = /\/(blog|blogs|articles?|guides?|news|posts?)\/[^/]+/i;
+const NEWS_PATH = /\/(news|press|changelog|releases?|announcements?)(\/|$)/i;
+const ORG_TYPES = new Set(["Organization", "Corporation", "LocalBusiness", "Restaurant", "Store", "NGO", "OnlineBusiness", "OnlineStore", "ProfessionalService", "Brand"]);
+const isOrgType = (t: string) => ORG_TYPES.has(t) || /(Organization|Business|Store|Service|Restaurant)$/.test(t);
 const QUESTION = /\?\s*$|^(what|how|why|which|who|when|where|can|does|do|is|are|should|will)\b/i;
 
 export const quote = (text: string, max = 200) => {
@@ -38,20 +41,43 @@ const wordCount = (text: string) => (text.trim() ? text.trim().split(/\s+/).leng
 const looksLikeHtml = (f: Fetched) => /html/i.test(f.contentType) || /^\s*<(!doctype|html)/i.test(f.text);
 const present = (f: Fetched | null): boolean => f !== null && f.status >= 200 && f.status < 300 && !looksLikeHtml(f);
 
-export function checkSite(input: { origin: string; robots: Fetched | null; llms: Fetched | null }): Finding[] {
+export function checkSite(input: { origin: string; robots: Fetched | null; llms: Fetched | null; paths?: string[] }): Finding[] {
 	const findings: Finding[] = [];
 	const robotsUrl = `${input.origin}/robots.txt`;
-	if (input.robots && present(input.robots)) {
+	if (input.robots && input.robots.status >= 500) {
+		findings.push({
+			checkId: "robots-error",
+			severity: "high",
+			url: robotsUrl,
+			title: "robots.txt returns a server error",
+			evidence: `The address returned status ${input.robots.status}. Crawlers treat a failing robots.txt as \"do not crawl\".`,
+			fix: "Make /robots.txt return a valid file with status 200, or a plain 404 if you do not use one.",
+		});
+	} else if (input.robots && present(input.robots)) {
 		const robots = parseRobots(input.robots.text);
 		for (const crawler of AI_CRAWLERS) {
-			if (robotsAllows(robots, crawler.id, "/")) continue;
+			const paths = input.paths ?? [];
+			const blockedPaths = paths.filter((path) => !robotsAllows(robots, crawler.id, path));
+			if (robotsAllows(robots, crawler.id, "/")) {
+				if (blockedPaths.length > 0) {
+					findings.push({
+						checkId: "crawler-partly-blocked",
+						severity: "medium",
+						url: robotsUrl,
+						title: `robots.txt blocks ${crawler.id} (${crawler.operator}) from ${blockedPaths.length} of ${paths.length} pages checked`,
+						evidence: `${crawler.id} ${PURPOSE[crawler.purpose]}. Rules in robots.txt keep it out of part of the site.`,
+						fix: `Check the Disallow rules that apply to ${crawler.id}. If you want it to read those pages, remove or narrow them.`,
+					});
+				}
+				continue;
+			}
 			findings.push({
 				checkId: "crawler-blocked",
 				severity: crawler.purpose === "training" ? "medium" : "high",
 				url: robotsUrl,
 				title: `robots.txt blocks ${crawler.id} (${crawler.operator})`,
 				evidence: `${crawler.id} ${PURPOSE[crawler.purpose]}. Your robots.txt does not let it read the site.`,
-				fix: `Add this group to robots.txt, above any "User-agent: *" group:\nUser-agent: ${crawler.id}\nAllow: /`,
+				fix: `If you want ${crawler.id} to read the site, add this group to robots.txt, above any "User-agent: *" group:\nUser-agent: ${crawler.id}\nAllow: /\nIf it was blocked on purpose, leave it.`,
 			});
 		}
 	} else {
@@ -82,7 +108,7 @@ export function checkPage(page: PageModel, now: number = Date.now()): Finding[] 
 	const add = (checkId: string, severity: Severity, title: string, evidence: string, fix: string) =>
 		findings.push({ checkId, severity, url: page.url, title, evidence: quote(evidence), fix });
 
-	if (page.words < 50 && page.scripts > 0 && !page.h1) {
+	if (!page.h1 && page.scripts > 0 && page.forms === 0 && (page.words < 50 || (page.words < 200 && page.paragraphs === 0))) {
 		add(
 			"js-only-content",
 			"high",
@@ -109,7 +135,7 @@ export function checkPage(page: PageModel, now: number = Date.now()): Finding[] 
 		add("no-structured-data", "medium", "The page has no structured data", "No JSON-LD was found.", "Add JSON-LD describing the page: Article for articles, Product for products, FAQPage for question-and-answer content.");
 	}
 
-	if (page.isHome && page.hasSchema && !page.schemaTypes.some((t) => t === "Organization" || t === "LocalBusiness" || t === "Corporation")) {
+	if (page.isHome && page.hasSchema && !page.schemaTypes.some(isOrgType)) {
 		add("no-organization-schema", "medium", "The home page does not describe the organisation", `Schema types found: ${page.schemaTypes.join(", ") || "none"}.`, "Add Organization JSON-LD to the home page with name, url, logo and sameAs links to official profiles.");
 	} else if (page.isHome && !page.hasSchema && page.schemaErrors === 0) {
 		add("no-organization-schema", "medium", "The home page does not describe the organisation", "No Organization structured data was found.", "Add Organization JSON-LD to the home page with name, url, logo and sameAs links to official profiles.");
@@ -126,7 +152,7 @@ export function checkPage(page: PageModel, now: number = Date.now()): Finding[] 
 	} else {
 		const first = page.headings.find((h) => h.level === 1)?.following ?? "";
 		const size = wordCount(first);
-		if (!page.isHome && (article || QUESTION.test(page.h1)) && (size < 20 || size > 80)) {
+		if (!page.isHome && (article || /\?\s*$/.test(page.h1)) && (size < 20 || size > 80)) {
 			add(
 				"no-direct-answer",
 				"medium",
@@ -139,25 +165,32 @@ export function checkPage(page: PageModel, now: number = Date.now()): Finding[] 
 
 	const sub = page.headings.filter((h) => h.level === 2 || h.level === 3);
 	const questions = sub.filter((h) => QUESTION.test(h.text));
+	const explicit = sub.filter((h) => /\?\s*$/.test(h.text));
 	const long = page.words > 300;
-	if (long && !page.isHome && sub.length > 0 && questions.length === 0) {
+	if (long && article && sub.length > 0 && questions.length === 0) {
 		add("no-question-headings", "low", "No headings are phrased as questions", `Headings include: ${sub.slice(0, 3).map((h) => `"${h.text}"`).join(", ")}`, "Rephrase some H2/H3 headings as the questions people ask, each followed by a direct answer.");
 	}
-	if (questions.length >= 2 && !page.schemaTypes.includes("FAQPage") && page.schemaErrors === 0) {
-		add("faq-without-schema", "medium", "Question-and-answer content has no FAQPage markup", `${questions.length} question headings, for example "${questions[0]?.text ?? ""}"`, "Add FAQPage JSON-LD whose questions and answers match the visible text.");
+	if (explicit.length >= 2 && !page.schemaTypes.includes("FAQPage") && page.schemaErrors === 0) {
+		add("faq-without-schema", "medium", "Question-and-answer content has no FAQPage markup", `${explicit.length} question headings, for example "${explicit[0]?.text ?? ""}"`, "Add FAQPage JSON-LD whose questions and answers match the visible text.");
 	}
 
 	if (long && article && !page.author) {
 		add("no-author", "low", "No author is named", "No author was found in the structured data, meta tags or byline.", "Name the author with a visible byline and in the Article JSON-LD, with credentials where relevant.");
 	}
 
-	const dated = page.dateModified ?? page.datePublished;
-	if (long && article && !dated) {
+	const declared = page.dateModified ?? page.datePublished;
+	if (long && article && !declared && !page.hasTimeElement) {
 		add("no-date", "low", "No published or updated date", "No date was found in the structured data, meta tags or a <time> element.", "Show a visible \"last updated\" date and set dateModified in the Article JSON-LD.");
-	} else if (dated) {
-		const time = Date.parse(dated);
+	} else if (declared && article && !NEWS_PATH.test(path)) {
+		const time = Date.parse(declared);
 		if (Number.isFinite(time) && now - time > STALE_MS) {
-			add("stale-content", "low", "The page has not been updated in over 18 months", `Last dated ${dated.slice(0, 10)}.`, "Review the page, update anything out of date, and change the visible date and dateModified.");
+			add(
+				"stale-content",
+				"low",
+				"The page has not been updated in over 18 months",
+				`Last dated ${declared.slice(0, 10)}.`,
+				"Review the page and bring anything out of date up to date, then update the visible date and dateModified to match. Do not change the date without changing the content.",
+			);
 		}
 	}
 

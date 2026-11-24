@@ -12,6 +12,9 @@ export type PageModel = {
 	headings: Heading[];
 	words: number;
 	scripts: number;
+	forms: number;
+	paragraphs: number;
+	hasTimeElement: boolean;
 	schemaTypes: string[];
 	schemaErrors: number;
 	hasSchema: boolean;
@@ -43,7 +46,15 @@ function nameOf(value: unknown): string | null {
 	return null;
 }
 
-const attr = (root: HTMLElement, selector: string, name: string) => clean(root.querySelector(selector)?.getAttribute(name) ?? "");
+function metaMap(root: HTMLElement): Map<string, string> {
+	const map = new Map<string, string>();
+	for (const meta of root.querySelectorAll("meta")) {
+		const key = (meta.getAttribute("name") ?? meta.getAttribute("property") ?? "").trim().toLowerCase();
+		const content = clean(meta.getAttribute("content") ?? "");
+		if (key && content && !map.has(key)) map.set(key, content);
+	}
+	return map;
+}
 
 export function parsePage(url: string, html: string): PageModel {
 	let origin = "";
@@ -64,7 +75,8 @@ export function parsePage(url: string, html: string): PageModel {
 	let author: string | null = null;
 	let datePublished: string | null = null;
 	let dateModified: string | null = null;
-	for (const script of root.querySelectorAll('script[type="application/ld+json"]')) {
+	for (const script of root.querySelectorAll("script")) {
+		if (!(script.getAttribute("type") ?? "").trim().toLowerCase().startsWith("application/ld+json")) continue;
 		const raw = script.text.trim();
 		if (!raw) continue;
 		try {
@@ -82,21 +94,34 @@ export function parsePage(url: string, html: string): PageModel {
 		}
 	}
 
+	for (const node of root.querySelectorAll("[itemtype]").slice(0, 200)) {
+		const type = (node.getAttribute("itemtype") ?? "").trim().split(/[/#]/).pop();
+		if (type) {
+			hasSchema = true;
+			schemaTypes.add(type);
+		}
+	}
+
 	const scripts = root.querySelectorAll("script").length;
+	const forms = root.querySelectorAll("form").length;
+	const metas = metaMap(root);
 	const title = clean(root.querySelector("title")?.text ?? "");
-	const description = attr(root, 'meta[name="description"]', "content") || attr(root, 'meta[property="og:description"]', "content");
-	author ??= attr(root, 'meta[name="author"]', "content") || clean(root.querySelector('[rel="author"]')?.text ?? "") || null;
-	datePublished ??= attr(root, 'meta[property="article:published_time"]', "content") || null;
-	dateModified ??= attr(root, 'meta[property="article:modified_time"]', "content") || attr(root, "time[datetime]", "datetime") || null;
+	const description = metas.get("description") ?? metas.get("og:description") ?? "";
+	author ??= metas.get("author") ?? (clean(root.querySelector('[rel="author"]')?.text ?? "") || null);
+	datePublished ??= metas.get("article:published_time") ?? null;
+	dateModified ??= metas.get("article:modified_time") ?? null;
+	const hasTimeElement = root.querySelector("time[datetime]") !== null;
 
 	for (const node of root.querySelectorAll("script, style, noscript, template, svg")) node.remove();
 	const body = root.querySelector("body") ?? root;
 
 	const headings: Heading[] = [];
+	let paragraphs = 0;
 	for (const node of body.querySelectorAll("h1, h2, h3, h4, h5, h6, p")) {
 		const tag = node.tagName?.toLowerCase() ?? "";
 		const text = clean(node.text);
 		if (tag === "p") {
+			if (countWords(text) >= 10) paragraphs += 1;
 			const last = headings.at(-1);
 			if (last && !last.following && text) last.following = text;
 		} else if (text) {
@@ -129,6 +154,9 @@ export function parsePage(url: string, html: string): PageModel {
 		headings,
 		words: countWords(body.text),
 		scripts,
+		forms,
+		paragraphs,
+		hasTimeElement,
 		schemaTypes: [...schemaTypes],
 		schemaErrors,
 		hasSchema,

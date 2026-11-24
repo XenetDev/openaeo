@@ -49,29 +49,47 @@ function parseV4(ip: string): number[] | null {
 	return numbers.every((n) => Number.isInteger(n) && n >= 0 && n <= 255) ? numbers : null;
 }
 
+function parseV6(value: string): number[] | null {
+	let text = value;
+	const lastColon = text.lastIndexOf(":");
+	const tail = text.slice(lastColon + 1);
+	if (tail.includes(".")) {
+		const v4 = parseV4(tail);
+		if (!v4) return null;
+		const [a, b, c, d] = v4 as [number, number, number, number];
+		text = `${text.slice(0, lastColon + 1)}${((a << 8) | b).toString(16)}:${((c << 8) | d).toString(16)}`;
+	}
+	const halves = text.split("::");
+	if (halves.length > 2) return null;
+	const toGroups = (part: string) => (part === "" ? [] : part.split(":"));
+	const head = toGroups(halves[0] ?? "");
+	const rest = halves.length === 2 ? toGroups(halves[1] ?? "") : [];
+	const missing = 8 - head.length - rest.length;
+	if (halves.length === 1 ? missing !== 0 : missing < 1) return null;
+	const groups = [...head, ...Array.from({ length: halves.length === 2 ? missing : 0 }, () => "0"), ...rest];
+	if (groups.length !== 8) return null;
+	const numbers = groups.map((g) => (/^[0-9a-f]{1,4}$/.test(g) ? Number.parseInt(g, 16) : Number.NaN));
+	return numbers.every((n) => Number.isInteger(n)) ? numbers : null;
+}
+
+const embedded = (high: number, low: number) => v4Private([high >> 8, high & 255, low >> 8, low & 255]);
+
 export function isPrivateAddress(ip: string): boolean {
 	const value = ip.trim().toLowerCase().replace(/^\[|\]$/g, "").replace(/%.*$/, "");
 	const v4 = parseV4(value);
 	if (v4) return v4Private(v4);
-	if (!value.includes(":") || !/^[0-9a-f:.]+$/.test(value)) return true;
-	const mapped = /^::ffff:(.+)$/.exec(value);
-	if (mapped?.[1]) {
-		const tail = mapped[1];
-		const dotted = parseV4(tail);
-		if (dotted) return v4Private(dotted);
-		const hex = /^([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(tail);
-		if (hex?.[1] && hex[2]) {
-			const high = Number.parseInt(hex[1], 16);
-			const low = Number.parseInt(hex[2], 16);
-			return v4Private([high >> 8, high & 255, low >> 8, low & 255]);
-		}
-		return true;
-	}
-	if (value === "::" || value === "::1") return true;
-	const first = Number.parseInt(value.split(":")[0] || "0", 16);
-	if ((first & 0xfe00) === 0xfc00) return true;
-	if ((first & 0xffc0) === 0xfe80) return true;
-	if ((first & 0xff00) === 0xff00) return true;
+	const g = parseV6(value);
+	if (!g) return true;
+	const [g0, g1, g2, g3, g4, g5, g6, g7] = g as [number, number, number, number, number, number, number, number];
+	const leadingZeros = g0 === 0 && g1 === 0 && g2 === 0 && g3 === 0 && g4 === 0;
+	if (leadingZeros && (g5 === 0 || g5 === 0xffff)) return g5 === 0 ? true : embedded(g6, g7);
+	if (g0 === 0x64 && g1 === 0xff9b && g2 === 0 && g3 === 0 && g4 === 0 && g5 === 0) return embedded(g6, g7);
+	if (g0 === 0x2002) return embedded(g1, g2);
+	if ((g0 & 0xfe00) === 0xfc00) return true;
+	if ((g0 & 0xffc0) === 0xfe80) return true;
+	if ((g0 & 0xffc0) === 0xfec0) return true;
+	if ((g0 & 0xff00) === 0xff00) return true;
+	if (g0 === 0x2001 && g1 === 0x0db8) return true;
 	return false;
 }
 
@@ -89,12 +107,12 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 	const maxRedirects = o.maxRedirects ?? 5;
 	const userAgent = o.userAgent ?? DEFAULT_USER_AGENT;
 
-	async function vet(raw: string, base?: string): Promise<URL> {
+	async function vet(raw: string, allowPrivateHere: boolean, base?: string): Promise<{ url: URL; isPrivate: boolean }> {
 		let url: URL;
 		try {
 			url = base ? new URL(raw, base) : new URL(raw);
 		} catch {
-			throw new AuditFetchError("bad_url", `"${raw.slice(0, 200)}" is not a web address.`);
+			throw new AuditFetchError("bad_url", "That is not a web address.");
 		}
 		if ((url.protocol !== "http:" && url.protocol !== "https:") || !url.hostname) {
 			throw new AuditFetchError("bad_url", "Only http and https addresses can be audited.");
@@ -102,24 +120,27 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 		url.username = "";
 		url.password = "";
 		url.hash = "";
-		if (o.allowPrivate) return url;
-		const host = url.hostname.replace(/^\[|\]$/g, "");
-		const blocked = new AuditFetchError("blocked", `${url.hostname} points to a private or internal address, which OpenAEO will not fetch.`);
-		if (BLOCKED_NAMES.test(host)) throw blocked;
+		const host = url.hostname.replace(/^\[|\]$/g, "").replace(/\.$/, "");
 		const literal = parseV4(host) !== null || host.includes(":");
-		let addresses: string[];
-		if (literal) {
-			addresses = [host];
-		} else {
-			try {
-				addresses = await lookup(host);
-			} catch {
-				throw new AuditFetchError("network", `${host} could not be found.`);
+		let isPrivate = BLOCKED_NAMES.test(host);
+		if (!isPrivate) {
+			let addresses: string[];
+			if (literal) {
+				addresses = [host];
+			} else {
+				try {
+					addresses = await lookup(host);
+				} catch {
+					throw new AuditFetchError("network", "The site's address could not be found.");
+				}
+				if (addresses.length === 0) throw new AuditFetchError("network", "The site's address could not be found.");
 			}
-			if (addresses.length === 0) throw new AuditFetchError("network", `${host} could not be found.`);
+			isPrivate = addresses.some(isPrivateAddress);
 		}
-		if (addresses.some(isPrivateAddress)) throw blocked;
-		return url;
+		if (isPrivate && !allowPrivateHere) {
+			throw new AuditFetchError("blocked", "That address points to a private or internal network, which OpenAEO will not fetch.");
+		}
+		return { url, isPrivate };
 	}
 
 	async function read(response: Response, signal: AbortSignal): Promise<string> {
@@ -158,7 +179,9 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 	return async function get(raw: string): Promise<Fetched> {
 		const signal = AbortSignal.timeout(timeoutMs);
 		const redirects: string[] = [];
-		let url = await vet(raw);
+		const first = await vet(raw, o.allowPrivate === true);
+		const allowPrivateHops = o.allowPrivate === true && first.isPrivate;
+		let url = first.url;
 		for (let hop = 0; ; hop += 1) {
 			let response: Response;
 			try {
@@ -166,17 +189,17 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 					method: "GET",
 					redirect: "manual",
 					signal,
-					headers: { "user-agent": userAgent, accept: "text/html,application/xhtml+xml,text/plain,application/xml;q=0.9,*/*;q=0.5" },
+					headers: { "user-agent": userAgent, "accept-encoding": "identity", accept: "text/html,application/xhtml+xml,text/plain,application/xml;q=0.9,*/*;q=0.5" },
 				});
 			} catch (error) {
 				if (signal.aborted) throw new AuditFetchError("timeout", "The page took too long to load.");
-				throw new AuditFetchError("network", `Could not reach ${url.hostname}: ${error instanceof Error ? error.message : String(error)}`);
+				throw new AuditFetchError("network", "The site could not be reached.");
 			}
 			const location = response.headers.get("location");
 			if (response.status >= 300 && response.status < 400 && location) {
 				await response.body?.cancel().catch(() => {});
 				if (hop >= maxRedirects) throw new AuditFetchError("too_many_redirects", "The page redirected too many times.");
-				url = await vet(location, url.toString());
+				url = (await vet(location, allowPrivateHops, url.toString())).url;
 				redirects.push(url.toString());
 				continue;
 			}
@@ -186,7 +209,7 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 			} catch (error) {
 				if (error instanceof AuditFetchError) throw error;
 				if (signal.aborted) throw new AuditFetchError("timeout", "The page took too long to load.");
-				throw new AuditFetchError("network", `Reading ${url.hostname} failed.`);
+				throw new AuditFetchError("network", "The page could not be read.");
 			}
 			return { url: url.toString(), status: response.status, contentType: response.headers.get("content-type") ?? "", text, redirects };
 		}

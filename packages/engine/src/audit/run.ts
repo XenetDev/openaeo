@@ -23,31 +23,55 @@ export type RunAuditOptions = {
 };
 
 const WEIGHT: Record<Severity, number> = { high: 12, medium: 5, low: 2 };
-const SITE_CHECKS = new Set(["crawler-blocked", "robots-missing", "llms-txt-missing", "site-unreachable"]);
+const SITE_CHECKS = new Set(["crawler-blocked", "crawler-partly-blocked", "robots-error", "robots-missing", "llms-txt-missing", "site-unreachable"]);
+const NOT_A_PAGE = "This address is not a web page.";
+const FETCH_MESSAGES: Record<string, string> = {
+	bad_url: "That is not a web address.",
+	blocked: "That address points to a private or internal network, which OpenAEO will not fetch.",
+	too_large: "The page is larger than OpenAEO reads.",
+	timeout: "The page took too long to load.",
+	too_many_redirects: "The page redirected too many times.",
+	network: "The page could not be reached.",
+};
 const ASSET = /\.(png|jpe?g|gif|svg|webp|ico|css|js|mjs|pdf|zip|gz|mp4|mp3|woff2?|ttf|xml|txt|md|json|rss|atom)$/i;
 
-const messageOf = (error: unknown) => (error instanceof AuditFetchError || error instanceof Error ? error.message : "The page could not be fetched.");
+const messageOf = (error: unknown) => (error instanceof AuditFetchError ? (FETCH_MESSAGES[error.code] ?? "The page could not be fetched.") : "The page could not be fetched.");
 const ok = (f: Fetched) => f.status >= 200 && f.status < 300;
 const isHtml = (f: Fetched) => /html/i.test(f.contentType) || (!f.contentType && /^\s*</.test(f.text));
 const locs = (xml: string) => [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map((m) => (m[1] ?? "").replace(/&amp;/g, "&"));
 
-export function scoreOf(findings: Finding[]): number {
+export function scoreOf(findings: Finding[], pages: AuditPage[] = []): number {
 	if (findings.some((f) => f.checkId === "site-unreachable")) return 0;
-	const perCheck = new Map<string, { total: number; cap: number }>();
-	let penalty = 0;
+	const attempted = pages.filter((p) => p.error !== NOT_A_PAGE);
+	const read = Math.max(1, attempted.filter((p) => !p.error).length);
+	const unread = attempted.filter((p) => p.error).length;
+	let penalty = attempted.length ? (40 * unread) / attempted.length : 0;
+	const perCheck = new Map<string, { urls: Set<string>; weight: number }>();
 	for (const finding of findings) {
 		const weight = WEIGHT[finding.severity];
 		if (SITE_CHECKS.has(finding.checkId)) {
 			penalty += weight;
 			continue;
 		}
-		const entry = perCheck.get(finding.checkId) ?? { total: 0, cap: 0 };
-		entry.total += weight;
-		entry.cap = Math.max(entry.cap, weight * 3);
+		const entry = perCheck.get(finding.checkId) ?? { urls: new Set<string>(), weight: 0 };
+		entry.urls.add(finding.url);
+		entry.weight = Math.max(entry.weight, weight);
 		perCheck.set(finding.checkId, entry);
 	}
-	for (const entry of perCheck.values()) penalty += Math.min(entry.total, entry.cap);
-	return Math.max(0, Math.min(100, 100 - penalty));
+	for (const [checkId, entry] of perCheck) {
+		const share = Math.min(1, entry.urls.size / read);
+		penalty += checkId === "js-only-content" ? 80 * share : entry.weight * 3 * share;
+	}
+	return Math.round(Math.max(0, Math.min(100, 100 - penalty)));
+}
+
+class HomeStatus extends Error {
+	readonly status: number;
+
+	constructor(status: number) {
+		super("status");
+		this.status = status;
+	}
 }
 
 export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
@@ -55,10 +79,10 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 	try {
 		const parsed = new URL(o.url.includes("://") ? o.url : `https://${o.url}`);
 		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("scheme");
-		if (!parsed.hostname.includes(".") && parsed.hostname !== "localhost") throw new Error("host");
+		if (!parsed.hostname.includes(".") && !parsed.hostname.includes(":") && parsed.hostname !== "localhost") throw new Error("host");
 		origin = parsed.origin;
 	} catch {
-		throw new Error(`"${o.url.slice(0, 200)}" is not a web address OpenAEO can audit.`);
+		throw new Error("That is not a web address OpenAEO can audit.");
 	}
 
 	const startedAt = (o.now ?? Date.now)();
@@ -76,9 +100,9 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 	let home: Fetched;
 	try {
 		home = await o.get(homeUrl);
-		if (!ok(home)) throw new Error(`The home page answered with status ${home.status}.`);
+		if (!ok(home)) throw new HomeStatus(home.status);
 	} catch (error) {
-		const reason = messageOf(error);
+		const reason = error instanceof HomeStatus ? `The home page answered with status ${error.status}.` : messageOf(error);
 		const finding: Finding = {
 			checkId: "site-unreachable",
 			severity: "high",
@@ -96,7 +120,6 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 	const landing = home.url || homeUrl;
 
 	const [robots, llms, sitemap] = await Promise.all([tryGet(`${origin}/robots.txt`), tryGet(`${origin}/llms.txt`), tryGet(`${origin}/sitemap.xml`)]);
-	const findings: Finding[] = checkSite({ origin, robots, llms });
 
 	const homePage = { ...parsePage(landing, home.text), isHome: true };
 	let discovered: string[] = [];
@@ -135,6 +158,16 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 	const chosen = candidates.slice(0, maxPages - 1);
 	const skipped = candidates.slice(maxPages - 1);
 
+	const pathOf = (url: string) => {
+		try {
+			const parsed = new URL(url);
+			return `${parsed.pathname}${parsed.search}`;
+		} catch {
+			return "/";
+		}
+	};
+	const findings: Finding[] = checkSite({ origin, robots, llms, paths: [landing, ...chosen].map(pathOf) });
+
 	const pages: (AuditPage | null)[] = [{ url: landing, status: home.status, words: homePage.words }, ...chosen.map(() => null)];
 	const perPage: Finding[][] = [checkPage(homePage, startedAt), ...chosen.map(() => [])];
 
@@ -148,7 +181,7 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 			try {
 				const got = await o.get(url);
 				if (!ok(got)) pages[index + 1] = { url, status: got.status, words: 0, error: `The server answered with status ${got.status}.` };
-				else if (!isHtml(got)) pages[index + 1] = { url, status: got.status, words: 0, error: `This address is not a web page (${got.contentType || "unknown type"}).` };
+				else if (!isHtml(got)) pages[index + 1] = { url, status: got.status, words: 0, error: NOT_A_PAGE };
 				else {
 					const page = parsePage(url, got.text);
 					pages[index + 1] = { url, status: got.status, words: page.words };
@@ -162,5 +195,6 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 	await Promise.all(Array.from({ length: Math.min(concurrency, chosen.length) }, worker));
 
 	findings.push(...perPage.flat());
-	return { origin, startedAt, pages: pages.filter((p): p is AuditPage => p !== null), findings, score: scoreOf(findings), skipped };
+	const done = pages.filter((p): p is AuditPage => p !== null);
+	return { origin, startedAt, pages: done, findings, score: scoreOf(findings, done), skipped };
 }

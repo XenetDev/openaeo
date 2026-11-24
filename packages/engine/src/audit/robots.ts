@@ -1,14 +1,34 @@
-type Rule = { allow: boolean; pattern: string; matcher: RegExp };
+type Rule = { allow: boolean; pattern: string };
 type Group = { agents: string[]; rules: Rule[] };
 export type Robots = { groups: Group[] };
 
-function toMatcher(pattern: string): RegExp {
+function matches(pattern: string, path: string): boolean {
 	const anchored = pattern.endsWith("$");
-	const body = (anchored ? pattern.slice(0, -1) : pattern)
-		.split("*")
-		.map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-		.join(".*");
-	return new RegExp(`^${body}${anchored ? "$" : ""}`);
+	const glob = anchored ? pattern.slice(0, -1) : pattern;
+	let p = 0;
+	let s = 0;
+	let star = -1;
+	let mark = 0;
+	while (s < path.length) {
+		if (p < glob.length && glob[p] === "*") {
+			star = p;
+			mark = s;
+			p += 1;
+		} else if (p < glob.length && glob[p] === path[s]) {
+			p += 1;
+			s += 1;
+		} else if (p === glob.length && !anchored) {
+			return true;
+		} else if (star !== -1) {
+			p = star + 1;
+			mark += 1;
+			s = mark;
+		} else {
+			return false;
+		}
+	}
+	while (p < glob.length && glob[p] === "*") p += 1;
+	return p === glob.length;
 }
 
 export function parseRobots(text: string): Robots {
@@ -31,7 +51,7 @@ export function parseRobots(text: string): Robots {
 		} else if (key === "allow" || key === "disallow") {
 			collectingAgents = false;
 			if (!current || !value) continue;
-			current.rules.push({ allow: key === "allow", pattern: value, matcher: toMatcher(value) });
+			current.rules.push({ allow: key === "allow", pattern: value.slice(0, 500) });
 		}
 	}
 	return { groups };
@@ -43,7 +63,7 @@ export function robotsAllows(robots: Robots, userAgent: string, path: string): b
 	if (groups.length === 0) groups = robots.groups.filter((g) => g.agents.includes("*"));
 	let best: Rule | null = null;
 	for (const rule of groups.flatMap((g) => g.rules)) {
-		if (!rule.matcher.test(path)) continue;
+		if (!matches(rule.pattern, path)) continue;
 		if (!best || rule.pattern.length > best.pattern.length || (rule.pattern.length === best.pattern.length && rule.allow)) best = rule;
 	}
 	return best ? best.allow : true;

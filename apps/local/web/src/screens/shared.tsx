@@ -5,6 +5,7 @@ import { GeminiLogo, GrokLogo, PerplexityLogo } from "@/components/engine-logos"
 import { Avatar } from "@/components/ui/avatar-clean";
 import { ChatGPTLogo, ClaudeLogo } from "@/components/ui/chat-composer-clean";
 import { Select } from "@/components/ui/select-clean";
+import { barColors } from "./palette";
 
 export const percent = (value: number) => `${Math.round((Number.isFinite(value) ? value : 0) * 100)}%`;
 export const engineLabel = (engines: EngineView[], id: string) => engines.find((e) => e.id === id)?.label ?? id;
@@ -56,13 +57,14 @@ export function ShareList({
 	items,
 	empty,
 }: {
-	items: { label: string; value: string; share: number; badge?: ReactNode; quiet?: boolean }[];
+	items: { label: string; value: string; share: number; badge?: ReactNode; own?: boolean; name?: string }[];
 	empty?: ReactNode;
 }) {
 	if (items.length === 0) return <>{empty}</>;
+	const colors = barColors(items.map((item) => ({ name: item.name ?? item.label, own: item.own })));
 	return (
 		<div className="ui-as-rev__products">
-			{items.map((item) => (
+			{items.map((item, index) => (
 				<div key={item.label} className="ui-as-rev__product">
 					<span>
 						<span className="ui-as-rev__product-name" title={item.label}>
@@ -70,7 +72,7 @@ export function ShareList({
 						</span>
 						<b>{item.value}</b>
 					</span>
-					<i data-quiet={item.quiet || undefined} style={{ width: `${Math.min(100, Math.max(0, item.share))}%` }} />
+					<i style={{ width: `${Math.min(100, Math.max(0, item.share))}%`, background: colors[index] }} />
 				</div>
 			))}
 		</div>

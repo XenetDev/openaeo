@@ -66,7 +66,7 @@ export function SetupPreview({
 							<CardContent>
 								<ShareList
 									items={[
-										{ label: name, value: "–", share: 0, badge: <Badge>You</Badge> },
+										{ label: name, value: "–", share: 0, badge: <Badge>You</Badge>, own: true },
 										...competitors.map((c) => ({ label: c, value: "–", share: 0 })),
 									]}
 								/>

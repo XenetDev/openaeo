@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { API_ENGINES, ENGINE_IDS } from "../engines";
+import { MAX_LOCATION } from "../location";
 
 const names = z.array(z.string().max(200)).max(50).default([]);
 
@@ -9,7 +10,11 @@ export const EntitySchema = z.object({
 	domains: names,
 });
 
-export const CreateProjectSchema = EntitySchema.extend({
+const location = z.string().trim().max(MAX_LOCATION).optional();
+
+export const ProjectSchema = EntitySchema.extend({ location });
+
+export const CreateProjectSchema = ProjectSchema.extend({
 	competitors: z.array(EntitySchema).max(50).default([]),
 	prompts: z.array(z.string().max(2000)).max(200).default([]),
 });
@@ -28,6 +33,7 @@ export const AskSchema = z.object({
 export const CompetitorIdeasSchema = z.object({
 	name: z.string().trim().min(1, "name is required").max(200),
 	domain: z.string().trim().max(300).optional(),
+	location,
 });
 export const PlanStepSchema = z.object({ done: z.boolean() });
 export const PatchPromptSchema = z

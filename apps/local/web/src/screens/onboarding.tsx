@@ -7,7 +7,7 @@ import { brandFrom, OnboardingWebsiteScreen } from "@/components/onboarding-webs
 import { Badge } from "@/components/ui/badge-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
-import { EnginesStep } from "./onboarding-steps";
+import { EnginesStep, LocationStep } from "./onboarding-steps";
 import { Page, ShareList } from "./shared";
 
 type Props = {
@@ -16,7 +16,7 @@ type Props = {
 	busy: boolean;
 	onCreate: (project: NewProject) => void;
 	onCancel?: () => void;
-	onFindCompetitors?: (name: string, domain?: string) => Promise<CompetitorIdea[]>;
+	onFindCompetitors?: (name: string, domain?: string, location?: string) => Promise<CompetitorIdea[]>;
 	onSaveKey: (engineId: string, key: string) => Promise<void>;
 };
 
@@ -110,14 +110,15 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 	const [domains, setDomains] = useState<string[]>([]);
 	const [names, setNames] = useState<string[]>([]);
 	const [rivals, setRivals] = useState<string[]>([]);
-	const frame = { product: "OpenAEO", email: "Runs on this computer", steps: 5, logo: <Mark size={20} /> };
+	const [location, setLocation] = useState("");
+	const frame = { product: "OpenAEO", email: "Runs on this computer", steps: 6, logo: <Mark size={20} /> };
 	const brand = names[0] ?? brandFrom(domains[0]);
 	const [found, setFound] = useState<CompetitorIdea[] | null>(null);
 	const [looking, setLooking] = useState(false);
 	const asked = useRef("");
 	const touched = useRef(false);
-	const look = (name: string, domain?: string) => {
-		const key = `${name}|${domain ?? ""}`;
+	const look = (name: string, domain: string | undefined, place: string) => {
+		const key = `${name}|${domain ?? ""}|${place}`;
 		if (!onFindCompetitors || !name || asked.current === key) return;
 		asked.current = key;
 		setFound(null);
@@ -127,7 +128,7 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 			setFound(list);
 			setLooking(false);
 		};
-		onFindCompetitors(name, domain).then(settle, () => settle([]));
+		onFindCompetitors(name, domain, place || undefined).then(settle, () => settle([]));
 	};
 	const prefill = found && found.length > 0 && !touched.current ? found.map((c) => c.name) : [];
 
@@ -181,21 +182,36 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 				)}
 				onContinue={(next) => {
 					setNames(next);
-					touched.current = false;
-					look(next[0] ?? brandFrom(domains[0]), domains[0]);
 					setStep(3);
 				}}
 			/>
 		);
 	}
-	if (step === 4) {
+	if (step === 3) {
+		return (
+			<LocationStep
+				frame={frame}
+				step={3}
+				defaultValue={location}
+				onBack={() => setStep(2)}
+				preview={<SetupPreview brand={brand} domains={domains} competitors={[]} engines={engines} nav={nav} />}
+				onContinue={(next) => {
+					setLocation(next);
+					touched.current = false;
+					look(brand, domains[0], next);
+					setStep(4);
+				}}
+			/>
+		);
+	}
+	if (step === 5) {
 		const sites = new Map((found ?? []).map((c) => [c.name.toLowerCase(), c.domain]));
 		return (
 			<EnginesStep
 				frame={frame}
-				step={4}
+				step={5}
 				engines={engines}
-				onBack={() => setStep(3)}
+				onBack={() => setStep(4)}
 				onSaveKey={onSaveKey}
 				preview={<SetupPreview brand={brand} domains={domains} competitors={rivals} engines={engines} nav={nav} />}
 				onContinue={() =>
@@ -204,6 +220,7 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 						name: brand || "My brand",
 						aliases: names.slice(1),
 						domains,
+						location,
 						competitors: rivals.slice(0, 50).map((name) => ({
 							name,
 							aliases: [],
@@ -219,11 +236,11 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 		<OnboardingBrandScreen
 			{...frame}
 			key={`competitors-${prefill.length}`}
-			step={3}
+			step={4}
 			autoFocus
 			defaultNames={rivals.length ? rivals : prefill}
 			optional
-			onBack={() => setStep(2)}
+			onBack={() => setStep(3)}
 			title="Who do you compete with?"
 			sub={
 				prefill.length
@@ -255,7 +272,7 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 			}}
 			onContinue={(competitors) => {
 				setRivals(competitors);
-				setStep(4);
+				setStep(5);
 			}}
 		/>
 	);

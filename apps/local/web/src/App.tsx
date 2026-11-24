@@ -95,7 +95,7 @@ export function App() {
 					onCancel={project ? () => setCreating(false) : undefined}
 					onFindCompetitors={
 						workspace.engineReady
-							? async (name, domain) => (await api.competitorIdeasFor(name, domain)).competitors
+							? async (name, domain, location) => (await api.competitorIdeasFor(name, domain, location)).competitors
 							: undefined
 					}
 					onCreate={(input) => {

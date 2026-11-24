@@ -1,5 +1,6 @@
 import { match, type Provider, run as runEngine } from "@openaeo/engine";
 import { runBrandCheck } from "./brand-check";
+import { withLocation } from "./location";
 import { type Log, logError } from "./log";
 import { labelSentiment } from "./sentiment";
 import type { Run, Store } from "./store/store";
@@ -40,9 +41,10 @@ export function createRunService(deps: RunServiceDeps) {
 			if (!project) throw new Error("Project was removed.");
 			const competitors = store.competitors.list(projectId);
 			const prompts = store.prompts.list(projectId).filter((p) => p.active);
-			const idByText = new Map(prompts.map((p) => [p.text, p.id]));
+			const asked = prompts.map((p) => ({ id: p.id, text: withLocation(p.text, project.location) }));
+			const idByText = new Map(asked.map((p) => [p.text, p.id]));
 			const items = runEngine({
-				prompts: prompts.map((p) => p.text),
+				prompts: asked.map((p) => p.text),
 				providers,
 				concurrency: deps.concurrency,
 				retries: deps.retries,

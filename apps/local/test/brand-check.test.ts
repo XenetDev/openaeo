@@ -4,7 +4,7 @@ import { buildReport } from "../src/report";
 import { createRunService } from "../src/runs";
 import { fakeProvider, freshStore, recordLog, seed, src } from "./helpers";
 
-const project = { id: "p", name: "Pipedrive", aliases: [], domains: ["pipedrive.com"], createdAt: 0 };
+const project = { id: "p", name: "Pipedrive", aliases: [], domains: ["pipedrive.com"], location: "", createdAt: 0 };
 
 test("the brand question names the brand and its website", () => {
 	expect(brandQuestion(project)).toContain('"Pipedrive"');

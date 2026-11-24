@@ -65,7 +65,7 @@ const GUIDE = [
 	"Sources page: the sites engines cite most; getting mentioned on those is how a brand gets named. Competitors page: add rivals and compare how often each is named.",
 	"Audit page: reads up to 25 pages of a website without AI and lists what stops AI engines reading or quoting it, with a fix for each.",
 	"OpenAEO never edits a website. On the Audit page the user copies a fix brief and pastes it into Claude Code or Codex inside their website's code, or connects the agent once (commands are on the Audit page and in Settings) so it can fetch reports and the brief itself.",
-	`Settings: turn engines on or off, add an API key (${API_ENGINES.map((api) => api.name).join(", ")}), edit the brand's names and websites.`,
+	`Settings: turn engines on or off, add an API key (${API_ENGINES.map((api) => api.name).join(", ")}), edit the brand's names and websites, and set the location its buyers are in (every question is then asked as someone there would).`,
 	"Engines are Claude and ChatGPT (through Codex) on the user's own subscriptions, plus any provider the user has added an API key for. Results are what those tools answer, which can differ from the consumer apps.",
 ];
 const pct = (value: number) => `${Math.round((Number.isFinite(value) ? value : 0) * 100)}%`;
@@ -77,6 +77,7 @@ const oneLine = (text: string, max: number) => {
 export function askContext(store: Store, project: Project): AskContext {
 	const facts: string[] = [`Brand: ${project.name}${project.domains.length ? ` (${project.domains.join(", ")})` : ""}`];
 	const quoted: string[] = [];
+	if (project.location) facts.push(`Location of the brand's buyers: ${project.location}`);
 	const competitors = store.competitors.list(project.id).map((c) => c.name);
 	if (competitors.length) facts.push(`Competitors being tracked: ${competitors.join(", ")}`);
 

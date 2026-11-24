@@ -2,7 +2,7 @@ import type { EngineView } from "@api";
 import { ArrowRight02Icon, Plug01Icon } from "@hugeicons/core-free-icons";
 import { type ReactNode, useState } from "react";
 import { Icon } from "@/components/app-shell";
-import { OnboardingFrame, Steps } from "@/components/onboarding-website";
+import { ChipField, OnboardingFrame, Steps } from "@/components/onboarding-website";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
@@ -119,6 +119,67 @@ export function EnginesStep({
 						: `Continue with ${ready} ${ready === 1 ? "engine" : "engines"}`}
 				</Button>
 			</div>
+		</OnboardingFrame>
+	);
+}
+
+export function LocationStep({
+	frame,
+	step,
+	defaultValue,
+	preview,
+	onBack,
+	onContinue,
+}: {
+	frame: Frame;
+	step: number;
+	defaultValue: string;
+	preview: ReactNode;
+	onBack: () => void;
+	onContinue: (location: string) => void;
+}) {
+	const [value, setValue] = useState(defaultValue);
+	const location = value.trim();
+
+	return (
+		<OnboardingFrame {...frame} autoFocus onBack={onBack} preview={preview}>
+			<Steps step={step} steps={frame.steps} />
+			<h1 className="ui-obw-title">Where are your buyers?</h1>
+			<p className="ui-obw-sub">
+				AI answers change with location. OpenAEO asks every question as someone there would. You can change this later
+				in Settings.
+			</p>
+			<form
+				className="ui-obw-form"
+				noValidate
+				onSubmit={(event) => {
+					event.preventDefault();
+					onContinue(location);
+				}}
+			>
+				<ChipField
+					chips={[]}
+					onRemove={() => {}}
+					brand=""
+					mark={false}
+					label="Location"
+					hint={<p className="ui-obw-hint">{location ? " " : "Leave it empty if you sell everywhere"}</p>}
+				>
+					<input
+						className="ui-obw-input"
+						value={value}
+						maxLength={80}
+						onChange={(event) => setValue(event.target.value)}
+						placeholder="London, United Kingdom"
+						aria-label="Location"
+						autoComplete="off"
+						spellCheck={false}
+					/>
+					<button type="submit" className="ui-obw-btn ui-obw-btn--go" aria-label="Continue" title="Continue">
+						<Icon icon={ArrowRight02Icon} size={14} />
+					</button>
+				</ChipField>
+			</form>
 		</OnboardingFrame>
 	);
 }

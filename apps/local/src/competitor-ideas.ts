@@ -10,6 +10,7 @@ export type CompetitorContext = {
 	questions: string[];
 	answers: string[];
 	existing: string[];
+	location?: string;
 };
 
 const MAX = 10;
@@ -58,6 +59,7 @@ export function buildCompetitorPrompt(context: CompetitorContext): string {
 		`Find the direct competitors of a company called "${context.brand}"${context.domains[0] ? ` (website: ${context.domains[0]})` : ""}.`,
 		"Work out what it sells, to whom and where from the quoted material below. If that is not enough, look the website up; do not guess from the name alone.",
 		"A direct competitor sells the same kind of product or service to the same kind of buyer, in the same country or region where that matters.",
+		context.location ? `It sells to buyers in ${context.location}, so prefer competitors that serve that market.` : "",
 		"Prefer businesses a buyer would realistically choose instead, including any named in the AI answers. Leave out directories, marketplaces, review sites, news sites and the company itself.",
 		context.existing.length
 			? `Already tracked, so leave these out: ${context.existing.map((n) => flat(n, 80)).join(", ")}.`

@@ -1,5 +1,6 @@
 import { type Provider, sameSite, toDomain } from "@openaeo/engine";
 import type { BrandCheckView } from "./api-types";
+import { withLocation } from "./location";
 import { type Log, logError } from "./log";
 import type { Project } from "./store/store";
 
@@ -19,7 +20,10 @@ const siteOf = (domain: string) => toDomain(/^https?:\/\//i.test(domain) ? domai
 
 export function brandQuestion(project: Project): string {
 	const site = project.domains[0];
-	return `What is "${project.name}"${site ? ` (${site})` : ""} and what does the company do? Who is it for, and what is it known for?`;
+	return withLocation(
+		`What is "${project.name}"${site ? ` (${site})` : ""} and what does the company do? Who is it for, and what is it known for?`,
+		project.location,
+	);
 }
 
 const strings = (value: unknown): string[] =>

@@ -115,6 +115,7 @@ const MIGRATIONS = [
 	);
 	CREATE INDEX brand_check_run ON brand_check(run_id);
 	`,
+	"ALTER TABLE project ADD COLUMN location TEXT NOT NULL DEFAULT '';",
 ];
 
 export function openDb(path: string): Database {

@@ -6,6 +6,7 @@ import {
 	type ProviderErrorCode,
 	type Source,
 } from "@openaeo/engine";
+import type { Log } from "../src/log";
 import { openDb } from "../src/store/db";
 import { createStore } from "../src/store/store";
 
@@ -61,4 +62,12 @@ export function seed(store: ReturnType<typeof freshStore>, prompts = ["best crm?
 	]);
 	store.prompts.add(project.id, prompts);
 	return project;
+}
+
+export function recordLog() {
+	const entries: { context: string; error: unknown }[] = [];
+	const log: Log = (context, error) => {
+		entries.push({ context, error });
+	};
+	return { log, entries };
 }

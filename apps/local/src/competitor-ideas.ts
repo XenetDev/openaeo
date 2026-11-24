@@ -1,4 +1,5 @@
 import { type Provider, toDomain } from "@openaeo/engine";
+import { type Log, logError } from "./log";
 
 export type CompetitorIdea = { name: string; domain: string | null };
 export type CompetitorContext = {
@@ -71,12 +72,14 @@ export function buildCompetitorPrompt(context: CompetitorContext): string {
 export async function suggestCompetitors(
 	provider: Provider | null,
 	context: CompetitorContext,
+	log: Log = logError,
 ): Promise<CompetitorIdea[]> {
 	if (!provider) return [];
 	try {
 		const answer = await provider.ask(buildCompetitorPrompt(context), { timeoutMs: 150_000 });
 		return parseCompetitors(answer.text, [context.brand, ...context.existing]);
-	} catch {
+	} catch (error) {
+		log("finding competitors", error);
 		return [];
 	}
 }

@@ -1,11 +1,19 @@
-import type { RunService } from "./runs";
+import { type Log, logError } from "./log";
+import { RunError, type RunService } from "./runs";
 import type { Store } from "./store/store";
 
 const DAY = 24 * 60 * 60 * 1000;
 const PERIODS: Record<string, number> = { daily: DAY, weekly: 7 * DAY };
 
-export function createScheduler(deps: { store: Store; runs: RunService; now?: () => number; intervalMs?: number }) {
+export function createScheduler(deps: {
+	store: Store;
+	runs: RunService;
+	now?: () => number;
+	intervalMs?: number;
+	log?: Log;
+}) {
 	const now = deps.now ?? Date.now;
+	const log = deps.log ?? logError;
 	let timer: ReturnType<typeof setInterval> | null = null;
 
 	function tick(): string[] {
@@ -17,7 +25,9 @@ export function createScheduler(deps: { store: Store; runs: RunService; now?: ()
 				const latest = deps.store.runs.latest(project.id);
 				if (!latest || latest.status === "running" || now() - latest.startedAt < period) continue;
 				started.push(deps.runs.start(project.id).id);
-			} catch {}
+			} catch (error) {
+				if (!(error instanceof RunError)) log(`scheduled run for ${project.id}`, error);
+			}
 		}
 		return started;
 	}

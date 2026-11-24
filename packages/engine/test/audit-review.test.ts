@@ -71,7 +71,7 @@ test("uncompressed responses are requested", async () => {
 	expect((seen as Headers | null)?.get("accept-encoding")).toBe("identity");
 });
 
-test("allowPrivate does not let a public site redirect the app to a private address", async () => {
+test("allowLoopback does not let a public site redirect the app to this machine", async () => {
 	const requested: string[] = [];
 	const fetcher = (async (input: string | URL | Request) => {
 		const url = String(input);
@@ -85,7 +85,7 @@ test("allowPrivate does not let a public site redirect the app to a private addr
 	const get = createSafeFetch({
 		fetch: fetcher,
 		lookup: async (host) => (host === "public.example" ? ["93.184.216.34"] : ["127.0.0.1"]),
-		allowPrivate: true,
+		allowLoopback: true,
 	});
 	expect(await codeOf(get("https://public.example/"))).toBe("blocked");
 	expect(requested).toEqual(["https://public.example/"]);
@@ -121,7 +121,7 @@ beforeAll(() => {
 afterAll(() => server.stop(true));
 
 test("real sockets: redirects, caps, timeouts and refusals behave as designed", async () => {
-	const local = createSafeFetch({ allowPrivate: true, maxBytes: 100_000, timeoutMs: 400 });
+	const local = createSafeFetch({ allowLoopback: true, maxBytes: 100_000, timeoutMs: 400 });
 	expect((await local(`${base}/hop`)).text).toBe("<h1>ok</h1>");
 	expect((await local(`${base}/hop`)).url).toBe(`${base}/ok`);
 	expect(await codeOf(local(`${base}/loop`))).toBe("too_many_redirects");

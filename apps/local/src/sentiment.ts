@@ -1,4 +1,5 @@
 import type { Provider } from "@openaeo/engine";
+import { type Log, logError } from "./log";
 
 export type Sentiment = "positive" | "neutral" | "negative";
 
@@ -47,7 +48,7 @@ export async function labelSentiment(
 	provider: Provider,
 	brand: string,
 	answers: { id: string; text: string }[],
-	opts: { signal?: AbortSignal } = {},
+	opts: { signal?: AbortSignal; log?: Log } = {},
 ): Promise<Map<string, Sentiment>> {
 	const result = new Map<string, Sentiment>();
 	const batch = answers.slice(0, MAX_ANSWERS);
@@ -65,6 +66,8 @@ export async function labelSentiment(
 			const answer = batch[index - 1];
 			if (answer) result.set(answer.id, label);
 		}
-	} catch {}
+	} catch (error) {
+		if (!opts.signal?.aborted) (opts.log ?? logError)("labelling sentiment", error);
+	}
 	return result;
 }

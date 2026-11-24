@@ -6,7 +6,7 @@ import { buildReport } from "../src/report";
 import { createRunService, RunError } from "../src/runs";
 import { openDb } from "../src/store/db";
 import { createStore } from "../src/store/store";
-import { fakeProvider, freshStore, seed } from "./helpers";
+import { fakeProvider, freshStore, recordLog, seed } from "./helpers";
 
 test("only runs whose owning process has gone are marked interrupted", () => {
 	const store = freshStore();
@@ -93,7 +93,7 @@ test("deleting a project during its run does not throw", async () => {
 	const store = freshStore();
 	const project = seed(store, ["a", "b", "c"]);
 	const slow = fakeProvider("claude-cli", () => "Pipedrive", 20);
-	const runs = createRunService({ store, providers: () => [slow.provider], concurrency: 1 });
+	const runs = createRunService({ store, providers: () => [slow.provider], concurrency: 1, log: recordLog().log });
 	const run = runs.start(project.id);
 	await new Promise((resolve) => setTimeout(resolve, 30));
 	store.projects.remove(project.id);

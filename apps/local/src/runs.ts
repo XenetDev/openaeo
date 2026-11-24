@@ -1,4 +1,5 @@
 import { match, type Provider, run as runEngine } from "@openaeo/engine";
+import { type Log, logError } from "./log";
 import { labelSentiment } from "./sentiment";
 import type { Run, Store } from "./store/store";
 
@@ -22,10 +23,12 @@ export type RunServiceDeps = {
 	concurrency?: number;
 	retries?: number;
 	sentiment?: boolean;
+	log?: Log;
 };
 
 export function createRunService(deps: RunServiceDeps) {
 	const { store } = deps;
+	const log = deps.log ?? logError;
 	const listeners = new Set<(event: RunEvent) => void>();
 	const active = new Map<string, { controller: AbortController; done: Promise<Run> }>();
 
@@ -35,7 +38,9 @@ export function createRunService(deps: RunServiceDeps) {
 		for (const listener of listeners) {
 			try {
 				listener({ runId, run: current });
-			} catch {}
+			} catch (error) {
+				log("run listener", error);
+			}
 		}
 	}
 
@@ -65,17 +70,20 @@ export function createRunService(deps: RunServiceDeps) {
 			const judge = providers[0];
 			if (deps.sentiment && judge && !controller.signal.aborted) {
 				const mentioned = store.answers.listByRun(runId).filter((a) => a.errorCode === null && a.brandRank !== null);
-				const labels = await labelSentiment(judge, project.name, mentioned, { signal: controller.signal });
+				const labels = await labelSentiment(judge, project.name, mentioned, { signal: controller.signal, log });
 				for (const [id, label] of labels) store.answers.setSentiment(id, label);
 			}
-		} catch {
+		} catch (error) {
+			if (!controller.signal.aborted) log(`run ${runId}`, error);
 			failed = true;
 			controller.abort();
 		}
 		let finished: Run | null = null;
 		try {
 			finished = store.runs.finish(runId, failed || controller.signal.aborted ? "interrupted" : "done");
-		} catch {}
+		} catch (error) {
+			log(`finishing run ${runId}`, error);
+		}
 		active.delete(runId);
 		notify(runId);
 		return finished ?? { ...created, status: "interrupted", finishedAt: Date.now() };

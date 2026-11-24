@@ -1,5 +1,12 @@
 import type { ArtefactsView, AuditView, FindingView, PlanStepView, ProjectView } from "@api";
-import { ArrowRight02Icon, CheckListIcon, Copy01Icon, Globe02Icon } from "@hugeicons/core-free-icons";
+import {
+	ArrowDown01Icon,
+	ArrowRight02Icon,
+	ArrowUp01Icon,
+	CheckListIcon,
+	Copy01Icon,
+	Globe02Icon,
+} from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { PillButton, PillField } from "@/components/pill-field";
@@ -184,6 +191,7 @@ export function AuditScreen({
 	onPlan,
 }: Props) {
 	const [url, setUrl] = useState(defaultUrl);
+	const [showFlagged, setShowFlagged] = useState(false);
 	const running = audit?.status === "running";
 	const unread = audit?.pages.filter((p) => p.error) ?? [];
 	const read = (audit?.pages.length ?? 0) - unread.length;
@@ -302,23 +310,34 @@ export function AuditScreen({
 					</div>
 
 					{flagged.length > 0 ? (
-						<Card>
+						<Card className="oa-flagged-card">
 							<CardHeader
 								icon={<AgentMark />}
 								title="What AI engines flagged"
 								description={`These come from what the engines said about ${project.name} in your latest run, not from reading your site. Your plan has the steps for each one.`}
 								action={
-									<Button
-										variant="secondary"
-										size="sm"
-										onClick={onPlan}
-										iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
-									>
-										Open your plan
-									</Button>
+									<>
+										<Button
+											variant="ghost"
+											size="sm"
+											aria-expanded={showFlagged}
+											onClick={() => setShowFlagged((shown) => !shown)}
+											iconRight={<Icon icon={showFlagged ? ArrowUp01Icon : ArrowDown01Icon} size={14} />}
+										>
+											{showFlagged ? "Hide" : `Show ${flagged.length}`}
+										</Button>
+										<Button
+											variant="secondary"
+											size="sm"
+											onClick={onPlan}
+											iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
+										>
+											Open your plan
+										</Button>
+									</>
 								}
 							/>
-							<CardContent>
+							<CardContent hidden={!showFlagged}>
 								{SEVERITIES.map((severity) => {
 									const steps = flagged.filter((step) => step.severity === severity);
 									return steps.length > 0 ? (

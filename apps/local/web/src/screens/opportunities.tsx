@@ -19,6 +19,7 @@ type Props = {
 	onNavigate: (page: PageId) => void;
 };
 
+const LONG_EVIDENCE = 40;
 const MARKS: Record<string, ReactNode> = { high: <HighMark />, medium: <MediumMark />, low: <LowMark /> };
 
 export function OpportunitiesScreen({ project, engines, found, onOpenQuestion, onNavigate }: Props) {
@@ -80,7 +81,13 @@ export function OpportunitiesScreen({ project, engines, found, onOpenQuestion, o
 											<div>
 												<b>{reason.title}</b>
 												<p>{reason.detail}</p>
-												{reason.evidence.length > 0 ? (
+												{reason.evidence.some((item) => item.length > LONG_EVIDENCE) ? (
+													<ul>
+														{reason.evidence.map((item) => (
+															<li key={item}>{item}</li>
+														))}
+													</ul>
+												) : reason.evidence.length > 0 ? (
 													<span className="oa-inline">
 														{reason.evidence.map((item) => (
 															<Badge key={item}>{item}</Badge>

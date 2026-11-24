@@ -362,11 +362,18 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 										rows={[
 											["Your own site", check.ownSiteUsed ? "Used as a source" : "Not used as a source"],
 											["Relied on", check.sources.slice(0, 5).join(", ") || "Its own memory"],
-											...(check.concerns.length > 0
-												? ([["Doubts it raised", check.concerns.join(" ")]] as [string, string][])
-												: []),
 										]}
 									/>
+									{check.concerns.length > 0 ? (
+										<div className="oa-doubts">
+											<small>Doubts it raised</small>
+											<ul>
+												{check.concerns.map((concern) => (
+													<li key={concern}>{concern}</li>
+												))}
+											</ul>
+										</div>
+									) : null}
 								</article>
 							))}
 						</div>

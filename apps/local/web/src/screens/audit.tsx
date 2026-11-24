@@ -358,7 +358,7 @@ export function AuditScreen({
 									rows={Math.min(6, feed.length)}
 									now={at}
 								/>
-								<FixCard count={findings.length} own={audit.own !== false} onCopyBrief={onCopyBrief} />
+								<FixCard count={findings.length + flagged.length} own={audit.own !== false} onCopyBrief={onCopyBrief} />
 							</div>
 							{LEVELS.map((level) => {
 								const groups = new Map<string, FindingView[]>();

@@ -1,6 +1,7 @@
-import { artefacts, buildFixBrief } from "@openaeo/engine";
+import { artefacts } from "@openaeo/engine";
 import type { AuditView, LatestAudit, Ok } from "../../api-types";
 import { AuditError, resultOf } from "../../audits";
+import { buildBrief } from "../../brief";
 import type { HandlerDeps } from "../handler";
 import { HttpError, json, notFound, read, requireProject } from "../http";
 import { type Route, route } from "../router";
@@ -46,7 +47,7 @@ export function auditRoutes({ store, audits }: HandlerDeps): Route[] {
 			const audit = requireAudit(params.id as string);
 			if (audit.status !== "done")
 				throw new HttpError(409, "That audit did not finish, so there is no brief. Run the audit again.");
-			return new Response(buildFixBrief(resultOf(audit, store.audits.findings(audit.id))), {
+			return new Response(buildBrief(store, audit), {
 				headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
 			});
 		}),

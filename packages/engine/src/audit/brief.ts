@@ -35,7 +35,7 @@ export function buildFixBrief(result: AuditResult, o: { maxFindings?: number } =
 		`Score: ${result.score}/100 · ${read} pages read · ${result.findings.length} findings`,
 		"",
 	];
-	if (result.findings.length === 0) return [...head, "No problems found. Nothing to fix."].join("\n");
+	if (result.findings.length === 0) return [...head, "No problems found on the site."].join("\n");
 
 	const groups = groupFindings(result.findings);
 	const shown = groups.slice(0, o.maxFindings ?? 40);

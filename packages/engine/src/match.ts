@@ -1,5 +1,5 @@
 import type { Answer } from "./types";
-import { URL_SOURCE, sameSite, toDomain } from "./url";
+import { sameSite, toDomain, URL_SOURCE } from "./url";
 
 export type Entity = { name: string; aliases?: string[]; domains?: string[] };
 
@@ -38,7 +38,11 @@ function siteOf(value: string): string | null {
 	return toDomain(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
 }
 
-export function match(answer: Pick<Answer, "text" | "citations" | "sources">, brand: Entity, competitors: Entity[]): MatchResult {
+export function match(
+	answer: Pick<Answer, "text" | "citations" | "sources">,
+	brand: Entity,
+	competitors: Entity[],
+): MatchResult {
 	const entities: { name: string; terms: string[] }[] = [];
 	const seen = new Set<string>();
 	for (const entity of [brand, ...competitors]) {

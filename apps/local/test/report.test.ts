@@ -4,8 +4,15 @@ import { createRunService } from "../src/runs";
 import { fakeProvider, freshStore, seed, src } from "./helpers";
 
 async function runOnce(store: ReturnType<typeof freshStore>, projectId: string, claudeText: string, codexText: string) {
-	const claude = fakeProvider("claude-cli", () => ({ text: claudeText, citations: [src("https://blog.pipedrive.com/a"), src("https://g2.com/x")] }));
-	const codex = fakeProvider("codex-cli", () => ({ text: codexText, citations: [src("https://g2.com/y")], sources: [src("https://g2.com/y"), src("https://capterra.com/z")] }));
+	const claude = fakeProvider("claude-cli", () => ({
+		text: claudeText,
+		citations: [src("https://blog.pipedrive.com/a"), src("https://g2.com/x")],
+	}));
+	const codex = fakeProvider("codex-cli", () => ({
+		text: codexText,
+		citations: [src("https://g2.com/y")],
+		sources: [src("https://g2.com/y"), src("https://capterra.com/z")],
+	}));
 	const runs = createRunService({ store, providers: () => [claude.provider, codex.provider] });
 	return runs.wait(runs.start(projectId).id);
 }

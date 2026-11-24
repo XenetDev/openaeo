@@ -9,15 +9,30 @@ test("labels come back keyed by answer", async () => {
 		{ id: "a", text: "Pipedrive is excellent for small teams." },
 		{ id: "b", text: "Avoid Pipedrive; support is slow." },
 	]);
-	expect(labels).toEqual(new Map([["a", "positive"], ["b", "negative"]]));
+	expect(labels).toEqual(
+		new Map([
+			["a", "positive"],
+			["b", "negative"],
+		]),
+	);
 	expect(p.calls.length).toBe(1);
 	expect(p.calls[0]).toContain("Pipedrive is excellent");
 	expect(p.calls[0]).toContain("support is slow");
 });
 
 test("the reply is parsed leniently and unknown labels are dropped", () => {
-	expect(parseSentiment('Sure!\n```json\n{"1":"Positive","2":"mixed","3":"NEUTRAL","9":"negative"}\n```', 3)).toEqual(new Map([[1, "positive"], [3, "neutral"]]));
-	expect(parseSentiment("1: positive\n2 - negative", 2)).toEqual(new Map([[1, "positive"], [2, "negative"]]));
+	expect(parseSentiment('Sure!\n```json\n{"1":"Positive","2":"mixed","3":"NEUTRAL","9":"negative"}\n```', 3)).toEqual(
+		new Map([
+			[1, "positive"],
+			[3, "neutral"],
+		]),
+	);
+	expect(parseSentiment("1: positive\n2 - negative", 2)).toEqual(
+		new Map([
+			[1, "positive"],
+			[2, "negative"],
+		]),
+	);
 	expect(parseSentiment("no idea", 2)).toEqual(new Map());
 	expect(parseSentiment("[1,2,3]", 2)).toEqual(new Map());
 });
@@ -59,7 +74,9 @@ test("a run stores sentiment for answers that mention the brand", async () => {
 test("a sentiment failure does not fail the run", async () => {
 	const store = freshStore();
 	const project = seed(store, ["q1"]);
-	const provider = fakeProvider("claude-cli", (prompt) => (prompt.includes("Classify") ? "rate_limited" : "Pipedrive is great."));
+	const provider = fakeProvider("claude-cli", (prompt) =>
+		prompt.includes("Classify") ? "rate_limited" : "Pipedrive is great.",
+	);
 	const runs = createRunService({ store, providers: () => [provider.provider], sentiment: true, retries: 0 });
 	const run = await runs.wait(runs.start(project.id).id);
 	expect(run.status).toBe("done");
@@ -77,12 +94,22 @@ test("an existing database gains the sentiment column", async () => {
 		const path = join(dir, "openaeo.db");
 		openDb(path).close();
 		const raw = new Database(path);
-		raw.exec("ALTER TABLE answer DROP COLUMN sentiment; ALTER TABLE run DROP COLUMN owner_pid; DROP TABLE finding; DROP TABLE audit; PRAGMA user_version = 1");
+		raw.exec(
+			"ALTER TABLE answer DROP COLUMN sentiment; ALTER TABLE run DROP COLUMN owner_pid; DROP TABLE finding; DROP TABLE audit; PRAGMA user_version = 1",
+		);
 		raw.close();
 		const db = openDb(path);
-		const columns = db.query<{ name: string }, []>("PRAGMA table_info(answer)").all().map((c) => c.name);
+		const columns = db
+			.query<{ name: string }, []>("PRAGMA table_info(answer)")
+			.all()
+			.map((c) => c.name);
 		expect(columns).toContain("sentiment");
-		expect(db.query<{ name: string }, []>("PRAGMA table_info(run)").all().map((c) => c.name)).toContain("owner_pid");
+		expect(
+			db
+				.query<{ name: string }, []>("PRAGMA table_info(run)")
+				.all()
+				.map((c) => c.name),
+		).toContain("owner_pid");
 		db.close();
 	} finally {
 		rmSync(dir, { recursive: true, force: true });

@@ -1,4 +1,5 @@
 ---
+
 name: aeo-audit-fix
 description: Fix the Answer Engine Optimization problems OpenAEO found on a website, in that website's source code. Use when asked to fix AEO findings, improve how AI engines read a site, or act on an OpenAEO audit.
 ---

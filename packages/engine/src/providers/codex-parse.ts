@@ -66,9 +66,11 @@ function unwrap(raw: string): { text: string; status?: number; code?: string } {
 
 function classify(error: { text: string; status?: number; code?: string }): ProviderErrorCode {
 	if (/requires a newer version/i.test(error.text)) return "cli_outdated";
-	if (error.code === "model_not_found" || /model\b[^.]{0,80}\bis not supported|model_not_found/i.test(error.text)) return "model_unavailable";
+	if (error.code === "model_not_found" || /model\b[^.]{0,80}\bis not supported|model_not_found/i.test(error.text))
+		return "model_unavailable";
 	if (error.status === 429 || /\busage limit\b|\brate limit/i.test(error.text)) return "rate_limited";
-	if (error.status === 401 || /\bnot logged in\b|\bplease log in\b|\bcodex login\b|\bunauthorized\b/i.test(error.text)) return "not_logged_in";
+	if (error.status === 401 || /\bnot logged in\b|\bplease log in\b|\bcodex login\b|\bunauthorized\b/i.test(error.text))
+		return "not_logged_in";
 	return "failed";
 }
 
@@ -109,7 +111,11 @@ export function parseCodexStream(stdout: string, durationMs: number): Answer {
 		}
 		const turn = UsageSchema.safeParse(event);
 		if (turn.success) {
-			usage = { inputTokens: turn.data.usage.input_tokens ?? 0, outputTokens: turn.data.usage.output_tokens ?? 0, searches: 0 };
+			usage = {
+				inputTokens: turn.data.usage.input_tokens ?? 0,
+				outputTokens: turn.data.usage.output_tokens ?? 0,
+				searches: 0,
+			};
 			continue;
 		}
 		const error = ErrorSchema.safeParse(event);

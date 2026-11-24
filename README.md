@@ -31,13 +31,13 @@ The dashboard opens in your browser. Enter your website, confirm your brand and 
 
 ## Engines
 
-| Engine | How it connects |
-| --- | --- |
-| Claude | Claude Code subscription on this computer, or an Anthropic API key |
-| ChatGPT | Codex subscription on this computer, or an OpenAI API key |
-| Grok | xAI API key |
-| Gemini | Google API key |
-| Perplexity | Perplexity API key |
+| Engine     | How it connects                                                    |
+| ---------- | ------------------------------------------------------------------ |
+| Claude     | Claude Code subscription on this computer, or an Anthropic API key |
+| ChatGPT    | Codex subscription on this computer, or an OpenAI API key          |
+| Grok       | xAI API key                                                        |
+| Gemini     | Google API key                                                     |
+| Perplexity | Perplexity API key                                                 |
 
 Each engine is asked with web search turned on. Results are close to, but not identical to, the consumer apps, which add their own memory and personalisation.
 

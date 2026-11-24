@@ -1,4 +1,5 @@
 ---
+
 name: aeo-content-brief
 description: Plan a page that would earn a brand a place in AI answers for a specific question, using OpenAEO's data on what engines currently say and cite. Use when asked for a content brief, an outline for an article aimed at AI search, or how to get mentioned for a given question.
 ---

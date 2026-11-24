@@ -1,4 +1,11 @@
-export type TreeRun = { id: string; status: "running" | "done" | "interrupted"; startedAt: number; finishedAt: number | null; total: number; completed: number };
+export type TreeRun = {
+	id: string;
+	status: "running" | "done" | "interrupted";
+	startedAt: number;
+	finishedAt: number | null;
+	total: number;
+	completed: number;
+};
 export type TreeAnswer = {
 	id: string;
 	engine: string;
@@ -49,7 +56,8 @@ export function runTree(run: TreeRun, answers: TreeAnswer[], label: (engine: str
 				tokensIn: answer.inputTokens ?? undefined,
 				tokensOut: answer.outputTokens ?? undefined,
 				input: answer.promptText,
-				output: answer.errorCode === null ? `${answer.text.slice(0, 400)}${answer.text.length > 400 ? "…" : ""}` : undefined,
+				output:
+					answer.errorCode === null ? `${answer.text.slice(0, 400)}${answer.text.length > 400 ? "…" : ""}` : undefined,
 				error: answer.errorCode === null ? undefined : (answer.errorMessage ?? "No reason was given."),
 			};
 		});

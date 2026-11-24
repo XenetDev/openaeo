@@ -18,7 +18,9 @@ for (const target of targets) {
 	renameSync(join(root, "dist", name), join(out, name));
 	await $`tar -czf ${name}.tar.gz ${name}`.cwd(out);
 	rmSync(join(out, name));
-	const hash = createHash("sha256").update(readFileSync(join(out, `${name}.tar.gz`))).digest("hex");
+	const hash = createHash("sha256")
+		.update(readFileSync(join(out, `${name}.tar.gz`)))
+		.digest("hex");
 	sums.push(`${hash}  ${name}.tar.gz`);
 	process.stdout.write(`${name}.tar.gz\n`);
 }

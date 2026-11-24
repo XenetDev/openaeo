@@ -67,7 +67,10 @@ export function parsePage(url: string, html: string): PageModel {
 		isHome = parsed.pathname === "/" || parsed.pathname === "";
 	} catch {}
 
-	const root = parse(html.slice(0, 3_000_000), { comment: false, blockTextElements: { script: true, style: true, noscript: true, pre: true } });
+	const root = parse(html.slice(0, 3_000_000), {
+		comment: false,
+		blockTextElements: { script: true, style: true, noscript: true, pre: true },
+	});
 
 	const schemaTypes = new Set<string>();
 	let schemaErrors = 0;

@@ -1,13 +1,20 @@
-import type { EngineInfo, PageId, ProjectView, ReportView } from "@/types";
-import { Analytics01Icon, ArrowRight02Icon, ChartIncreaseIcon, News01Icon, PlayIcon, StopIcon } from "@hugeicons/core-free-icons";
-import { EmptyState, Icon } from "@/components/app-shell";
+import {
+	Analytics01Icon,
+	ArrowRight02Icon,
+	ChartIncreaseIcon,
+	News01Icon,
+	PlayIcon,
+	StopIcon,
+} from "@hugeicons/core-free-icons";
 import { ChartCard } from "@/components/analytics";
+import { EmptyState, Icon } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { ChangeSummary, type MetricChange } from "@/components/ui/change-summary-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
 import { TrendChart } from "@/components/ui/trend-chart-clean";
+import type { EngineInfo, PageId, ProjectView, ReportView } from "@/types";
 import { day, engineLabel, Page, percent, ShareList, when } from "./shared";
 
 type Props = {
@@ -20,10 +27,21 @@ type Props = {
 	onNavigate: (page: PageId) => void;
 };
 
-const moved = (label: string, now: number, before: number, format: (n: number) => string, lowerIsBetter = false): MetricChange => {
+const moved = (
+	label: string,
+	now: number,
+	before: number,
+	format: (n: number) => string,
+	lowerIsBetter = false,
+): MetricChange => {
 	if (Math.abs(now - before) < 0.05) return { label, change: `Unchanged at ${format(now)}`, tone: "neutral" };
 	const up = now > before;
-	return { label, change: `${up ? "Up" : "Down"} to ${format(now)} from ${format(before)}`, tone: up !== lowerIsBetter ? "good" : "bad", direction: up ? "up" : "down" };
+	return {
+		label,
+		change: `${up ? "Up" : "Down"} to ${format(now)} from ${format(before)}`,
+		tone: up !== lowerIsBetter ? "good" : "bad",
+		direction: up ? "up" : "down",
+	};
 };
 
 export function OverviewScreen({ project, report, engines, loading, onRun, onCancel, onNavigate }: Props) {
@@ -40,7 +58,15 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 		values.length < 2 ? (
 			<span />
 		) : (
-		<TrendChart variant="bar" axis={false} tooltip={false} height={22} label={`${label} by run`} labels={labels} series={[{ label, values, color: "var(--faint)" }]} />
+			<TrendChart
+				variant="bar"
+				axis={false}
+				tooltip={false}
+				height={22}
+				label={`${label} by run`}
+				labels={labels}
+				series={[{ label, values, color: "var(--faint)" }]}
+			/>
 		);
 
 	const actions =
@@ -64,7 +90,16 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 			<Page brand={project.name} title="Overview" actions={actions}>
 				<div className="ui-as-rev__stats">
 					{["Visibility score", "Mentioned in", "Your site cited in", "Average position"].map((label) => (
-						<StatCard key={label} className="ui-as-rev__stat" layout="inline" label={label} value="" change={0} loading chart={<span />} />
+						<StatCard
+							key={label}
+							className="ui-as-rev__stat"
+							layout="inline"
+							label={label}
+							value=""
+							change={0}
+							loading
+							chart={<span />}
+						/>
 					))}
 				</div>
 				<div className="ui-as-rev__row ui-as-rev__row--main">
@@ -79,7 +114,11 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 		<>
 			{usable.length === 0 ? (
 				<Card>
-					<CardHeader title="No AI engine can run yet" description="OpenAEO uses the AI tools signed in on this computer." action={<Badge tone="danger">Needs you</Badge>} />
+					<CardHeader
+						title="No AI engine can run yet"
+						description="OpenAEO uses the AI tools signed in on this computer."
+						action={<Badge tone="danger">Needs you</Badge>}
+					/>
 					<CardContent>
 						{blocked.map((e) => (
 							<p key={e.id} className="oa-quiet">
@@ -94,7 +133,9 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 					<CardHeader
 						title={hasData ? "Some questions could not be answered in this run" : "The last run got no answers"}
 						description={hasData ? undefined : "Fix the problem below, then press Run now."}
-						action={<Badge tone={hasData ? "warning" : "danger"}>{problems.reduce((n, p) => n + p.count, 0)} failed</Badge>}
+						action={
+							<Badge tone={hasData ? "warning" : "danger"}>{problems.reduce((n, p) => n + p.count, 0)} failed</Badge>
+						}
 					/>
 					<CardContent>
 						{problems.map((p) => (
@@ -119,7 +160,12 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 						text="A run asks each AI engine every question on your Prompts page, then records who was mentioned and which sites were cited. It takes about half a minute per question."
 						action={
 							running ? undefined : (
-								<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")} iconRight={<Icon icon={ArrowRight02Icon} size={14} />}>
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={() => onNavigate("prompts")}
+									iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
+								>
 									Review your questions
 								</Button>
 							)
@@ -167,8 +213,21 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 						"Mention rate",
 					)}
 				/>
-				<StatCard className="ui-as-rev__stat" layout="inline" label="Your site cited in" value={m.citationRate * 100} format={(n) => `${Math.round(n)}%`} chart={<span />} />
-				<StatCard className="ui-as-rev__stat" layout="inline" label="Average position" value={m.averageRank === null ? "–" : m.averageRank.toFixed(1)} chart={<span />} />
+				<StatCard
+					className="ui-as-rev__stat"
+					layout="inline"
+					label="Your site cited in"
+					value={m.citationRate * 100}
+					format={(n) => `${Math.round(n)}%`}
+					chart={<span />}
+				/>
+				<StatCard
+					className="ui-as-rev__stat"
+					layout="inline"
+					label="Average position"
+					value={m.averageRank === null ? "–" : m.averageRank.toFixed(1)}
+					chart={<span />}
+				/>
 			</div>
 
 			<div className="ui-as-rev__row ui-as-rev__row--main">
@@ -181,7 +240,11 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 					labels={labels}
 					tooltipLabels={trend.map((t) => when(t.startedAt))}
 					series={[{ label: "Visibility", values: trend.map((t) => t.visibility) }]}
-					footer={trend.length === 1 ? "One run so far. Each run adds a point." : `${trend.length} runs · latest ${run ? when(run.startedAt) : ""}`}
+					footer={
+						trend.length === 1
+							? "One run so far. Each run adds a point."
+							: `${trend.length} runs · latest ${run ? when(run.startedAt) : ""}`
+					}
 				/>
 				<Card>
 					<CardHeader title="By engine" description="Visibility score from each engine's answers" />
@@ -225,17 +288,33 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 								share: (d.citations / Math.max(1, report.topDomains[0]?.citations ?? 1)) * 100,
 								badge: d.isBrand ? <Badge>Yours</Badge> : undefined,
 							}))}
-							empty={<EmptyState bare icon={News01Icon} title="No links cited" text="The engines answered this run without linking to any site." />}
+							empty={
+								<EmptyState
+									bare
+									icon={News01Icon}
+									title="No links cited"
+									text="The engines answered this run without linking to any site."
+								/>
+							}
 						/>
 					</CardContent>
 				</Card>
 				{changes.length > 0 ? (
-					<ChangeSummary title="Since the last run" period={previous ? when(previous.startedAt) : ""} changes={changes} />
+					<ChangeSummary
+						title="Since the last run"
+						period={previous ? when(previous.startedAt) : ""}
+						changes={changes}
+					/>
 				) : (
 					<Card className="oa-card-fill">
 						<CardHeader title="Since the last run" />
 						<CardContent>
-							<EmptyState bare icon={ChartIncreaseIcon} title="Nothing to compare yet" text="After a second run, this shows what went up and what went down." />
+							<EmptyState
+								bare
+								icon={ChartIncreaseIcon}
+								title="Nothing to compare yet"
+								text="After a second run, this shows what went up and what went down."
+							/>
 						</CardContent>
 					</Card>
 				)}

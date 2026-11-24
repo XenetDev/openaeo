@@ -1,23 +1,54 @@
-import type { OpportunitiesView, AnswerView, ArtefactsView, AuditView, EngineInfo, EntityView, FindingView, PageId, ProjectView, PromptView, ReportView, Suggestions } from "@/types";
-import { AiChat02Icon, BubbleChatIcon, CheckListIcon, Clock01Icon, ComputerIcon, DashboardSquare01Icon, Globe02Icon, Moon02Icon, News01Icon, PaintBoardIcon, Plug01Icon, PlusSignIcon, Search01Icon, Settings01Icon, Sun03Icon, Target02Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import {
+	AiChat02Icon,
+	BubbleChatIcon,
+	CheckListIcon,
+	Clock01Icon,
+	ComputerIcon,
+	DashboardSquare01Icon,
+	Globe02Icon,
+	Moon02Icon,
+	News01Icon,
+	PaintBoardIcon,
+	Plug01Icon,
+	PlusSignIcon,
+	Search01Icon,
+	Settings01Icon,
+	Sun03Icon,
+	Target02Icon,
+	UserMultipleIcon,
+} from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, Icon, type ShellNavItem } from "@/components/app-shell";
-import { AgentMark, AuditMark, BrandMark, BriefMark, RunMark, SuggestMark } from "./screens/command-icons";
-import { saveTheme, storedTheme, type Theme } from "./theme";
+import { Mark } from "@/components/mark";
+import { Toaster, toast } from "@/components/ui/toaster-clean";
+import type {
+	AnswerView,
+	ArtefactsView,
+	AuditView,
+	EngineInfo,
+	EntityView,
+	FindingView,
+	OpportunitiesView,
+	PageId,
+	ProjectView,
+	PromptView,
+	ReportView,
+	Suggestions,
+} from "@/types";
 import { ApiError, api, type CompetitorIdea } from "./api";
 import { AnswersScreen } from "./screens/answers";
-import { AuditScreen } from "./screens/audit";
-import { CompetitorsScreen, SourcesScreen } from "./screens/lists";
 import { AskScreen, type Turn } from "./screens/ask";
-import { OpportunitiesScreen } from "./screens/opportunities";
-import { RunsScreen } from "./screens/runs";
-import { OverviewScreen } from "./screens/overview";
-import { type PromptStat, PromptsScreen } from "./screens/prompts";
+import { AuditScreen } from "./screens/audit";
+import { AgentMark, AuditMark, BrandMark, BriefMark, RunMark, SuggestMark } from "./screens/command-icons";
+import { CompetitorsScreen, SourcesScreen } from "./screens/lists";
 import { OnboardingFlow, SetupPreview } from "./screens/onboarding";
 import { FirstRunStep } from "./screens/onboarding-steps";
-import { Mark } from "@/components/mark";
+import { OpportunitiesScreen } from "./screens/opportunities";
+import { OverviewScreen } from "./screens/overview";
+import { type PromptStat, PromptsScreen } from "./screens/prompts";
+import { RunsScreen } from "./screens/runs";
 import { SettingsScreen } from "./screens/settings";
-import { Toaster, toast } from "@/components/ui/toaster-clean";
+import { saveTheme, storedTheme, type Theme } from "./theme";
 
 const PAGES: { id: PageId; label: string; icon: ShellNavItem["icon"] }[] = [
 	{ id: "overview", label: "Overview", icon: DashboardSquare01Icon },
@@ -36,7 +67,10 @@ const NEW_BRAND = "Track another brand";
 const pageFromHash = (): PageId => PAGES.find((p) => p.id === window.location.hash.slice(1))?.id ?? "overview";
 const EMPTY_REPORT: ReportView = {
 	run: null,
-	overall: { metrics: { answers: 0, mentionRate: 0, averageRank: null, rankScore: 0, shareOfVoice: 0, citationRate: 0 }, visibility: 0 },
+	overall: {
+		metrics: { answers: 0, mentionRate: 0, averageRank: null, rankScore: 0, shareOfVoice: 0, citationRate: 0 },
+		visibility: 0,
+	},
 	engines: [],
 	competitors: [],
 	topDomains: [],
@@ -45,7 +79,15 @@ const EMPTY_REPORT: ReportView = {
 const messageOf = (error: unknown) => (error instanceof ApiError ? error.message : "Something went wrong. Try again.");
 
 type AuditData = { audit: AuditView | null; findings: FindingView[]; artefacts: ArtefactsView };
-type Data = { competitors: EntityView[]; prompts: PromptView[]; stats: PromptStat[]; report: ReportView; answers: AnswerView[]; audit: AuditData; found: OpportunitiesView };
+type Data = {
+	competitors: EntityView[];
+	prompts: PromptView[];
+	stats: PromptStat[];
+	report: ReportView;
+	answers: AnswerView[];
+	audit: AuditData;
+	found: OpportunitiesView;
+};
 
 export function App() {
 	const [projects, setProjects] = useState<ProjectView[] | null>(null);
@@ -63,7 +105,13 @@ export function App() {
 	const [turns, setTurns] = useState<Turn[]>([]);
 	const [ideas, setIdeas] = useState<CompetitorIdea[] | null>(null);
 	const [finding, setFinding] = useState(false);
-	const [setup, setSetup] = useState<{ id: string; audit: "working" | "skipped"; questions: "waiting" | "working" | "done" | "skipped"; run: "waiting" | "working" | "skipped"; count: number } | null>(null);
+	const [setup, setSetup] = useState<{
+		id: string;
+		audit: "working" | "skipped";
+		questions: "waiting" | "working" | "done" | "skipped";
+		run: "waiting" | "working" | "skipped";
+		count: number;
+	} | null>(null);
 	const [theme, setTheme] = useState<Theme>(storedTheme);
 	const commandRef = useRef<(id: string, text?: string) => void>(() => {});
 	const loading = useRef(0);
@@ -82,20 +130,38 @@ export function App() {
 
 	const loadProject = useCallback(async (id: string) => {
 		const ticket = ++loading.current;
-		const [detail, report, audit, stats, found] = await Promise.all([api.project(id), api.report(id), api.latestAudit(id), api.promptStats(id), api.opportunities(id)]);
+		const [detail, report, audit, stats, found] = await Promise.all([
+			api.project(id),
+			api.report(id),
+			api.latestAudit(id),
+			api.promptStats(id),
+			api.opportunities(id),
+		]);
 		const answers = report.run ? (await api.run(report.run.id)).answers : [];
 		if (ticket !== loading.current) return;
-		setData({ competitors: detail.competitors, prompts: detail.prompts, stats: stats.stats, report, answers, audit, found });
+		setData({
+			competitors: detail.competitors,
+			prompts: detail.prompts,
+			stats: stats.stats,
+			report,
+			answers,
+			audit,
+			found,
+		});
 		if (!window.location.hash && !report.run) setPage("prompts");
 	}, []);
 
 	const findCompetitors = useCallback((pid: string, announce: boolean) => {
 		setFinding(true);
-		api.competitorIdeas(pid)
+		api
+			.competitorIdeas(pid)
 			.then((result) => {
 				if (liveId.current !== pid) return;
 				setIdeas(result.competitors);
-				if (announce && result.competitors.length > 0) toast(`Found ${result.competitors.length} likely competitors`, { description: "Open Competitors to choose the ones to track." });
+				if (announce && result.competitors.length > 0)
+					toast(`Found ${result.competitors.length} likely competitors`, {
+						description: "Open Competitors to choose the ones to track.",
+					});
 			})
 			.catch((caught) => {
 				if (!announce) toast.error("That didn't work", { description: messageOf(caught) });
@@ -106,7 +172,8 @@ export function App() {
 	const beginSetup = useCallback(
 		async (pid: string) => {
 			setSetup({ id: pid, audit: "working", questions: "working", run: "waiting", count: 0 });
-			const patch = (next: Partial<NonNullable<typeof setup>>) => setSetup((now) => (now && now.id === pid ? { ...now, ...next } : now));
+			const patch = (next: Partial<NonNullable<typeof setup>>) =>
+				setSetup((now) => (now && now.id === pid ? { ...now, ...next } : now));
 			api.startAudit(pid, "").then(
 				() => loadProject(pid),
 				() => patch({ audit: "skipped" }),
@@ -172,7 +239,10 @@ export function App() {
 				},
 				() => {
 					misses += 1;
-					if (misses === 3) setError("OpenAEO stopped responding. Check that it is still running in your terminal, then reload this page.");
+					if (misses === 3)
+						setError(
+							"OpenAEO stopped responding. Check that it is still running in your terminal, then reload this page.",
+						);
 				},
 			);
 		}, 2000);
@@ -211,12 +281,25 @@ export function App() {
 			nav={project ? NAV.map((p) => ({ label: p.label, icon: p.icon })) : []}
 			groups={
 				projects && projects.length > 0
-					? [{ label: "Brands", items: [...projects.map((p) => ({ label: p.name, icon: Globe02Icon })), { label: NEW_BRAND, icon: PlusSignIcon }] }]
+					? [
+							{
+								label: "Brands",
+								items: [
+									...projects.map((p) => ({ label: p.name, icon: Globe02Icon })),
+									{ label: NEW_BRAND, icon: PlusSignIcon },
+								],
+							},
+						]
 					: []
 			}
 			sideCards={false}
 			workspaceItems={[
-				...(projects ?? []).map((p) => ({ label: p.name, description: p.domains[0], checked: p.id === project?.id, onSelect: () => (setCreating(false), select(p.id)) })),
+				...(projects ?? []).map((p) => ({
+					label: p.name,
+					description: p.domains[0],
+					checked: p.id === project?.id,
+					onSelect: () => (setCreating(false), select(p.id)),
+				})),
 				{ label: NEW_BRAND, icon: PlusSignIcon, divider: true, onSelect: () => setCreating(true) },
 				...(project ? [{ label: "Brand settings", icon: Settings01Icon, onSelect: () => navigate("settings") }] : []),
 			]}
@@ -254,18 +337,64 @@ export function App() {
 								id: "suggestions",
 								label: "Suggestions",
 								commands: [
-									{ id: "run", label: "Run now", hint: "Ask every engine your questions", logo: <RunMark />, keywords: "start ask engines" },
-									{ id: "audit", label: "Audit your website", hint: "Check what AI engines can read", logo: <AuditMark />, keywords: "check site crawl robots" },
-									{ id: "suggest", label: "Suggest questions", hint: "Ideas from your AI engine", logo: <SuggestMark />, keywords: "prompts ideas" },
-									{ id: "brief", label: "Copy fix brief", hint: "For Claude Code or Codex", logo: <BriefMark />, keywords: "agent fix findings" },
-									{ id: "agent", label: "Connect your AI agent", hint: "Claude Code or Codex", logo: <AgentMark />, keywords: "mcp connect" },
+									{
+										id: "run",
+										label: "Run now",
+										hint: "Ask every engine your questions",
+										logo: <RunMark />,
+										keywords: "start ask engines",
+									},
+									{
+										id: "audit",
+										label: "Audit your website",
+										hint: "Check what AI engines can read",
+										logo: <AuditMark />,
+										keywords: "check site crawl robots",
+									},
+									{
+										id: "suggest",
+										label: "Suggest questions",
+										hint: "Ideas from your AI engine",
+										logo: <SuggestMark />,
+										keywords: "prompts ideas",
+									},
+									{
+										id: "brief",
+										label: "Copy fix brief",
+										hint: "For Claude Code or Codex",
+										logo: <BriefMark />,
+										keywords: "agent fix findings",
+									},
+									{
+										id: "agent",
+										label: "Connect your AI agent",
+										hint: "Claude Code or Codex",
+										logo: <AgentMark />,
+										keywords: "mcp connect",
+									},
 								],
 							},
-							{ id: "brands", label: "Brands", commands: [{ id: "new", label: NEW_BRAND, hint: "Start tracking a new name", logo: <BrandMark />, keywords: "add project" }] },
+							{
+								id: "brands",
+								label: "Brands",
+								commands: [
+									{
+										id: "new",
+										label: NEW_BRAND,
+										hint: "Start tracking a new name",
+										logo: <BrandMark />,
+										keywords: "add project",
+									},
+								],
+							},
 						]
 					: []
 			}
-			typedCommand={{ group: "Questions", label: (text) => `Track “${text}” as a question`, done: (text) => `Tracking “${text}”` }}
+			typedCommand={{
+				group: "Questions",
+				label: (text) => `Track “${text}” as a question`,
+				done: (text) => `Tracking “${text}”`,
+			}}
 			onCommand={(id, text) => commandRef.current(id, text)}
 			onNavigate={(label) => {
 				const target = PAGES.find((p) => p.label === label);
@@ -287,14 +416,28 @@ export function App() {
 
 	const nav = NAV.map((p) => ({ label: p.label, icon: p.icon }));
 
-	if (projects === null) return shell(<div className="ui-as-page">{error ? <p className="ui-as-page-sub">{error}</p> : null}</div>, "");
+	if (projects === null)
+		return shell(<div className="ui-as-page">{error ? <p className="ui-as-page-sub">{error}</p> : null}</div>, "");
 
 	if (setup && project && setup.id === project.id && !creating) {
 		const audit = data?.audit.audit;
 		const run = data?.report.run;
-		const auditState = setup.audit === "skipped" ? "skipped" : audit?.status === "done" || audit?.status === "interrupted" ? "done" : "working";
-		const runState = setup.run === "skipped" ? "skipped" : setup.run === "waiting" ? "waiting" : run && run.status !== "running" ? "done" : "working";
-		const finished = (runState === "done" || runState === "skipped") && auditState !== "working" && setup.questions !== "working";
+		const auditState =
+			setup.audit === "skipped"
+				? "skipped"
+				: audit?.status === "done" || audit?.status === "interrupted"
+					? "done"
+					: "working";
+		const runState =
+			setup.run === "skipped"
+				? "skipped"
+				: setup.run === "waiting"
+					? "waiting"
+					: run && run.status !== "running"
+						? "done"
+						: "working";
+		const finished =
+			(runState === "done" || runState === "skipped") && auditState !== "working" && setup.questions !== "working";
 		const ready = engines.filter((e) => e.available && e.enabled);
 		return (
 			<>
@@ -303,15 +446,50 @@ export function App() {
 					step={5}
 					brand={project.name}
 					finished={finished}
-					preview={<SetupPreview brand={project.name} domains={project.domains} competitors={data?.competitors.map((c) => c.name) ?? []} engines={engines} nav={nav} />}
+					preview={
+						<SetupPreview
+							brand={project.name}
+							domains={project.domains}
+							competitors={data?.competitors.map((c) => c.name) ?? []}
+							engines={engines}
+							nav={nav}
+						/>
+					}
 					tasks={[
-						{ id: "audit", label: "Checking whether AI can read your website", state: auditState, detail: auditState === "done" && audit ? `${audit.pages.length} pages read, score ${audit.score ?? 0} of 100` : auditState === "skipped" ? "Skipped. Run it later from the Audit page." : undefined },
-						{ id: "questions", label: "Writing the questions your buyers ask", state: setup.questions, detail: setup.questions === "done" ? `${setup.count} questions tracked` : setup.questions === "skipped" ? "None could be written. Add your own on the Prompts page." : undefined },
+						{
+							id: "audit",
+							label: "Checking whether AI can read your website",
+							state: auditState,
+							detail:
+								auditState === "done" && audit
+									? `${audit.pages.length} pages read, score ${audit.score ?? 0} of 100`
+									: auditState === "skipped"
+										? "Skipped. Run it later from the Audit page."
+										: undefined,
+						},
+						{
+							id: "questions",
+							label: "Writing the questions your buyers ask",
+							state: setup.questions,
+							detail:
+								setup.questions === "done"
+									? `${setup.count} questions tracked`
+									: setup.questions === "skipped"
+										? "None could be written. Add your own on the Prompts page."
+										: undefined,
+						},
 						{
 							id: "run",
 							label: `Asking ${ready.map((e) => e.label).join(" and ") || "your engines"}`,
 							state: runState,
-							detail: runState === "working" && run ? `${run.completed} of ${run.total} answers so far` : runState === "done" && run ? `${run.completed} answers collected` : runState === "skipped" ? "Skipped. Press Run now once you have questions." : `About ${Math.max(1, Math.ceil((8 * Math.max(1, ready.length)) / 4))} minutes`,
+							detail:
+								runState === "working" && run
+									? `${run.completed} of ${run.total} answers so far`
+									: runState === "done" && run
+										? `${run.completed} answers collected`
+										: runState === "skipped"
+											? "Skipped. Press Run now once you have questions."
+											: `About ${Math.max(1, Math.ceil((8 * Math.max(1, ready.length)) / 4))} minutes`,
 						},
 					]}
 					onOpen={() => {
@@ -332,7 +510,11 @@ export function App() {
 					nav={nav}
 					busy={busy}
 					onCancel={project ? () => setCreating(false) : undefined}
-					onFindCompetitors={engines.some((e) => e.available && e.enabled) ? async (name, domain) => (await api.competitorIdeasFor(name, domain)).competitors : undefined}
+					onFindCompetitors={
+						engines.some((e) => e.available && e.enabled)
+							? async (name, domain) => (await api.competitorIdeasFor(name, domain)).competitors
+							: undefined
+					}
 					onCreate={(input) => {
 						setBusy(true);
 						void guard(async () => {
@@ -378,18 +560,19 @@ export function App() {
 			} else {
 				void guard(async () => {
 					await navigator.clipboard.writeText(await api.auditBrief(audit.id));
-					toast.success("Fix brief copied", { description: "Paste it into Claude Code or Codex in your website's code." });
+					toast.success("Fix brief copied", {
+						description: "Paste it into Claude Code or Codex in your website's code.",
+					});
 				});
 			}
-		}
-		else if (command === "new") setCreating(true);
+		} else if (command === "new") setCreating(true);
 		else if (command === "suggest") {
 			navigate("prompts");
 			setSuggesting(true);
 			void guard(async () => {
-						const result = await api.suggest(id);
-						if (liveId.current === id) setSuggestions(result);
-					}).finally(() => liveId.current === id && setSuggesting(false));
+				const result = await api.suggest(id);
+				if (liveId.current === id) setSuggestions(result);
+			}).finally(() => liveId.current === id && setSuggesting(false));
 		} else if (command === "ask" && text?.trim()) {
 			act(async () => {
 				await api.addPrompts(id, [text.trim()]);
@@ -429,7 +612,9 @@ export function App() {
 					try {
 						await api.addPrompts(id, texts);
 						await refresh();
-						toast.success(texts.length === 1 ? "Question tracked" : `${texts.length} questions tracked`, { description: "Press Run now to ask the AI engines." });
+						toast.success(texts.length === 1 ? "Question tracked" : `${texts.length} questions tracked`, {
+							description: "Press Run now to ask the AI engines.",
+						});
 					} catch (caught) {
 						toast.error("That question was not tracked", { description: messageOf(caught) });
 						throw caught;
@@ -451,7 +636,16 @@ export function App() {
 				}}
 			/>
 		) : page === "answers" ? (
-			<AnswersScreen answers={data.answers} project={project} engines={engines} live={data.report.run?.status === "running"} filter={answerFilter} onFilter={setAnswerFilter} onRunAgain={startRun} onNavigate={navigate} />
+			<AnswersScreen
+				answers={data.answers}
+				project={project}
+				engines={engines}
+				live={data.report.run?.status === "running"}
+				filter={answerFilter}
+				onFilter={setAnswerFilter}
+				onRunAgain={startRun}
+				onNavigate={navigate}
+			/>
 		) : page === "sources" ? (
 			<SourcesScreen project={project} report={data.report} />
 		) : page === "competitors" ? (
@@ -486,7 +680,9 @@ export function App() {
 					void guard(async () => {
 						if (!data.audit.audit) return;
 						await navigator.clipboard.writeText(await api.auditBrief(data.audit.audit.id));
-						toast.success("Fix brief copied", { description: "Paste it into Claude Code or Codex in your website's code." });
+						toast.success("Fix brief copied", {
+							description: "Paste it into Claude Code or Codex in your website's code.",
+						});
 					})
 				}
 			/>
@@ -510,7 +706,8 @@ export function App() {
 				onAction={(action) => {
 					if (action.type === "run") startRun();
 					else if (action.type === "audit") navigate("audit");
-					else if (action.type === "open") navigate((PAGES.find((p) => p.id === action.page)?.id ?? "overview") as PageId);
+					else if (action.type === "open")
+						navigate((PAGES.find((p) => p.id === action.page)?.id ?? "overview") as PageId);
 					else
 						act(async () => {
 							await api.addPrompts(id, [action.question]);
@@ -523,11 +720,32 @@ export function App() {
 					if (kept[kept.length - 1]?.role === "user") kept.pop();
 					const history = kept.slice(-8).map((t) => ({ role: t.role, text: t.text }));
 					const reply = crypto.randomUUID();
-					setTurns([...kept, { id: crypto.randomUUID(), role: "user", text: question }, { id: reply, role: "assistant", text: "", engine, pending: true }]);
+					setTurns([
+						...kept,
+						{ id: crypto.randomUUID(), role: "user", text: question },
+						{ id: reply, role: "assistant", text: "", engine, pending: true },
+					]);
 					const asked = Date.now();
 					api.ask(id, { question, history, engine: engine || undefined }).then(
-						(result) => setTurns((now) => now.map((t) => (t.id === reply ? { ...t, text: result.text, engine: result.engine, actions: result.actions, pending: false, took: Math.round((Date.now() - asked) / 100) / 10 } : t))),
-						(caught) => setTurns((now) => now.map((t) => (t.id === reply ? { ...t, text: messageOf(caught), pending: false, failed: true } : t))),
+						(result) =>
+							setTurns((now) =>
+								now.map((t) =>
+									t.id === reply
+										? {
+												...t,
+												text: result.text,
+												engine: result.engine,
+												actions: result.actions,
+												pending: false,
+												took: Math.round((Date.now() - asked) / 100) / 10,
+											}
+										: t,
+								),
+							),
+						(caught) =>
+							setTurns((now) =>
+								now.map((t) => (t.id === reply ? { ...t, text: messageOf(caught), pending: false, failed: true } : t)),
+							),
 					);
 				}}
 			/>

@@ -33,7 +33,20 @@ test("the pure entry point never reaches subprocess code", () => {
 });
 
 test("the pure entry point exports the public API", () => {
-	for (const name of ["AnswerSchema", "ProviderError", "normalizeUrl", "extractUrls", "toDomain", "sameSite", "parseClaudeStream", "parseCodexStream", "createOpenAI", "match", "metrics", "run"]) {
+	for (const name of [
+		"AnswerSchema",
+		"ProviderError",
+		"normalizeUrl",
+		"extractUrls",
+		"toDomain",
+		"sameSite",
+		"parseClaudeStream",
+		"parseCodexStream",
+		"createOpenAI",
+		"match",
+		"metrics",
+		"run",
+	]) {
 		expect(typeof (engine as Record<string, unknown>)[name]).not.toBe("undefined");
 	}
 });

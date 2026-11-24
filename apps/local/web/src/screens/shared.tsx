@@ -1,12 +1,13 @@
-import type { EngineInfo } from "@/types";
 import type { ReactNode } from "react";
 import { css as pageCss } from "@/components/analytics";
 import { Avatar } from "@/components/ui/avatar-clean";
 import { ChatGPTLogo, ClaudeLogo } from "@/components/ui/chat-composer-clean";
+import type { EngineInfo } from "@/types";
 
 export const percent = (value: number) => `${Math.round((Number.isFinite(value) ? value : 0) * 100)}%`;
 export const engineLabel = (engines: EngineInfo[], id: string) => engines.find((e) => e.id === id)?.label ?? id;
-export const when = (ms: number) => new Date(ms).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+export const when = (ms: number) =>
+	new Date(ms).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 export const day = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 export const byLine = (value: string) =>
 	value
@@ -20,7 +21,17 @@ export function ordinal(n: number): string {
 	return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
 }
 
-export function Page({ brand, title, actions, children }: { brand: string; title: string; actions?: ReactNode; children: ReactNode }) {
+export function Page({
+	brand,
+	title,
+	actions,
+	children,
+}: {
+	brand: string;
+	title: string;
+	actions?: ReactNode;
+	children: ReactNode;
+}) {
 	return (
 		<div className="ui-as-rev">
 			<style href="ui-screen-analytics" precedence="default">
@@ -39,7 +50,13 @@ export function Page({ brand, title, actions, children }: { brand: string; title
 	);
 }
 
-export function ShareList({ items, empty }: { items: { label: string; value: string; share: number; badge?: ReactNode }[]; empty?: ReactNode }) {
+export function ShareList({
+	items,
+	empty,
+}: {
+	items: { label: string; value: string; share: number; badge?: ReactNode }[];
+	empty?: ReactNode;
+}) {
 	if (items.length === 0) return <>{empty}</>;
 	return (
 		<div className="ui-as-rev__products">

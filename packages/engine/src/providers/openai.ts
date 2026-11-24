@@ -87,7 +87,8 @@ export function createOpenAI(o: OpenAIOptions): Provider {
 				const code = parsed.success ? parsed.data.error.code : null;
 				if (response.status === 401) fail("not_logged_in", "OpenAI rejected the API key. Check the key and try again.");
 				if (response.status === 429) fail("rate_limited", `OpenAI rate limit or quota reached. ${detail}`.trim());
-				if (code === "model_not_found") fail("model_unavailable", `OpenAI model \`${o.model}\` is not available to this key. ${detail}`.trim());
+				if (code === "model_not_found")
+					fail("model_unavailable", `OpenAI model \`${o.model}\` is not available to this key. ${detail}`.trim());
 				fail("failed", `OpenAI returned HTTP ${response.status}. ${detail}`.trim());
 			}
 
@@ -98,7 +99,10 @@ export function createOpenAI(o: OpenAIOptions): Provider {
 				fail("failed", `OpenAI could not complete the request. ${redact(parsed.data.error?.message ?? "")}`.trim());
 			}
 			if (parsed.data.status === "incomplete") {
-				fail("failed", `OpenAI stopped before finishing the answer (${parsed.data.incomplete_details?.reason ?? "no reason given"}).`);
+				fail(
+					"failed",
+					`OpenAI stopped before finishing the answer (${parsed.data.incomplete_details?.reason ?? "no reason given"}).`,
+				);
 			}
 
 			const texts: string[] = [];
@@ -143,7 +147,11 @@ export function createOpenAI(o: OpenAIOptions): Provider {
 			const citations = collectSources([...cited, ...extractUrls(text).map((url) => ({ url }))]);
 			const sources = searched ? collectSources([...consulted, ...citations]) : [];
 			const usage = parsed.data.usage
-				? { inputTokens: parsed.data.usage.input_tokens ?? 0, outputTokens: parsed.data.usage.output_tokens ?? 0, searches }
+				? {
+						inputTokens: parsed.data.usage.input_tokens ?? 0,
+						outputTokens: parsed.data.usage.output_tokens ?? 0,
+						searches,
+					}
 				: null;
 
 			return {

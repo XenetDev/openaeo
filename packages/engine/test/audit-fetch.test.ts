@@ -1,7 +1,12 @@
 import { expect, test } from "bun:test";
 import { AuditFetchError, createSafeFetch, isPrivateAddress } from "../src/audit/fetch";
 
-type Route = { status?: number; headers?: Record<string, string>; body?: string | ReadableStream<Uint8Array>; delayMs?: number };
+type Route = {
+	status?: number;
+	headers?: Record<string, string>;
+	body?: string | ReadableStream<Uint8Array>;
+	delayMs?: number;
+};
 
 function site(routes: Record<string, Route>, dns: Record<string, string[]> = {}) {
 	const requested: { url: string; init?: RequestInit }[] = [];
@@ -36,16 +41,45 @@ async function codeOf(run: Promise<unknown>) {
 }
 
 test("private, loopback, link-local and metadata addresses are recognised", () => {
-	for (const ip of ["127.0.0.1", "10.1.2.3", "172.16.0.1", "172.31.255.255", "192.168.1.1", "169.254.169.254", "0.0.0.0", "100.64.0.1", "::1", "::", "fc00::1", "fd12:3456::1", "fe80::1", "::ffff:127.0.0.1", "::ffff:7f00:1", "::ffff:10.0.0.1", "not-an-ip"]) {
+	for (const ip of [
+		"127.0.0.1",
+		"10.1.2.3",
+		"172.16.0.1",
+		"172.31.255.255",
+		"192.168.1.1",
+		"169.254.169.254",
+		"0.0.0.0",
+		"100.64.0.1",
+		"::1",
+		"::",
+		"fc00::1",
+		"fd12:3456::1",
+		"fe80::1",
+		"::ffff:127.0.0.1",
+		"::ffff:7f00:1",
+		"::ffff:10.0.0.1",
+		"not-an-ip",
+	]) {
 		expect([ip, isPrivateAddress(ip)]).toEqual([ip, true]);
 	}
-	for (const ip of ["93.184.216.34", "8.8.8.8", "172.32.0.1", "172.15.0.1", "100.128.0.1", "2606:4700:4700::1111", "::ffff:8.8.8.8"]) {
+	for (const ip of [
+		"93.184.216.34",
+		"8.8.8.8",
+		"172.32.0.1",
+		"172.15.0.1",
+		"100.128.0.1",
+		"2606:4700:4700::1111",
+		"::ffff:8.8.8.8",
+	]) {
 		expect([ip, isPrivateAddress(ip)]).toEqual([ip, false]);
 	}
 });
 
 test("addresses that point inside a network are refused without a request", async () => {
-	const { fetcher, lookup, requested } = site({}, { "intranet.example.com": ["10.0.0.5"], "mixed.example.com": ["93.184.216.34", "127.0.0.1"] });
+	const { fetcher, lookup, requested } = site(
+		{},
+		{ "intranet.example.com": ["10.0.0.5"], "mixed.example.com": ["93.184.216.34", "127.0.0.1"] },
+	);
 	const get = createSafeFetch({ fetch: fetcher, lookup });
 	for (const url of [
 		"http://127.0.0.1/",
@@ -78,9 +112,19 @@ test("unsupported schemes and garbage are bad urls", async () => {
 });
 
 test("a normal page is returned with its final url, status and type", async () => {
-	const { fetcher, lookup, requested } = site({ "https://example.com/": { body: "<h1>Hi</h1>", headers: { "content-type": "text/html; charset=utf-8" } } });
-	const got = await createSafeFetch({ fetch: fetcher, lookup, userAgent: "OpenAEO-Audit/test" })("https://example.com/");
-	expect(got).toEqual({ url: "https://example.com/", status: 200, contentType: "text/html; charset=utf-8", text: "<h1>Hi</h1>", redirects: [] });
+	const { fetcher, lookup, requested } = site({
+		"https://example.com/": { body: "<h1>Hi</h1>", headers: { "content-type": "text/html; charset=utf-8" } },
+	});
+	const got = await createSafeFetch({ fetch: fetcher, lookup, userAgent: "OpenAEO-Audit/test" })(
+		"https://example.com/",
+	);
+	expect(got).toEqual({
+		url: "https://example.com/",
+		status: 200,
+		contentType: "text/html; charset=utf-8",
+		text: "<h1>Hi</h1>",
+		redirects: [],
+	});
 	expect(new Headers(requested[0]?.init?.headers).get("user-agent")).toBe("OpenAEO-Audit/test");
 	expect(requested[0]?.init?.redirect).toBe("manual");
 	expect(requested[0]?.init?.method ?? "GET").toBe("GET");
@@ -118,12 +162,17 @@ test("a redirect into a private address is refused at that hop", async () => {
 	expect(await codeOf(get("https://example.com/"))).toBe("blocked");
 	expect(await codeOf(get("https://example.com/b"))).toBe("blocked");
 	expect(await codeOf(get("https://example.com/c"))).toBe("bad_url");
-	expect(requested.map((r) => r.url)).toEqual(["https://example.com/", "https://example.com/b", "https://example.com/c"]);
+	expect(requested.map((r) => r.url)).toEqual([
+		"https://example.com/",
+		"https://example.com/b",
+		"https://example.com/c",
+	]);
 });
 
 test("too many redirects stop", async () => {
 	const routes: Record<string, Route> = {};
-	for (let i = 0; i < 10; i += 1) routes[`https://example.com/${i}`] = { status: 302, headers: { location: `/${i + 1}` } };
+	for (let i = 0; i < 10; i += 1)
+		routes[`https://example.com/${i}`] = { status: 302, headers: { location: `/${i + 1}` } };
 	const { fetcher, lookup, requested } = site(routes);
 	expect(await codeOf(createSafeFetch({ fetch: fetcher, lookup })("https://example.com/0"))).toBe("too_many_redirects");
 	expect(requested.length).toBe(6);
@@ -138,19 +187,27 @@ test("a body over the cap stops being read", async () => {
 		},
 	});
 	const { fetcher, lookup } = site({ "https://example.com/big": { body: endless } });
-	expect(await codeOf(createSafeFetch({ fetch: fetcher, lookup, maxBytes: 256 * 1024 })("https://example.com/big"))).toBe("too_large");
+	expect(
+		await codeOf(createSafeFetch({ fetch: fetcher, lookup, maxBytes: 256 * 1024 })("https://example.com/big")),
+	).toBe("too_large");
 	expect(pulled).toBeLessThan(20);
 });
 
 test("a declared length over the cap is refused before reading", async () => {
-	const { fetcher, lookup } = site({ "https://example.com/big": { body: "x", headers: { "content-length": "999999999" } } });
-	expect(await codeOf(createSafeFetch({ fetch: fetcher, lookup, maxBytes: 1000 })("https://example.com/big"))).toBe("too_large");
+	const { fetcher, lookup } = site({
+		"https://example.com/big": { body: "x", headers: { "content-length": "999999999" } },
+	});
+	expect(await codeOf(createSafeFetch({ fetch: fetcher, lookup, maxBytes: 1000 })("https://example.com/big"))).toBe(
+		"too_large",
+	);
 });
 
 test("a slow response times out", async () => {
 	const { fetcher, lookup } = site({ "https://example.com/slow": { delayMs: 500 } });
 	const started = Date.now();
-	expect(await codeOf(createSafeFetch({ fetch: fetcher, lookup, timeoutMs: 50 })("https://example.com/slow"))).toBe("timeout");
+	expect(await codeOf(createSafeFetch({ fetch: fetcher, lookup, timeoutMs: 50 })("https://example.com/slow"))).toBe(
+		"timeout",
+	);
 	expect(Date.now() - started).toBeLessThan(400);
 });
 
@@ -158,14 +215,30 @@ test("network and lookup failures are reported as network errors", async () => {
 	const failing = (async () => {
 		throw new TypeError("connection refused");
 	}) as unknown as typeof fetch;
-	expect(await codeOf(createSafeFetch({ fetch: failing, lookup: async () => ["93.184.216.34"] })("https://example.com/"))).toBe("network");
+	expect(
+		await codeOf(createSafeFetch({ fetch: failing, lookup: async () => ["93.184.216.34"] })("https://example.com/")),
+	).toBe("network");
 	const { fetcher } = site({});
-	expect(await codeOf(createSafeFetch({ fetch: fetcher, lookup: async () => { throw new Error("ENOTFOUND"); } })("https://nope.example/"))).toBe("network");
-	expect(await codeOf(createSafeFetch({ fetch: fetcher, lookup: async () => [] })("https://nope.example/"))).toBe("network");
+	expect(
+		await codeOf(
+			createSafeFetch({
+				fetch: fetcher,
+				lookup: async () => {
+					throw new Error("ENOTFOUND");
+				},
+			})("https://nope.example/"),
+		),
+	).toBe("network");
+	expect(await codeOf(createSafeFetch({ fetch: fetcher, lookup: async () => [] })("https://nope.example/"))).toBe(
+		"network",
+	);
 });
 
 test("allowPrivate lets the local app audit a site on this machine", async () => {
-	const { fetcher, lookup } = site({ "http://127.0.0.1:3000/": { body: "dev" }, "http://localhost:3000/": { body: "dev2" } });
+	const { fetcher, lookup } = site({
+		"http://127.0.0.1:3000/": { body: "dev" },
+		"http://localhost:3000/": { body: "dev2" },
+	});
 	const get = createSafeFetch({ fetch: fetcher, lookup, allowPrivate: true });
 	expect((await get("http://127.0.0.1:3000/")).text).toBe("dev");
 	expect((await get("http://localhost:3000/")).text).toBe("dev2");

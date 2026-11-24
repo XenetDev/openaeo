@@ -6,7 +6,14 @@ import { RunError, type RunService } from "./runs";
 import type { Store } from "./store/store";
 
 export type Args =
-	| { command: "serve" | "run" | "status" | "audit" | "mcp" | "version" | "help"; open: boolean; json: boolean; project?: string; port?: number; url?: string }
+	| {
+			command: "serve" | "run" | "status" | "audit" | "mcp" | "version" | "help";
+			open: boolean;
+			json: boolean;
+			project?: string;
+			port?: number;
+			url?: string;
+	  }
 	| { command: "error"; message: string };
 
 const COMMANDS = new Set(["run", "status", "audit", "mcp", "help"]);
@@ -27,7 +34,8 @@ export function parseArgs(argv: string[]): Args {
 			i += 1;
 		} else if (arg === "--port") {
 			const value = Number(argv[i + 1]);
-			if (!Number.isInteger(value) || value < 1 || value > 65535) return fail("--port needs a number between 1 and 65535.");
+			if (!Number.isInteger(value) || value < 1 || value > 65535)
+				return fail("--port needs a number between 1 and 65535.");
 			args.port = value;
 			i += 1;
 		} else if (arg.startsWith("-")) return fail(`Unknown option "${arg}".`);
@@ -75,23 +83,42 @@ export function formatReport(name: string, report: Report): string {
 		"",
 		`${pad("Who gets mentioned", 26)}${pad("Share of answers", 18)}Average position`,
 		...report.competitors.map(
-			(c) => `${pad(c.isBrand ? `${c.name} (you)` : c.name, 26)}${pad(percent(c.mentionRate), 18)}${c.averageRank === null ? "-" : c.averageRank.toFixed(1)}`,
+			(c) =>
+				`${pad(c.isBrand ? `${c.name} (you)` : c.name, 26)}${pad(percent(c.mentionRate), 18)}${c.averageRank === null ? "-" : c.averageRank.toFixed(1)}`,
 		),
 	];
 	if (report.topDomains.length) {
-		lines.push("", "Most cited sites", ...report.topDomains.slice(0, 8).map((d) => `${pad(d.isBrand ? `${d.domain} (yours)` : d.domain, 40)}${d.citations}`));
+		lines.push(
+			"",
+			"Most cited sites",
+			...report.topDomains
+				.slice(0, 8)
+				.map((d) => `${pad(d.isBrand ? `${d.domain} (yours)` : d.domain, 40)}${d.citations}`),
+		);
 	}
 	return lines.join("\n");
 }
 
-export type RunOnceDeps = { store: Store; runs: RunService; out: (line: string) => void; json: boolean; project?: string };
+export type RunOnceDeps = {
+	store: Store;
+	runs: RunService;
+	out: (line: string) => void;
+	json: boolean;
+	project?: string;
+};
 
 export async function runOnce(deps: RunOnceDeps): Promise<number> {
 	const { store, runs, out } = deps;
 	const projects = store.projects.list();
-	const project = deps.project ? projects.find((p) => p.name.toLowerCase() === deps.project?.toLowerCase()) : projects[0];
+	const project = deps.project
+		? projects.find((p) => p.name.toLowerCase() === deps.project?.toLowerCase())
+		: projects[0];
 	if (!project) {
-		out(deps.project ? `There is no project named "${deps.project}".` : "There is no project yet. Run `openaeo` and set one up in the dashboard first.");
+		out(
+			deps.project
+				? `There is no project named "${deps.project}".`
+				: "There is no project yet. Run `openaeo` and set one up in the dashboard first.",
+		);
 		return 1;
 	}
 	let runId: string;
@@ -102,7 +129,8 @@ export async function runOnce(deps: RunOnceDeps): Promise<number> {
 		out(error.message);
 		return 1;
 	}
-	if (!deps.json) out(`Running ${store.prompts.list(project.id).filter((p) => p.active).length} prompts for ${project.name}…`);
+	if (!deps.json)
+		out(`Running ${store.prompts.list(project.id).filter((p) => p.active).length} prompts for ${project.name}…`);
 	const finished = await runs.wait(runId);
 	const answers = store.answers.listByRun(runId);
 	const failures = answers.filter((a) => a.errorCode !== null);
@@ -111,7 +139,9 @@ export async function runOnce(deps: RunOnceDeps): Promise<number> {
 		out(JSON.stringify(report, null, 2));
 	} else {
 		out(formatReport(project.name, report));
-		const problems = [...new Set(failures.map((a) => `${ENGINE_LABELS[a.engine] ?? a.engine}: ${a.errorMessage ?? a.errorCode}`))];
+		const problems = [
+			...new Set(failures.map((a) => `${ENGINE_LABELS[a.engine] ?? a.engine}: ${a.errorMessage ?? a.errorCode}`)),
+		];
 		if (problems.length) out(["", "Problems", ...problems.map((p) => `  ${p}`)].join("\n"));
 		if (finished.status === "interrupted") out("\nThe run was interrupted before it finished.");
 	}
@@ -122,15 +152,26 @@ const SEVERITIES = ["high", "medium", "low"] as const;
 
 export function formatAudit(result: Pick<AuditResult, "origin" | "score" | "pages" | "findings">): string {
 	const read = result.pages.filter((p) => !p.error).length;
-	const lines = [`OpenAEO audit · ${result.origin}`, "", `${pad("Score", 18)}${result.score} / 100`, `${pad("Pages read", 18)}${read} of ${result.pages.length}`, `${pad("Findings", 18)}${result.findings.length}`];
+	const lines = [
+		`OpenAEO audit · ${result.origin}`,
+		"",
+		`${pad("Score", 18)}${result.score} / 100`,
+		`${pad("Pages read", 18)}${read} of ${result.pages.length}`,
+		`${pad("Findings", 18)}${result.findings.length}`,
+	];
 	for (const severity of SEVERITIES) {
 		const groups = new Map<string, Finding[]>();
-		for (const finding of result.findings.filter((f) => f.severity === severity)) groups.set(finding.title, [...(groups.get(finding.title) ?? []), finding]);
+		for (const finding of result.findings.filter((f) => f.severity === severity))
+			groups.set(finding.title, [...(groups.get(finding.title) ?? []), finding]);
 		if (groups.size === 0) continue;
 		lines.push("", severity.toUpperCase());
 		for (const [title, findings] of groups) {
 			const first = findings[0] as Finding;
-			lines.push(`  ${title}${findings.length > 1 ? ` (${findings.length} pages)` : ""}`, `    ${first.url}`, ...first.fix.split("\n").map((line, i) => `    ${i === 0 ? "Fix: " : "     "}${line}`));
+			lines.push(
+				`  ${title}${findings.length > 1 ? ` (${findings.length} pages)` : ""}`,
+				`    ${first.url}`,
+				...first.fix.split("\n").map((line, i) => `    ${i === 0 ? "Fix: " : "     "}${line}`),
+			);
 		}
 	}
 	if (result.findings.length === 0) lines.push("", "No problems found.");
@@ -152,7 +193,9 @@ export type AuditOnceDeps = {
 export async function auditOnce(deps: AuditOnceDeps): Promise<number> {
 	const { store, out } = deps;
 	const projects = store.projects.list();
-	const project = deps.project ? projects.find((p) => p.name.toLowerCase() === deps.project?.toLowerCase()) : projects[0];
+	const project = deps.project
+		? projects.find((p) => p.name.toLowerCase() === deps.project?.toLowerCase())
+		: projects[0];
 	if (deps.project && !project) {
 		out(`There is no project named "${deps.project}".`);
 		return 1;
@@ -165,7 +208,12 @@ export async function auditOnce(deps: AuditOnceDeps): Promise<number> {
 				out("The audit was interrupted before it finished.");
 				return 1;
 			}
-			result = { origin: audit.origin, score: audit.score ?? 0, pages: audit.pages, findings: store.audits.findings(audit.id) };
+			result = {
+				origin: audit.origin,
+				score: audit.score ?? 0,
+				pages: audit.pages,
+				findings: store.audits.findings(audit.id),
+			};
 		} catch (error) {
 			if (!(error instanceof AuditError)) throw error;
 			out(error.message);
@@ -174,7 +222,11 @@ export async function auditOnce(deps: AuditOnceDeps): Promise<number> {
 	} else {
 		const origin = deps.url ? toOrigin(deps.url) : null;
 		if (!origin) {
-			out(deps.url ? `"${deps.url.slice(0, 100)}" is not a web address OpenAEO can audit.` : "Give an address to audit, for example: openaeo audit example.com");
+			out(
+				deps.url
+					? `"${deps.url.slice(0, 100)}" is not a web address OpenAEO can audit.`
+					: "Give an address to audit, for example: openaeo audit example.com",
+			);
 			return 1;
 		}
 		result = await runAudit({ url: origin, get: deps.get });

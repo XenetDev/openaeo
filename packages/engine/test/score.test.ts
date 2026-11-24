@@ -25,15 +25,36 @@ test("metrics summarise a set of answers", () => {
 		result(null, [2]),
 		result(null, [1]),
 	]);
-	expect(m).toEqual({ answers: 4, mentionRate: 0.5, averageRank: 2, rankScore: 0.375, shareOfVoice: 0.25, citationRate: 0.25 });
+	expect(m).toEqual({
+		answers: 4,
+		mentionRate: 0.5,
+		averageRank: 2,
+		rankScore: 0.375,
+		shareOfVoice: 0.25,
+		citationRate: 0.25,
+	});
 });
 
 test("metrics of no answers are zero with no rank", () => {
-	expect(metrics([])).toEqual({ answers: 0, mentionRate: 0, averageRank: null, rankScore: 0, shareOfVoice: 0, citationRate: 0 });
+	expect(metrics([])).toEqual({
+		answers: 0,
+		mentionRate: 0,
+		averageRank: null,
+		rankScore: 0,
+		shareOfVoice: 0,
+		citationRate: 0,
+	});
 });
 
 test("answers that mention nobody do not divide by zero", () => {
-	expect(metrics([result(null, []), result(null, [])])).toEqual({ answers: 2, mentionRate: 0, averageRank: null, rankScore: 0, shareOfVoice: 0, citationRate: 0 });
+	expect(metrics([result(null, []), result(null, [])])).toEqual({
+		answers: 2,
+		mentionRate: 0,
+		averageRank: null,
+		rankScore: 0,
+		shareOfVoice: 0,
+		citationRate: 0,
+	});
 });
 
 test("a brand that is the only one mentioned has full share of voice", () => {
@@ -53,7 +74,9 @@ test("visibility is 0 when the brand never appears", () => {
 });
 
 test("visibility is 100 for a brand that is always first, alone and cited", () => {
-	expect(visibility({ answers: 10, mentionRate: 1, averageRank: 1, rankScore: 1, shareOfVoice: 1, citationRate: 1 })).toBe(100);
+	expect(
+		visibility({ answers: 10, mentionRate: 1, averageRank: 1, rankScore: 1, shareOfVoice: 1, citationRate: 1 }),
+	).toBe(100);
 });
 
 test("visibility stays within 0..100 and is finite", () => {
@@ -61,7 +84,14 @@ test("visibility stays within 0..100 and is finite", () => {
 		for (const rankScore of [0, 0.2, 1]) {
 			for (const shareOfVoice of [0, 0.3, 1]) {
 				for (const citationRate of [0, 0.4, 1]) {
-					const score = visibility({ answers: 10, mentionRate, averageRank: null, rankScore, shareOfVoice, citationRate });
+					const score = visibility({
+						answers: 10,
+						mentionRate,
+						averageRank: null,
+						rankScore,
+						shareOfVoice,
+						citationRate,
+					});
 					expect(Number.isFinite(score)).toBe(true);
 					expect(score).toBeGreaterThanOrEqual(0);
 					expect(score).toBeLessThanOrEqual(100);
@@ -91,6 +121,17 @@ test("the average rank shown to users does not change the score", () => {
 });
 
 test("visibility tolerates out-of-range and non-finite inputs", () => {
-	expect(visibility({ answers: 1, mentionRate: 2, averageRank: 0, rankScore: 7, shareOfVoice: 5, citationRate: 9 })).toBe(100);
-	expect(visibility({ answers: 1, mentionRate: Number.NaN, averageRank: Number.NaN, rankScore: Number.NaN, shareOfVoice: -1, citationRate: Number.NaN })).toBe(0);
+	expect(
+		visibility({ answers: 1, mentionRate: 2, averageRank: 0, rankScore: 7, shareOfVoice: 5, citationRate: 9 }),
+	).toBe(100);
+	expect(
+		visibility({
+			answers: 1,
+			mentionRate: Number.NaN,
+			averageRank: Number.NaN,
+			rankScore: Number.NaN,
+			shareOfVoice: -1,
+			citationRate: Number.NaN,
+		}),
+	).toBe(0);
 });

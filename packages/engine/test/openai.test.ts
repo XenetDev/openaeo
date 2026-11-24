@@ -18,7 +18,8 @@ function fakeFetch(respond: (seen: Seen) => Response | Promise<Response>) {
 	return { fetcher, calls };
 }
 
-const ok = (value: unknown) => new Response(JSON.stringify(value), { status: 200, headers: { "content-type": "application/json" } });
+const ok = (value: unknown) =>
+	new Response(JSON.stringify(value), { status: 200, headers: { "content-type": "application/json" } });
 const fail = (status: number, error: unknown) => new Response(JSON.stringify({ error }), { status });
 
 async function errorOf(run: Promise<unknown>) {
@@ -97,8 +98,11 @@ test("an answer without a search call is not searched", async () => {
 });
 
 test("http errors are classified", async () => {
-	const ask = (response: Response) => errorOf(createOpenAI({ apiKey: "k", model: "m9", fetch: fakeFetch(() => response).fetcher }).ask("q"));
-	expect((await ask(fail(401, { message: "Incorrect API key provided", code: "invalid_api_key" }))).code).toBe("not_logged_in");
+	const ask = (response: Response) =>
+		errorOf(createOpenAI({ apiKey: "k", model: "m9", fetch: fakeFetch(() => response).fetcher }).ask("q"));
+	expect((await ask(fail(401, { message: "Incorrect API key provided", code: "invalid_api_key" }))).code).toBe(
+		"not_logged_in",
+	);
 	expect((await ask(fail(429, { message: "Rate limit reached" }))).code).toBe("rate_limited");
 	const missing = await ask(fail(404, { message: "The model `m9` does not exist", code: "model_not_found" }));
 	expect(missing.code).toBe("model_unavailable");
@@ -109,13 +113,20 @@ test("http errors are classified", async () => {
 });
 
 test("a non-JSON error body still gives a readable failure", async () => {
-	const error = await errorOf(createOpenAI({ apiKey: "k", model: "m", fetch: fakeFetch(() => new Response("<html>Bad gateway</html>", { status: 502 })).fetcher }).ask("q"));
+	const error = await errorOf(
+		createOpenAI({
+			apiKey: "k",
+			model: "m",
+			fetch: fakeFetch(() => new Response("<html>Bad gateway</html>", { status: 502 })).fetcher,
+		}).ask("q"),
+	);
 	expect(error.code).toBe("failed");
 	expect(error.message).toContain("502");
 });
 
 test("a 200 response with an empty or malformed body fails", async () => {
-	const ask = (response: Response) => errorOf(createOpenAI({ apiKey: "k", model: "m", fetch: fakeFetch(() => response).fetcher }).ask("q"));
+	const ask = (response: Response) =>
+		errorOf(createOpenAI({ apiKey: "k", model: "m", fetch: fakeFetch(() => response).fetcher }).ask("q"));
 	expect((await ask(new Response("not json", { status: 200 }))).code).toBe("failed");
 	expect((await ask(ok({ output: [] }))).code).toBe("failed");
 	expect((await ask(ok({ nothing: true }))).code).toBe("failed");
@@ -123,7 +134,11 @@ test("a 200 response with an empty or malformed body fails", async () => {
 
 test("a network failure is reported as failed", async () => {
 	const error = await errorOf(
-		createOpenAI({ apiKey: "k", model: "m", fetch: fakeFetch(() => Promise.reject(new TypeError("fetch failed"))).fetcher }).ask("q"),
+		createOpenAI({
+			apiKey: "k",
+			model: "m",
+			fetch: fakeFetch(() => Promise.reject(new TypeError("fetch failed"))).fetcher,
+		}).ask("q"),
 	);
 	expect(error.code).toBe("failed");
 	expect(error.message).toContain("fetch failed");
@@ -145,7 +160,11 @@ test("an aborted request is reported as timeout", async () => {
 
 test("the api key never appears in an error message", async () => {
 	const error = await errorOf(
-		createOpenAI({ apiKey: "sk-secret-123", model: "m", fetch: fakeFetch(() => fail(401, { message: "Incorrect API key provided: sk-secret-123" })).fetcher }).ask("q"),
+		createOpenAI({
+			apiKey: "sk-secret-123",
+			model: "m",
+			fetch: fakeFetch(() => fail(401, { message: "Incorrect API key provided: sk-secret-123" })).fetcher,
+		}).ask("q"),
 	);
 	expect(error.message).not.toContain("sk-secret-123");
 });

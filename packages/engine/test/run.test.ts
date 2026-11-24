@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { run, type RunItem } from "../src/run";
+import { type RunItem, run } from "../src/run";
 import { type Answer, type EngineId, type Provider, ProviderError } from "../src/types";
 
 const answer = (engine: EngineId, text: string): Answer => ({
@@ -41,7 +41,14 @@ test("yields every prompt and engine pair exactly once", async () => {
 	const b = provider("codex-cli");
 	const items = await collect(run({ prompts: ["p1", "p2", "p3"], providers: [a.p, b.p] }));
 	expect(items.length).toBe(6);
-	expect(items.map((i) => `${i.prompt}|${i.engine}`).sort()).toEqual(["p1|claude-cli", "p1|codex-cli", "p2|claude-cli", "p2|codex-cli", "p3|claude-cli", "p3|codex-cli"]);
+	expect(items.map((i) => `${i.prompt}|${i.engine}`).sort()).toEqual([
+		"p1|claude-cli",
+		"p1|codex-cli",
+		"p2|claude-cli",
+		"p2|codex-cli",
+		"p3|claude-cli",
+		"p3|codex-cli",
+	]);
 	expect(items.every((i) => i.ok)).toBe(true);
 });
 
@@ -125,7 +132,12 @@ test("aborting stops further asks", async () => {
 		return answer("claude-cli", prompt);
 	});
 	const seen: RunItem[] = [];
-	for await (const item of run({ prompts: ["1", "2", "3", "4", "5"], providers: [p.p], concurrency: 1, signal: controller.signal })) {
+	for await (const item of run({
+		prompts: ["1", "2", "3", "4", "5"],
+		providers: [p.p],
+		concurrency: 1,
+		signal: controller.signal,
+	})) {
 		seen.push(item);
 		controller.abort();
 	}

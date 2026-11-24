@@ -1,5 +1,5 @@
 import type { Answer, AskOptions, Provider } from "../types";
-import { type ApiOptions, failWith, finish, type Found, list, num, postJson, rec, str } from "./http";
+import { type ApiOptions, type Found, failWith, finish, list, num, postJson, rec, str } from "./http";
 
 export const PERPLEXITY_DEFAULT_MODEL = "perplexity/sonar";
 
@@ -10,13 +10,29 @@ export function createPerplexity(o: ApiOptions): Provider {
 		id: "perplexity",
 		async ask(prompt: string, opts: AskOptions = {}): Promise<Answer> {
 			const started = Date.now();
-			const res = await postJson({ engine: "perplexity", label: "Perplexity", fetcher: o.fetch ?? fetch, url, headers: { authorization: `Bearer ${o.apiKey}` }, body: { model, input: prompt, tools: [{ type: "web_search" }], stream: false }, apiKey: o.apiKey, opts });
+			const res = await postJson({
+				engine: "perplexity",
+				label: "Perplexity",
+				fetcher: o.fetch ?? fetch,
+				url,
+				headers: { authorization: `Bearer ${o.apiKey}` },
+				body: { model, input: prompt, tools: [{ type: "web_search" }], stream: false },
+				apiKey: o.apiKey,
+				opts,
+			});
 			const body = rec(res.json);
 			if (!res.ok) {
 				const detail = res.redact(str(rec(body.error).message));
-				if (res.status === 401 || res.status === 403) failWith("perplexity", "not_logged_in", "Perplexity rejected the API key. Check the key and try again.");
-				if (res.status === 429 || res.status === 402) failWith("perplexity", "rate_limited", `Perplexity rate limit reached or credits used up. ${detail}`.trim());
-				if (res.status === 404 || /model/i.test(detail)) failWith("perplexity", "model_unavailable", `Perplexity model \`${model}\` is not available to this key. ${detail}`.trim());
+				if (res.status === 401 || res.status === 403)
+					failWith("perplexity", "not_logged_in", "Perplexity rejected the API key. Check the key and try again.");
+				if (res.status === 429 || res.status === 402)
+					failWith("perplexity", "rate_limited", `Perplexity rate limit reached or credits used up. ${detail}`.trim());
+				if (res.status === 404 || /model/i.test(detail))
+					failWith(
+						"perplexity",
+						"model_unavailable",
+						`Perplexity model \`${model}\` is not available to this key. ${detail}`.trim(),
+					);
 				failWith("perplexity", "failed", `Perplexity returned HTTP ${res.status}. ${detail}`.trim());
 			}
 			const texts: string[] = [];
@@ -35,7 +51,8 @@ export function createPerplexity(o: ApiOptions): Provider {
 					}
 				}
 				if (entry.type !== "message") continue;
-				for (const block of list(entry.content)) if (rec(block).type === "output_text") texts.push(str(rec(block).text));
+				for (const block of list(entry.content))
+					if (rec(block).type === "output_text") texts.push(str(rec(block).text));
 			}
 			const cited: Found[] = [];
 			const text = texts.join("\n\n").replace(/\s*\[(?:web:)?(\d+)\]/g, (whole, id: string) => {
@@ -53,7 +70,13 @@ export function createPerplexity(o: ApiOptions): Provider {
 				cited,
 				consulted,
 				searched,
-				usage: body.usage ? { inputTokens: num(usage.input_tokens), outputTokens: num(usage.output_tokens), searches: num(rec(rec(usage.tool_calls_details).search_web).invocation) } : null,
+				usage: body.usage
+					? {
+							inputTokens: num(usage.input_tokens),
+							outputTokens: num(usage.output_tokens),
+							searches: num(rec(rec(usage.tool_calls_details).search_web).invocation),
+						}
+					: null,
 				started,
 			});
 		},

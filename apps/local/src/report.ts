@@ -1,4 +1,12 @@
-import { type EngineId, type MatchResult, type Metrics, metrics, sameSite, toDomain, visibility } from "@openaeo/engine";
+import {
+	type EngineId,
+	type MatchResult,
+	type Metrics,
+	metrics,
+	sameSite,
+	toDomain,
+	visibility,
+} from "@openaeo/engine";
 import type { Project, Run, Store, StoredAnswer } from "./store/store";
 
 export type EngineReport = { engine: EngineId; metrics: Metrics; visibility: number; errors: number };
@@ -36,7 +44,11 @@ function brandSites(project: Project): string[] {
 		.filter((d): d is string => d !== null);
 }
 
-export function buildReport(store: Store, projectId: string, opts: { runId?: string; trendRuns?: number } = {}): Report {
+export function buildReport(
+	store: Store,
+	projectId: string,
+	opts: { runId?: string; trendRuns?: number } = {},
+): Report {
 	const project = store.projects.get(projectId);
 	const run = (opts.runId ? store.runs.get(opts.runId) : store.runs.latest(projectId)) ?? null;
 	const answers = run && run.projectId === projectId ? store.answers.listByRun(run.id) : [];
@@ -77,7 +89,12 @@ export function buildReport(store: Store, projectId: string, opts: { runId?: str
 		.reverse()
 		.map((r) => {
 			const summary = summarise(store.answers.listByRun(r.id));
-			return { runId: r.id, startedAt: r.startedAt, visibility: summary.visibility, mentionRate: summary.metrics.mentionRate };
+			return {
+				runId: r.id,
+				startedAt: r.startedAt,
+				visibility: summary.visibility,
+				mentionRate: summary.metrics.mentionRate,
+			};
 		});
 
 	const problems: Report["problems"] = [];
@@ -89,7 +106,16 @@ export function buildReport(store: Store, projectId: string, opts: { runId?: str
 		else problems.push({ engine: answer.engine, message, count: 1 });
 	}
 
-	return { projectId, run: answers.length || run ? run : null, overall: summarise(answers), engines, competitors, topDomains, trend, problems };
+	return {
+		projectId,
+		run: answers.length || run ? run : null,
+		overall: summarise(answers),
+		engines,
+		competitors,
+		topDomains,
+		trend,
+		problems,
+	};
 }
 
 export type PromptStat = {
@@ -116,7 +142,8 @@ export function promptStats(store: Store, projectId: string, maxRuns = 12): Prom
 			if (mine.length === 0) continue;
 			const mentioned = mine.filter((a) => a.brandRank !== null);
 			history.push({ runId: run.id, startedAt: run.startedAt, rate: mentioned.length / mine.length });
-			for (const answer of mentioned) bestRank = bestRank === null ? answer.brandRank : Math.min(bestRank, answer.brandRank ?? bestRank);
+			for (const answer of mentioned)
+				bestRank = bestRank === null ? answer.brandRank : Math.min(bestRank, answer.brandRank ?? bestRank);
 		}
 		return {
 			promptId: prompt.id,

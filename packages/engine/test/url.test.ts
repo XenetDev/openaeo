@@ -50,7 +50,11 @@ test("sameSite matches the site and its subdomains only", () => {
 });
 
 test("toSource builds a source with a domain and optional title", () => {
-	expect(toSource("https://www.a.com/x?utm_campaign=1", "A")).toEqual({ url: "https://www.a.com/x", domain: "a.com", title: "A" });
+	expect(toSource("https://www.a.com/x?utm_campaign=1", "A")).toEqual({
+		url: "https://www.a.com/x",
+		domain: "a.com",
+		title: "A",
+	});
 	expect(toSource("https://a.com/x")).toEqual({ url: "https://a.com/x", domain: "a.com" });
 	expect(toSource("junk")).toBeNull();
 });

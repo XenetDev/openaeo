@@ -27,7 +27,15 @@ export type Report = {
 	engines: EngineReport[];
 	competitors: { name: string; mentionRate: number; averageRank: number | null; isBrand: boolean }[];
 	topDomains: { domain: string; citations: number; isBrand: boolean }[];
-	trend: { runId: string; startedAt: number; visibility: number; mentionRate: number; sentiment: number | null }[];
+	trend: {
+		runId: string;
+		startedAt: number;
+		visibility: number;
+		mentionRate: number;
+		citationRate: number;
+		averageRank: number | null;
+		sentiment: number | null;
+	}[];
 	problems: { engine: EngineId; message: string; count: number }[];
 };
 
@@ -132,6 +140,8 @@ export function buildReport(
 				startedAt: r.startedAt,
 				visibility: summary.visibility,
 				mentionRate: summary.metrics.mentionRate,
+				citationRate: summary.metrics.citationRate,
+				averageRank: summary.metrics.averageRank,
 				sentiment: summary.sentiment.score,
 			};
 		});

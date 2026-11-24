@@ -1077,3 +1077,24 @@ body,
 	font-size: 12px;
 	line-height: 16px;
 }
+
+.oa-stat .ui-statc__text {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	column-gap: 8px;
+}
+
+.oa-stat .ui-statc__label {
+	grid-column: 1 / -1;
+}
+
+.oa-stat .ui-statc__meta {
+	margin: 0;
+	justify-self: end;
+}
+
+.oa-stat .ui-statc__body {
+	row-gap: 10px;
+	padding-bottom: 12px;
+}

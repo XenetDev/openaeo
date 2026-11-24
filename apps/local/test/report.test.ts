@@ -194,3 +194,13 @@ test("a first run shows its own answers as they arrive", async () => {
 	expect(buildReport(store, project.id).basedOnRunId).toBe(run.id);
 	await runs.wait(run.id);
 });
+
+test("the trend carries every headline figure for each finished run", async () => {
+	const store = freshStore();
+	const project = seed(store, ["q1"]);
+	await runOnce(store, project.id, "HubSpot first, then Pipedrive.", "HubSpot only.");
+	const [point] = buildReport(store, project.id).trend;
+	expect(point?.mentionRate).toBe(0.5);
+	expect(point?.citationRate).toBe(0.5);
+	expect(point?.averageRank).toBe(2);
+});

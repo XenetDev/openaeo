@@ -48,7 +48,15 @@ export type ReportView = {
 	engines: { engine: string; metrics: MetricsView; visibility: number; sentiment: SentimentView; errors: number }[];
 	competitors: { name: string; mentionRate: number; averageRank: number | null; isBrand: boolean }[];
 	topDomains: { domain: string; citations: number; isBrand: boolean }[];
-	trend: { runId: string; startedAt: number; visibility: number; mentionRate: number; sentiment: number | null }[];
+	trend: {
+		runId: string;
+		startedAt: number;
+		visibility: number;
+		mentionRate: number;
+		citationRate: number;
+		averageRank: number | null;
+		sentiment: number | null;
+	}[];
 	problems: { engine: string; message: string; count: number }[];
 };
 

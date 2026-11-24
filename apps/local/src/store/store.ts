@@ -353,7 +353,8 @@ export function createStore(db: Database) {
 		},
 		finish(id: string, status: AuditStatus, result: AuditResult | null): StoredAudit | null {
 			db.transaction(() => {
-				db.query("UPDATE audit SET status = ?, finished_at = ?, score = ?, pages = ?, skipped = ? WHERE id = ?").run(
+				db.query("UPDATE audit SET origin = COALESCE(?, origin), status = ?, finished_at = ?, score = ?, pages = ?, skipped = ? WHERE id = ?").run(
+					result?.origin ?? null,
 					status,
 					Date.now(),
 					result?.score ?? null,

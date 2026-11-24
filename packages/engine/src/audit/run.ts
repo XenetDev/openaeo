@@ -90,10 +90,15 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 		return { origin, startedAt, pages: [{ url: homeUrl, status: 0, words: 0, error: reason }], findings: [finding], score: 0, skipped: [] };
 	}
 
+	try {
+		origin = new URL(home.url).origin;
+	} catch {}
+	const landing = home.url || homeUrl;
+
 	const [robots, llms, sitemap] = await Promise.all([tryGet(`${origin}/robots.txt`), tryGet(`${origin}/llms.txt`), tryGet(`${origin}/sitemap.xml`)]);
 	const findings: Finding[] = checkSite({ origin, robots, llms });
 
-	const homePage = parsePage(home.url, home.text);
+	const homePage = { ...parsePage(landing, home.text), isHome: true };
 	let discovered: string[] = [];
 	if (sitemap && ok(sitemap) && /<(urlset|sitemapindex)/i.test(sitemap.text)) {
 		if (/<sitemapindex/i.test(sitemap.text)) {
@@ -111,7 +116,7 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 	}
 	if (discovered.length === 0) discovered = homePage.internalLinks;
 
-	const seen = new Set<string>([homeUrl]);
+	const seen = new Set<string>([homeUrl, landing, `${origin}/`]);
 	const candidates: string[] = [];
 	for (const raw of discovered) {
 		let url: URL;
@@ -130,7 +135,7 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 	const chosen = candidates.slice(0, maxPages - 1);
 	const skipped = candidates.slice(maxPages - 1);
 
-	const pages: (AuditPage | null)[] = [{ url: homeUrl, status: home.status, words: homePage.words }, ...chosen.map(() => null)];
+	const pages: (AuditPage | null)[] = [{ url: landing, status: home.status, words: homePage.words }, ...chosen.map(() => null)];
 	const perPage: Finding[][] = [checkPage(homePage, startedAt), ...chosen.map(() => [])];
 
 	let next = 0;

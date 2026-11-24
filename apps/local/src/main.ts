@@ -56,6 +56,16 @@ if (args.command === "status") {
 	process.exit(0);
 }
 
+if (args.command === "mcp") {
+	const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
+	const { createMcpServer } = await import("./mcp");
+	await createMcpServer({ store, runs, audits, version: pkg.version }).connect(new StdioServerTransport());
+	await new Promise<void>((resolve) => process.stdin.on("close", resolve));
+	runs.cancelAll();
+	audits.cancelAll();
+	process.exit(0);
+}
+
 if (args.command === "audit") {
 	process.exit(await auditOnce({ store, audits, get, out, json: args.json, url: args.url, project: args.project }));
 }

@@ -224,3 +224,17 @@ test("openaeo audit explains what is missing", async () => {
 	expect(await auditOnce({ store, audits: createAuditService({ store, get: down }), get: down, out: (l) => lines.push(l), json: false, url: "x.com" })).toBe(1);
 	expect(lines.join("\n")).toContain("Could not reach x.com");
 });
+
+test("the stored audit records the address the site redirected to", async () => {
+	const store = freshStore();
+	const project = seed(store);
+	const get = async (url: string): Promise<Fetched> => {
+		const final = url.replace("https://pipedrive.com/", "https://www.pipedrive.com/");
+		return final === "https://www.pipedrive.com/"
+			? { url: final, status: 200, contentType: "text/html", text: page("Home"), redirects: [final] }
+			: { url: final, status: 404, contentType: "text/html", text: "", redirects: [] };
+	};
+	const audits = createAuditService({ store, get });
+	const done = await audits.wait(audits.start(project.id).id);
+	expect(done.origin).toBe("https://www.pipedrive.com");
+});

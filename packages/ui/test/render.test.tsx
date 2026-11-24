@@ -207,3 +207,10 @@ test("the shell links to the audit page", () => {
 	const out = html(<AppShell projects={[project]} project={project} page="audit" onNavigate={noop} onSelectProject={noop} onNewProject={noop}><p>x</p></AppShell>);
 	expect(out).toMatch(/aria-current="page"[^>]*>.{0,80}?Audit</);
 });
+
+test("settings explain how to connect an AI agent", () => {
+	const out = html(<SettingsPage engines={engines} settings={{}} project={project} onSave={noop} onSaveProject={noop} onDeleteProject={noop} />);
+	expect(out).toContain("Connect your AI agent");
+	expect(out).toContain("claude mcp add openaeo --scope user -- openaeo mcp");
+	expect(out).toContain("codex mcp add openaeo -- openaeo mcp");
+});

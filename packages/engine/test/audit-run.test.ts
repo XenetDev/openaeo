@@ -197,3 +197,37 @@ test("artefacts are valid and only offered when needed", async () => {
 	const clean = artefacts({ ...result, findings: [] }, { name: "Acme" });
 	expect(clean).toEqual({});
 });
+
+test("a site that redirects to its www address is audited there", async () => {
+	const pages: Record<string, string> = {
+		"https://www.acme.com/": article("Home"),
+		"https://www.acme.com/robots.txt": "User-agent: GPTBot\nDisallow: /",
+		"https://www.acme.com/sitemap.xml": sitemap(["https://www.acme.com/a", "https://www.acme.com/b"]),
+		"https://www.acme.com/a": article("A"),
+		"https://www.acme.com/b": article("B"),
+	};
+	const calls: string[] = [];
+	const get = async (url: string): Promise<Fetched> => {
+		calls.push(url);
+		const final = url.replace("https://acme.com/", "https://www.acme.com/");
+		const text = pages[final];
+		if (text === undefined) return { url: final, status: 404, contentType: "text/html", text: "", redirects: [] };
+		return { url: final, status: 200, contentType: final.endsWith(".txt") ? "text/plain" : final.endsWith(".xml") ? "application/xml" : "text/html", text, redirects: final === url ? [] : [final] };
+	};
+	const result = await runAudit({ url: "acme.com", get, now: () => NOW });
+	expect(result.origin).toBe("https://www.acme.com");
+	expect(result.pages.map((p) => p.url)).toEqual(["https://www.acme.com/", "https://www.acme.com/a", "https://www.acme.com/b"]);
+	expect(result.findings.some((f) => f.checkId === "crawler-blocked")).toBe(true);
+	expect(calls).toContain("https://www.acme.com/robots.txt");
+});
+
+test("a home page that redirects to another site entirely is followed, and a deep landing path still counts as home", async () => {
+	const get = async (url: string): Promise<Fetched> => {
+		if (url === "https://old.example/" || url === "https://new.example/en/") return { url: "https://new.example/en/", status: 200, contentType: "text/html", text: article("New home"), redirects: [] };
+		return { url, status: 404, contentType: "text/html", text: "", redirects: [] };
+	};
+	const result = await runAudit({ url: "https://old.example", get, now: () => NOW });
+	expect(result.origin).toBe("https://new.example");
+	expect(result.pages[0]?.url).toBe("https://new.example/en/");
+	expect(result.findings.map((f) => f.checkId)).not.toContain("no-question-headings");
+});

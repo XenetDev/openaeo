@@ -100,7 +100,7 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 					}
 				/>
 			) : (
-				<div className="oa-answers">
+				<div className="oa-answers" data-wide="">
 					<Card className="oa-qlist">
 						<CardHeader title="History" description={`${runs.length} ${runs.length === 1 ? "run" : "runs"}, newest first`} />
 						<nav aria-label="Runs">

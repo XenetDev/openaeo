@@ -442,7 +442,7 @@ export const css = /* css */ `
 /* Revenue dashboard: a header, then rows of white cards on the panel */
 .ui-as-rev { display: flex; flex-direction: column; min-height: 100%; }
 /* The bar stays on top while the page scrolls under it */
-.ui-as-rev__head { position: sticky; top: 0; z-index: 6; display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; height: var(--as-head-h, 48px); padding: 0 12px 0 20px; background: var(--panel); }
+.ui-as-rev__head { position: sticky; top: 0; z-index: 6; display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; height: var(--as-head-h, 48px); padding: 0 16px; background: var(--panel); }
 .ui-as-rev__path { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; font-size: 13px; font-weight: 400; color: var(--muted); white-space: nowrap; }
 .ui-as-rev__path i { font-style: normal; color: var(--faint); }
 .ui-as-rev__path b { font-weight: 500; color: var(--ink); }

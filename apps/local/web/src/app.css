@@ -73,9 +73,15 @@ body,
 
 .oa-answers {
 	display: grid;
-	grid-template-columns: minmax(240px, 340px) minmax(0, 760px) minmax(240px, 340px);
+	grid-template-columns: minmax(260px, 1fr) minmax(0, 760px) minmax(260px, 1fr);
 	align-items: start;
 	gap: 12px;
+}
+
+@media (min-width: 1501px) {
+	.oa-answers[data-wide] {
+		grid-template-columns: minmax(240px, 340px) minmax(0, 1fr) minmax(240px, 340px);
+	}
 }
 
 .oa-qlist {

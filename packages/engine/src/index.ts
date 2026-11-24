@@ -7,3 +7,6 @@ export * from "./score";
 export * from "./providers/openai";
 export * from "./run";
 export * from "./audit/fetch";
+export * from "./audit/checks";
+export * from "./audit/page";
+export * from "./audit/robots";

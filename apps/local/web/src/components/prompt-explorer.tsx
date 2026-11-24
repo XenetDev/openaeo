@@ -367,7 +367,7 @@ export function PromptExplorerScreen({
                     <Completion text={s.text} typed={typed} />
                   </span>
                   <span className="ui-pex-opt__nums ui-pex-num">
-                    {short(s.volume)} <Change value={s.change} arrow={false} />
+                    {s.pending ? "Not run yet" : <>{short(s.volume)} <Change value={s.change} arrow={false} /></>}
                   </span>
                 </div>
               ))}

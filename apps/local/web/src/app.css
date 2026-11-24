@@ -588,9 +588,17 @@ body,
 	text-align: left;
 }
 
-.ui-pex-box.oa-pill[data-bulk],
-.ui-pex-box.oa-pill[data-open] {
+.ui-pex-box.oa-pill[data-bulk] {
 	border-radius: 18px;
+}
+
+.oa-pill .ui-pex-list {
+	top: calc(100% + 6px);
+	padding: 6px;
+	border-radius: 14px;
+	background: var(--aui-overlay, var(--card));
+	box-shadow: var(--aui-shadow-popover, 0 0 0 0.5px var(--line-strong), 0 12px 32px -8px rgba(0, 0, 0, 0.3));
+	clip-path: none;
 }
 
 .ui-pex-box.oa-pill:focus-within {
@@ -607,12 +615,16 @@ body,
 }
 
 .oa-pill[data-bulk] .oa-pill-row {
-	align-items: flex-end;
+	align-items: flex-start;
+	padding-top: 14px;
 }
 
 .oa-pill[data-bulk] .oa-pill-row > svg {
-	align-self: flex-start;
-	margin-top: 9px;
+	margin-top: 3px;
+}
+
+.oa-pill[data-bulk] .oa-pill-row button {
+	align-self: flex-end;
 }
 
 .oa-pill-row .ui-pex-field {

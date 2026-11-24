@@ -10,16 +10,23 @@ import {
 import type { PromptStatView } from "./api-types";
 import type { Project, Run, Store, StoredAnswer } from "./store/store";
 
-export type EngineReport = { engine: EngineId; metrics: Metrics; visibility: number; errors: number };
+export type Sentiment = { score: number | null; positive: number; neutral: number; negative: number };
+export type EngineReport = {
+	engine: EngineId;
+	metrics: Metrics;
+	visibility: number;
+	sentiment: Sentiment;
+	errors: number;
+};
 
 export type Report = {
 	projectId: string;
 	run: Run | null;
-	overall: { metrics: Metrics; visibility: number };
+	overall: { metrics: Metrics; visibility: number; sentiment: Sentiment };
 	engines: EngineReport[];
 	competitors: { name: string; mentionRate: number; averageRank: number | null; isBrand: boolean }[];
 	topDomains: { domain: string; citations: number; isBrand: boolean }[];
-	trend: { runId: string; startedAt: number; visibility: number; mentionRate: number }[];
+	trend: { runId: string; startedAt: number; visibility: number; mentionRate: number; sentiment: number | null }[];
 	problems: { engine: EngineId; message: string; count: number }[];
 };
 
@@ -34,9 +41,20 @@ const toMatch = (a: StoredAnswer): MatchResult => ({
 	citedDomains: [...new Set(a.citations.map((c) => c.domain))],
 });
 
+export function sentimentOf(answers: StoredAnswer[]): Sentiment {
+	const count = (label: StoredAnswer["sentiment"]) => answers.filter((a) => a.sentiment === label).length;
+	const positive = count("positive");
+	const neutral = count("neutral");
+	const negative = count("negative");
+	const labelled = positive + neutral + negative;
+	const score = labelled ? Math.round(((positive + neutral / 2) / labelled) * 100) : null;
+	return { score, positive, neutral, negative };
+}
+
 function summarise(answers: StoredAnswer[]) {
-	const m = metrics(ok(answers).map(toMatch));
-	return { metrics: m, visibility: visibility(m) };
+	const good = ok(answers);
+	const m = metrics(good.map(toMatch));
+	return { metrics: m, visibility: visibility(m), sentiment: sentimentOf(good) };
 }
 
 function brandSites(project: Project): string[] {
@@ -48,11 +66,24 @@ function brandSites(project: Project): string[] {
 export function buildReport(
 	store: Store,
 	projectId: string,
-	opts: { runId?: string; trendRuns?: number } = {},
+	opts: { runId?: string; trendRuns?: number; tag?: string } = {},
 ): Report {
 	const project = store.projects.get(projectId);
 	const run = (opts.runId ? store.runs.get(opts.runId) : store.runs.latest(projectId)) ?? null;
-	const answers = run && run.projectId === projectId ? store.answers.listByRun(run.id) : [];
+	const wanted = opts.tag?.trim().toLowerCase();
+	const tagged = wanted
+		? new Set(
+				store.prompts
+					.list(projectId)
+					.filter((prompt) => prompt.tags.some((tag) => tag.toLowerCase() === wanted))
+					.map((prompt) => prompt.id),
+			)
+		: null;
+	const answersOf = (runId: string) => {
+		const all = store.answers.listByRun(runId);
+		return tagged ? all.filter((answer) => tagged.has(answer.promptId)) : all;
+	};
+	const answers = run && run.projectId === projectId ? answersOf(run.id) : [];
 	const good = ok(answers);
 
 	const engineIds = [...new Set(answers.map((a) => a.engine))];
@@ -89,12 +120,13 @@ export function buildReport(
 		.filter((r) => r.status !== "running")
 		.reverse()
 		.map((r) => {
-			const summary = summarise(store.answers.listByRun(r.id));
+			const summary = summarise(answersOf(r.id));
 			return {
 				runId: r.id,
 				startedAt: r.startedAt,
 				visibility: summary.visibility,
 				mentionRate: summary.metrics.mentionRate,
+				sentiment: summary.sentiment.score,
 			};
 		});
 

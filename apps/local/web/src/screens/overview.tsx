@@ -47,6 +47,8 @@ const moved = (
 export function OverviewScreen({ project, report, engines, loading, onRun, onCancel, onNavigate }: Props) {
 	const { run, overall, trend } = report;
 	const m = overall.metrics;
+	const tone = overall.sentiment;
+	const labelled = tone.positive + tone.neutral + tone.negative;
 	const running = run?.status === "running";
 	const usable = engines.filter((e) => e.available && e.enabled);
 	const blocked = engines.filter((e) => !e.available && e.id !== "openai");
@@ -88,8 +90,8 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 	if (loading) {
 		return (
 			<Page brand={project.name} title="Overview" actions={actions}>
-				<div className="ui-as-rev__stats">
-					{["Visibility score", "Mentioned in", "Your site cited in", "Average position"].map((label) => (
+				<div className="ui-as-rev__stats oa-stats-5">
+					{["Visibility score", "Mentioned in", "Your site cited in", "Average position", "Sentiment"].map((label) => (
 						<StatCard
 							key={label}
 							className="ui-as-rev__stat"
@@ -180,13 +182,16 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 		? [
 				moved("Visibility score", overall.visibility, previous.visibility, (n) => n.toFixed(1)),
 				moved("Mentioned in", m.mentionRate * 100, previous.mentionRate * 100, (n) => `${Math.round(n)}%`),
+				...(tone.score !== null && typeof previous.sentiment === "number"
+					? [moved("Sentiment", tone.score, previous.sentiment, (n) => `${Math.round(n)}`)]
+					: []),
 			]
 		: [];
 
 	return (
 		<Page brand={project.name} title="Overview" actions={actions}>
 			{notices}
-			<div className="ui-as-rev__stats">
+			<div className="ui-as-rev__stats oa-stats-5">
 				<StatCard
 					className="ui-as-rev__stat"
 					layout="inline"
@@ -228,6 +233,23 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 					value={m.averageRank === null ? "–" : m.averageRank.toFixed(1)}
 					chart={<span />}
 				/>
+				{tone.score === null ? (
+					<StatCard className="ui-as-rev__stat" layout="inline" label="Sentiment" value="–" chart={<span />} />
+				) : (
+					<StatCard
+						className="ui-as-rev__stat"
+						layout="inline"
+						label="Sentiment"
+						value={tone.score}
+						format={(n) => `${Math.round(n)}`}
+						change={typeof previous?.sentiment === "number" ? tone.score - previous.sentiment : undefined}
+						changeFormat={(n) => `${Math.round(n)} pts`}
+						chart={bars(
+							trend.flatMap((t) => (t.sentiment === null ? [] : [t.sentiment])),
+							"Sentiment",
+						)}
+					/>
+				)}
 			</div>
 
 			<div className="ui-as-rev__row ui-as-rev__row--main">
@@ -257,6 +279,25 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 								badge: e.errors > 0 ? <Badge tone="danger">{e.errors} failed</Badge> : undefined,
 							}))}
 						/>
+						{labelled > 0 ? (
+							<div className="oa-tone">
+								<span className="oa-tone-head">
+									<b>Tone when you are named</b>
+									<small>
+										{tone.positive} positive · {tone.neutral} neutral · {tone.negative} negative
+									</small>
+								</span>
+								<span
+									className="oa-tone-bar"
+									role="img"
+									aria-label={`${tone.positive} positive, ${tone.neutral} neutral, ${tone.negative} negative answers`}
+								>
+									<i data-tone="positive" style={{ flexGrow: tone.positive }} />
+									<i data-tone="neutral" style={{ flexGrow: tone.neutral }} />
+									<i data-tone="negative" style={{ flexGrow: tone.negative }} />
+								</span>
+							</div>
+						) : null}
 						<p className="oa-quiet" style={{ marginTop: 12 }}>
 							Each engine is asked through its own tool with web search on. Results can differ from the consumer apps.
 						</p>

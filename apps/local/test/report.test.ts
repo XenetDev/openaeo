@@ -119,3 +119,47 @@ test("prompt stats give each question's mention rate per run, oldest first", asy
 	expect(stats[1]?.history.length).toBe(2);
 	expect(stats[2]).toMatchObject({ latest: null, previous: null, bestRank: null, history: [] });
 });
+
+test("sentiment is scored from the labelled answers, overall, per engine and over time", async () => {
+	const store = freshStore();
+	const project = seed(store, ["q1", "q2"]);
+	const run = await runOnce(store, project.id, "Pipedrive is best.", "Pipedrive is fine.");
+	expect(buildReport(store, project.id).overall.sentiment).toEqual({
+		score: null,
+		positive: 0,
+		neutral: 0,
+		negative: 0,
+	});
+	const answers = store.answers.listByRun(run.id);
+	const claude = answers.filter((a) => a.engine === "claude-cli");
+	const codex = answers.filter((a) => a.engine === "codex-cli");
+	for (const answer of claude) store.answers.setSentiment(answer.id, "positive");
+	store.answers.setSentiment(codex[0]?.id as string, "neutral");
+	store.answers.setSentiment(codex[1]?.id as string, "negative");
+
+	const report = buildReport(store, project.id);
+	expect(report.overall.sentiment).toEqual({ score: 63, positive: 2, neutral: 1, negative: 1 });
+	expect(report.engines.find((e) => e.engine === "claude-cli")?.sentiment.score).toBe(100);
+	expect(report.engines.find((e) => e.engine === "codex-cli")?.sentiment.score).toBe(25);
+	expect(report.trend.at(-1)?.sentiment).toBe(63);
+});
+
+test("a tag limits the report to the questions that carry it", async () => {
+	const store = freshStore();
+	const project = seed(store, ["pricing question", "other question"]);
+	const [pricing] = store.prompts.list(project.id);
+	store.prompts.setTags(pricing?.id as string, ["Pricing"]);
+	const claude = fakeProvider("claude-cli", (prompt) =>
+		prompt.includes("pricing") ? "Pipedrive is best." : "HubSpot only.",
+	);
+	const runs = createRunService({ store, providers: () => [claude.provider] });
+	await runs.wait(runs.start(project.id).id);
+
+	expect(buildReport(store, project.id).overall.metrics.mentionRate).toBe(0.5);
+	const tagged = buildReport(store, project.id, { tag: "pricing" });
+	expect(tagged.overall.metrics.answers).toBe(1);
+	expect(tagged.overall.metrics.mentionRate).toBe(1);
+	expect(tagged.trend.at(-1)?.mentionRate).toBe(1);
+	expect(tagged.competitors.find((c) => c.name === "HubSpot")?.mentionRate).toBe(0);
+	expect(buildReport(store, project.id, { tag: "unknown" }).overall.metrics.answers).toBe(0);
+});

@@ -22,6 +22,7 @@ const EMPTY_REPORT: ReportView = {
 	overall: {
 		metrics: { answers: 0, mentionRate: 0, averageRank: null, rankScore: 0, shareOfVoice: 0, citationRate: 0 },
 		visibility: 0,
+		sentiment: { score: null, positive: 0, neutral: 0, negative: 0 },
 	},
 	engines: [],
 	competitors: [],
@@ -71,6 +72,12 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 			}}
 			onToggle={(promptId, active) => act(() => api.setPromptActive(promptId, active))}
 			onRemove={(promptId) => act(() => api.removePrompt(promptId))}
+			onTags={(promptId, tags) =>
+				act(async () => {
+					await api.setPromptTags(promptId, tags);
+					toast.success("Tags saved");
+				})
+			}
 			onDismissSuggestions={suggestions.dismiss}
 			onSuggest={() => suggestions.suggest(project.id)}
 			onOpen={(text) => {
@@ -82,6 +89,7 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 	answers: ({ workspace, project, data, answerFilter, setAnswerFilter, startRun, navigate }) => (
 		<AnswersScreen
 			answers={data.answers}
+			prompts={data.prompts}
 			project={project}
 			engines={workspace.engines}
 			live={data.report.run?.status === "running"}
@@ -89,6 +97,16 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 			onFilter={setAnswerFilter}
 			onRunAgain={startRun}
 			onNavigate={navigate}
+			onExport={() =>
+				void workspace.guard(async () => {
+					const file = await api.exportAnswers(project.id);
+					const url = URL.createObjectURL(file.blob);
+					const link = Object.assign(document.createElement("a"), { href: url, download: file.name });
+					link.click();
+					URL.revokeObjectURL(url);
+					toast.success("Answers exported", { description: file.name });
+				})
+			}
 		/>
 	),
 	sources: ({ project, data }) => <SourcesScreen project={project} report={data.report} />,

@@ -271,3 +271,34 @@ test("answers carry their sentiment", async () => {
 	const run = await call("GET", `/api/runs/${started.json.run.id}`);
 	expect(run.json.answers[0].sentiment).toBe("negative");
 });
+
+test("a question can be tagged, and the report and export follow the tag", async () => {
+	const { call, runs } = setup();
+	const id = await project(call);
+	const listed = await call("GET", `/api/projects/${id}/prompts`);
+	const promptId = listed.json.prompts[0].id;
+	expect(listed.json.prompts[0].tags).toEqual([]);
+
+	const tagged = await call("PATCH", `/api/prompts/${promptId}`, { tags: [" Pricing ", "pricing", "Top"] });
+	expect(tagged.status).toBe(200);
+	expect(tagged.json.prompt.tags).toEqual(["Pricing", "Top"]);
+	expect(tagged.json.prompt.active).toBe(true);
+	expect((await call("PATCH", `/api/prompts/${promptId}`, {})).status).toBe(400);
+	expect((await call("PATCH", `/api/prompts/${promptId}`, { tags: "Pricing" })).status).toBe(400);
+
+	const started = await call("POST", `/api/projects/${id}/runs`);
+	await runs.wait(started.json.run.id);
+	const all = await call("GET", `/api/projects/${id}/report`);
+	const some = await call("GET", `/api/projects/${id}/report?tag=pricing`);
+	expect(some.json.overall.metrics.answers).toBe(1);
+	expect(all.json.overall.metrics.answers).toBeGreaterThan(1);
+	expect(all.json.overall.sentiment).toEqual({ score: null, positive: 0, neutral: 0, negative: 0 });
+
+	const csv = await call("GET", `/api/projects/${id}/export/answers.csv`);
+	expect(csv.status).toBe(200);
+	expect(csv.headers.get("content-type")).toContain("text/csv");
+	expect(csv.headers.get("content-disposition")).toContain("attachment");
+	expect(csv.text.split("\r\n")[0]).toContain("run_started,engine");
+	expect(csv.text).toContain("Pricing; Top");
+	expect((await call("GET", "/api/projects/missing/export/answers.csv")).status).toBe(404);
+});

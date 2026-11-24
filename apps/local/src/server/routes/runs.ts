@@ -1,4 +1,5 @@
 import type { Ok, OpportunitiesView, ReportView, RunDetail, RunView } from "../../api-types";
+import { answersCsv } from "../../export";
 import { buildOpportunities } from "../../opportunities";
 import { buildReport } from "../../report";
 import { RunError } from "../../runs";
@@ -32,9 +33,27 @@ export function runRoutes({ store, runs }: HandlerDeps): Route[] {
 		route("GET", "/api/projects/:id/report", ({ request, params }) => {
 			const id = params.id as string;
 			requireProject(store, id);
-			const runId = new URL(request.url).searchParams.get("run") ?? undefined;
+			const query = new URL(request.url).searchParams;
+			const runId = query.get("run") ?? undefined;
 			if (runId && store.runs.get(runId)?.projectId !== id) throw notFound("That run");
-			return json<ReportView>(buildReport(store, id, { runId }));
+			return json<ReportView>(buildReport(store, id, { runId, tag: query.get("tag") ?? undefined }));
+		}),
+		route("GET", "/api/projects/:id/export/answers.csv", ({ request, params }) => {
+			const project = requireProject(store, params.id as string);
+			const runId = new URL(request.url).searchParams.get("run") ?? undefined;
+			if (runId && store.runs.get(runId)?.projectId !== project.id) throw notFound("That run");
+			const name =
+				project.name
+					.replace(/[^a-z0-9]+/gi, "-")
+					.replace(/^-|-$/g, "")
+					.toLowerCase() || "openaeo";
+			return new Response(answersCsv(store, project.id, runId), {
+				headers: {
+					"content-type": "text/csv; charset=utf-8",
+					"content-disposition": `attachment; filename="${name}-answers.csv"`,
+					"cache-control": "no-store",
+				},
+			});
 		}),
 		route("GET", "/api/projects/:id/opportunities", ({ params }) => {
 			const id = params.id as string;

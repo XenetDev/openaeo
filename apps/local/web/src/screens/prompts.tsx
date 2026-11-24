@@ -7,16 +7,20 @@ import {
 	PauseIcon,
 	PlayIcon,
 	SparklesIcon,
+	Tag01Icon,
 } from "@hugeicons/core-free-icons";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { type PexKeyword, type PexResult, PromptExplorerScreen } from "@/components/prompt-explorer";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
+import { Dialog } from "@/components/ui/dialog-clean";
 import { DropdownMenu } from "@/components/ui/dropdown-menu-clean";
 import { IconButton } from "@/components/ui/icon-button-clean";
+import { Select } from "@/components/ui/select-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
+import { TagInput } from "@/components/ui/tag-input-clean";
 import { SuggestMark } from "./command-icons";
 import { Page } from "./shared";
 
@@ -29,10 +33,13 @@ type Props = {
 	onAdd: (texts: string[]) => Promise<void>;
 	onToggle: (id: string, active: boolean) => void;
 	onRemove: (id: string) => void;
+	onTags: (id: string, tags: string[]) => void;
 	onSuggest: () => void;
 	onDismissSuggestions: () => void;
 	onOpen: (text: string) => void;
 };
+
+const ALL_TAGS = "";
 
 const toKeyword = (s: PromptStatView): PexKeyword => ({
 	id: s.promptId,
@@ -53,12 +60,21 @@ export function PromptsScreen({
 	onAdd,
 	onToggle,
 	onRemove,
+	onTags,
 	onSuggest,
 	onDismissSuggestions,
 	onOpen,
 }: Props) {
-	const keywords = stats.filter((s) => s.active).map(toKeyword);
-	const ranked = [...stats.map(toKeyword)].sort((a, b) => Number(a.paused) - Number(b.paused) || b.volume - a.volume);
+	const tagsOf = new Map(prompts.map((p) => [p.id, p.tags]));
+	const allTags = [...new Set(prompts.flatMap((p) => p.tags))].sort((a, b) => a.localeCompare(b));
+	const [tag, setTag] = useState(ALL_TAGS);
+	const active = allTags.includes(tag) ? tag : ALL_TAGS;
+	const [editing, setEditing] = useState<{ id: string; text: string; tags: string[] } | null>(null);
+	const shown = stats
+		.filter((s) => active === ALL_TAGS || tagsOf.get(s.promptId)?.includes(active))
+		.map((s) => ({ ...toKeyword(s), tags: tagsOf.get(s.promptId) ?? [] }));
+	const keywords = shown.filter((k) => !k.paused);
+	const ranked = [...shown].sort((a, b) => Number(a.paused) - Number(b.paused) || b.volume - a.volume);
 	const tracked = new Set(prompts.map((p) => p.text.toLowerCase()));
 	const fresh = suggestions?.prompts.filter((p) => !tracked.has(p.toLowerCase())) ?? [];
 	const spot = useRef<HTMLDivElement>(null);
@@ -85,6 +101,12 @@ export function PromptsScreen({
 						items={[
 							{ label: "Read the answers", icon: BubbleChatIcon, disabled: k.pending, onSelect: () => onOpen(k.text) },
 							{
+								label: "Edit tags",
+								description: "Group questions by topic",
+								icon: Tag01Icon,
+								onSelect: () => setEditing({ id: k.id, text: k.text, tags: k.tags ?? [] }),
+							},
+							{
 								label: k.paused ? "Resume" : "Pause",
 								description: k.paused ? "Ask it again in runs" : "Keep it, but skip it in runs",
 								icon: k.paused ? PlayIcon : PauseIcon,
@@ -110,15 +132,26 @@ export function PromptsScreen({
 					});
 				}}
 				actions={
-					<Button
-						variant="ghost"
-						size="sm"
-						loading={suggesting}
-						onClick={onSuggest}
-						icon={<Icon icon={SparklesIcon} size={14} />}
-					>
-						Suggest questions
-					</Button>
+					<span className="oa-inline">
+						{allTags.length > 0 ? (
+							<Select
+								size="sm"
+								aria-label="Filter by tag"
+								value={active}
+								onChange={setTag}
+								options={[{ value: ALL_TAGS, label: "All tags" }, ...allTags.map((t) => ({ value: t, label: t }))]}
+							/>
+						) : null}
+						<Button
+							variant="ghost"
+							size="sm"
+							loading={suggesting}
+							onClick={onSuggest}
+							icon={<Icon icon={SparklesIcon} size={14} />}
+						>
+							Suggest questions
+						</Button>
+					</span>
 				}
 				after={
 					<>
@@ -192,6 +225,37 @@ export function PromptsScreen({
 					</>
 				}
 			/>
+			<Dialog
+				open={editing !== null}
+				onOpenChange={(next) => !next && setEditing(null)}
+				size="sm"
+				title="Tags"
+				description={editing?.text}
+				footer={
+					<>
+						<Button variant="secondary" onClick={() => setEditing(null)}>
+							Cancel
+						</Button>
+						<Button
+							onClick={() => {
+								if (editing) onTags(editing.id, editing.tags);
+								setEditing(null);
+							}}
+						>
+							Save tags
+						</Button>
+					</>
+				}
+			>
+				<TagInput
+					label="Tags"
+					hint="Press Enter after each one. Use them to group questions, for example Pricing or Comparison."
+					placeholder="Add a tag"
+					max={10}
+					value={editing?.tags ?? []}
+					onChange={(tags) => setEditing((now) => (now ? { ...now, tags } : now))}
+				/>
+			</Dialog>
 		</Page>
 	);
 }

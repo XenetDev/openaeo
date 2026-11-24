@@ -24,6 +24,9 @@ The dashboard opens in your browser. Enter your website, confirm your brand and 
 
 - **Answers.** Every answer from every engine, word for word, with the sites it relied on.
 - **Visibility.** How often you are named, in what position, and how often your own site is cited, tracked over time.
+- **Sentiment.** Whether each engine talks about you positively, neutrally or negatively, as a 0 to 100 score with a trend.
+- **Tags.** Group questions by topic, then filter questions, answers and the report by tag.
+- **Export.** Download every answer from a run as a CSV file.
 - **Competitors and sources.** Who gets recommended beside you, and which outside sites the engines trust.
 - **Opportunities.** Questions where a competitor is named and you are not.
 - **Audit.** Checks your pages the way an AI crawler reads them: robots rules for AI bots, content without JavaScript, structured data, direct answers and more. Each finding comes with a fix.

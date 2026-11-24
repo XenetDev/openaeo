@@ -7,6 +7,7 @@ const pad = (value: string, width: number) => value.padEnd(width);
 
 export function formatReport(name: string, report: Report): string {
 	const m = report.overall.metrics;
+	const tone = report.overall.sentiment;
 	const lines = [
 		`OpenAEO · ${name}`,
 		"",
@@ -14,6 +15,11 @@ export function formatReport(name: string, report: Report): string {
 		`${pad("Mentioned in", 18)}${percent(m.mentionRate)} of ${m.answers} answers`,
 		`${pad("Own site cited in", 18)}${percent(m.citationRate)} of answers`,
 		`${pad("Average position", 18)}${m.averageRank === null ? "not mentioned" : m.averageRank.toFixed(1)}`,
+		...(tone.score === null
+			? []
+			: [
+					`${pad("Sentiment", 18)}${tone.score} / 100 (${tone.positive} positive, ${tone.neutral} neutral, ${tone.negative} negative)`,
+				]),
 		"",
 		`${pad("Engine", 20)}${pad("Visibility", 12)}${pad("Mentioned", 11)}${pad("Cited", 8)}Errors`,
 		...report.engines.map(

@@ -34,7 +34,7 @@ import { EmptyState, Icon, Loading, Skeleton, rove, useToast, type AppShellProps
 /* ---------- Types ---------- */
 
 /** A prompt or keyword with how many times a month people ask it, and how much that changed since last month */
-export type PexKeyword = { id: string; text: string; volume: number; change: number; /** Not measured yet – shown in words, not as 0 */ pending?: boolean; paused?: boolean; /** Twelve months, oldest first – the sparkline */ trend?: number[] };
+export type PexKeyword = { id: string; text: string; volume: number; change: number; /** Not measured yet – shown in words, not as 0 */ pending?: boolean; paused?: boolean; /** Small labels after the text */ tags?: string[]; /** Twelve months, oldest first – the sparkline */ trend?: number[] };
 /** What Analyse found for one prompt */
 export type PexResult = { text: string; volume: number; change: number; pending?: boolean; trend: number[]; /** Share of answers that mention you, 0–1 */ share: number };
 export type PexMode = "keyword" | "url";
@@ -494,6 +494,11 @@ function KeywordList({ items, loading, empty, label, spark, none, onPick, rowMen
           <button type="button" className="ui-pex-kw" data-spark={spark || undefined} aria-label={`${k.text}, ${short(k.volume)} of answers mention you${k.pending ? " (not run yet)" : ""}, ${k.change >= 0 ? "up" : "down"} ${short(k.change)} – analyse`} onClick={() => onPick(k.text)}>
             <span className="ui-pex-kw__text" dir="auto" title={k.text}>
               {k.text}
+              {k.tags?.map((tag) => (
+                <i key={tag} className="oa-kwtag">
+                  {tag}
+                </i>
+              ))}
             </span>
             {spark && <Sparkline values={k.trend ?? []} />}
             {k.change !== 0 ? <Change value={k.change} /> : <span />}

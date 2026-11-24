@@ -21,17 +21,24 @@ import type {
 	StateResponse,
 	Suggestions,
 } from "@api";
+import { createSession, tokenIn } from "./session";
 
-const token = document.querySelector<HTMLMetaElement>('meta[name="openaeo-token"]')?.content ?? "";
+const session = createSession(
+	document.querySelector<HTMLMetaElement>('meta[name="openaeo-token"]')?.content ?? "",
+	async () => tokenIn(await (await fetch("/", { cache: "no-store" })).text()),
+);
+
+const send = (path: string, init: RequestInit = {}) =>
+	session.send((token) => fetch(path, { ...init, headers: { ...init.headers, "x-openaeo-token": token } }));
 
 export class ApiError extends Error {}
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
 	let response: Response;
 	try {
-		response = await fetch(path, {
+		response = await send(path, {
 			method,
-			headers: { "x-openaeo-token": token, ...(body === undefined ? {} : { "content-type": "application/json" }) },
+			headers: body === undefined ? {} : { "content-type": "application/json" },
 			body: body === undefined ? undefined : JSON.stringify(body),
 		});
 	} catch {
@@ -57,7 +64,7 @@ export const api = {
 		call<{ prompt: PromptView }>("PATCH", `/api/prompts/${id}`, { active }),
 	setPromptTags: (id: string, tags: string[]) => call<{ prompt: PromptView }>("PATCH", `/api/prompts/${id}`, { tags }),
 	exportAnswers: async (id: string) => {
-		const response = await fetch(`/api/projects/${id}/export/answers.csv`, { headers: { "x-openaeo-token": token } });
+		const response = await send(`/api/projects/${id}/export/answers.csv`);
 		if (!response.ok) throw new ApiError("The export could not be created.");
 		const name = /filename="([^"]+)"/.exec(response.headers.get("content-disposition") ?? "")?.[1] ?? "answers.csv";
 		return { name, blob: await response.blob() };
@@ -87,7 +94,7 @@ export const api = {
 		call<{ audit: AuditView }>("POST", `/api/projects/${id}/audits`, url ? { url } : {}),
 	cancelAudit: (id: string) => call<Ok>("POST", `/api/audits/${id}/cancel`),
 	auditBrief: async (id: string) => {
-		const response = await fetch(`/api/audits/${id}/brief`, { headers: { "x-openaeo-token": token } });
+		const response = await send(`/api/audits/${id}/brief`);
 		if (!response.ok) throw new ApiError("The fix brief could not be loaded.");
 		return response.text();
 	},

@@ -1,218 +1,32 @@
-import type {
-	AnswerView,
-	ArtefactsView,
-	AuditView,
-	CompetitorIdea,
-	EngineView,
-	EntityView,
-	FindingView,
-	OpportunitiesView,
-	PageId,
-	ProjectView,
-	PromptStatView,
-	PromptView,
-	ReportView,
-	Suggestions,
-} from "@api";
-import {
-	AiChat02Icon,
-	BubbleChatIcon,
-	CheckListIcon,
-	Clock01Icon,
-	ComputerIcon,
-	DashboardSquare01Icon,
-	Globe02Icon,
-	Moon02Icon,
-	News01Icon,
-	PaintBoardIcon,
-	Plug01Icon,
-	PlusSignIcon,
-	Search01Icon,
-	Settings01Icon,
-	Sun03Icon,
-	Target02Icon,
-	UserMultipleIcon,
-} from "@hugeicons/core-free-icons";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AppShell, type ShellNavItem } from "@/components/app-shell";
-import { Mark } from "@/components/mark";
+import type { PageId } from "@api";
+import { useEffect, useState } from "react";
 import { Toaster, toast } from "@/components/ui/toaster-clean";
-import { ApiError, api } from "./api";
-import { AnswersScreen } from "./screens/answers";
-import { AskScreen, type Turn } from "./screens/ask";
-import { AuditScreen } from "./screens/audit";
-import { AgentMark, AuditMark, BrandMark, BriefMark, RunMark, SuggestMark } from "./screens/command-icons";
-import { CompetitorsScreen, SourcesScreen } from "./screens/lists";
-import { OnboardingFlow, SetupPreview } from "./screens/onboarding";
-import { FirstRunStep } from "./screens/onboarding-steps";
-import { OpportunitiesScreen } from "./screens/opportunities";
-import { OverviewScreen } from "./screens/overview";
-import { PromptsScreen } from "./screens/prompts";
-import { RunsScreen } from "./screens/runs";
-import { SettingsScreen } from "./screens/settings";
-import { saveTheme, storedTheme, type Theme } from "./theme";
+import { api } from "./api";
+import { FirstRun } from "./app/first-run";
+import { NAV, pageFromHash } from "./app/pages";
+import { Screen } from "./app/screens";
+import { Shell } from "./app/shell";
+import { useAsk } from "./app/use-ask";
+import { useCompetitorIdeas } from "./app/use-competitor-ideas";
+import { useSetup } from "./app/use-setup";
+import { useSuggestions } from "./app/use-suggestions";
+import { messageOf, useWorkspace } from "./app/use-workspace";
+import { OnboardingFlow } from "./screens/onboarding";
 
-const PAGES: { id: PageId; label: string; icon: ShellNavItem["icon"] }[] = [
-	{ id: "overview", label: "Overview", icon: DashboardSquare01Icon },
-	{ id: "prompts", label: "Prompts", icon: Search01Icon },
-	{ id: "answers", label: "Answers", icon: BubbleChatIcon },
-	{ id: "sources", label: "Sources", icon: News01Icon },
-	{ id: "competitors", label: "Competitors", icon: UserMultipleIcon },
-	{ id: "opportunities", label: "Opportunities", icon: Target02Icon },
-	{ id: "audit", label: "Audit", icon: CheckListIcon },
-	{ id: "runs", label: "Runs", icon: Clock01Icon },
-	{ id: "ask", label: "Ask Aeo", icon: AiChat02Icon },
-	{ id: "settings", label: "Settings", icon: Settings01Icon },
-];
-const NAV = PAGES.filter((p) => p.id !== "settings");
-const NEW_BRAND = "Track another brand";
-const pageFromHash = (): PageId => PAGES.find((p) => p.id === window.location.hash.slice(1))?.id ?? "overview";
-const EMPTY_REPORT: ReportView = {
-	run: null,
-	overall: {
-		metrics: { answers: 0, mentionRate: 0, averageRank: null, rankScore: 0, shareOfVoice: 0, citationRate: 0 },
-		visibility: 0,
-	},
-	engines: [],
-	competitors: [],
-	topDomains: [],
-	trend: [],
-	problems: [],
-};
-const messageOf = (error: unknown) => (error instanceof ApiError ? error.message : "Something went wrong. Try again.");
-
-type AuditData = { audit: AuditView | null; findings: FindingView[]; artefacts: ArtefactsView };
-type Data = {
-	competitors: EntityView[];
-	prompts: PromptView[];
-	stats: PromptStatView[];
-	report: ReportView;
-	answers: AnswerView[];
-	audit: AuditData;
-	found: OpportunitiesView;
-};
+const BRIEF_COPIED = "Paste it into Claude Code or Codex in your website's code.";
 
 export function App() {
-	const [projects, setProjects] = useState<ProjectView[] | null>(null);
-	const [engines, setEngines] = useState<EngineView[]>([]);
-	const [settings, setSettings] = useState<Record<string, string>>({});
-	const [projectId, setProjectId] = useState<string | null>(() => window.localStorage.getItem("openaeo.project"));
-	const [data, setData] = useState<Data | null>(null);
+	const workspace = useWorkspace();
+	const { projects, project, data, engines, guard, loadProject, loadState } = workspace;
+	const projectId = project?.id ?? null;
 	const [page, setPage] = useState<PageId>(pageFromHash);
 	const [creating, setCreating] = useState(false);
 	const [busy, setBusy] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
-	const [suggesting, setSuggesting] = useState(false);
 	const [answerFilter, setAnswerFilter] = useState("");
-	const [turns, setTurns] = useState<Turn[]>([]);
-	const [ideas, setIdeas] = useState<CompetitorIdea[] | null>(null);
-	const [finding, setFinding] = useState(false);
-	const [setup, setSetup] = useState<{
-		id: string;
-		audit: "working" | "skipped";
-		questions: "waiting" | "working" | "done" | "skipped";
-		run: "waiting" | "working" | "skipped";
-		count: number;
-	} | null>(null);
-	const [theme, setTheme] = useState<Theme>(storedTheme);
-	const commandRef = useRef<(id: string, text?: string) => void>(() => {});
-	const loading = useRef(0);
-	const liveId = useRef<string | null>(null);
-
-	const project = projects?.find((p) => p.id === projectId) ?? projects?.[0] ?? null;
-	const currentId = project?.id ?? null;
-	liveId.current = currentId;
-
-	const loadState = useCallback(async () => {
-		const [state, stored] = await Promise.all([api.state(), api.settings()]);
-		setProjects(state.projects);
-		setEngines(state.engines);
-		setSettings(stored.settings);
-	}, []);
-
-	const loadProject = useCallback(async (id: string) => {
-		const ticket = ++loading.current;
-		const [detail, report, audit, stats, found] = await Promise.all([
-			api.project(id),
-			api.report(id),
-			api.latestAudit(id),
-			api.promptStats(id),
-			api.opportunities(id),
-		]);
-		const answers = report.run ? (await api.run(report.run.id)).answers : [];
-		if (ticket !== loading.current) return;
-		setData({
-			competitors: detail.competitors,
-			prompts: detail.prompts,
-			stats: stats.stats,
-			report,
-			answers,
-			audit,
-			found,
-		});
-		if (!window.location.hash && !report.run) setPage("prompts");
-	}, []);
-
-	const findCompetitors = useCallback((pid: string, announce: boolean) => {
-		setFinding(true);
-		api
-			.competitorIdeas(pid)
-			.then((result) => {
-				if (liveId.current !== pid) return;
-				setIdeas(result.competitors);
-				if (announce && result.competitors.length > 0)
-					toast(`Found ${result.competitors.length} likely competitors`, {
-						description: "Open Competitors to choose the ones to track.",
-					});
-			})
-			.catch((caught) => {
-				if (!announce) toast.error("That didn't work", { description: messageOf(caught) });
-			})
-			.finally(() => liveId.current === pid && setFinding(false));
-	}, []);
-
-	const beginSetup = useCallback(
-		async (pid: string) => {
-			setSetup({ id: pid, audit: "working", questions: "working", run: "waiting", count: 0 });
-			const patch = (next: Partial<NonNullable<typeof setup>>) =>
-				setSetup((now) => (now && now.id === pid ? { ...now, ...next } : now));
-			api.startAudit(pid, "").then(
-				() => loadProject(pid),
-				() => patch({ audit: "skipped" }),
-			);
-			let picks: string[] = [];
-			try {
-				picks = (await api.suggest(pid)).prompts.slice(0, 8);
-				if (picks.length) await api.addPrompts(pid, picks);
-			} catch {
-				picks = [];
-			}
-			if (picks.length === 0) return patch({ questions: "skipped", run: "skipped" });
-			patch({ questions: "done", count: picks.length, run: "working" });
-			try {
-				await api.startRun(pid);
-			} catch {
-				patch({ run: "skipped" });
-			}
-			await loadProject(pid).catch(() => {});
-		},
-		[loadProject],
-	);
-
-	const guard = useCallback(async (work: () => Promise<void>) => {
-		setError(null);
-		try {
-			await work();
-		} catch (caught) {
-			setError(messageOf(caught));
-			toast.error("That didn't work", { description: messageOf(caught) });
-		}
-	}, []);
-
-	useEffect(() => {
-		void guard(loadState);
-	}, [guard, loadState]);
+	const suggestions = useSuggestions(projectId, workspace);
+	const rivals = useCompetitorIdeas(page, workspace);
+	const chat = useAsk(projectId);
+	const { setup, begin: beginSetup, finish: finishSetup } = useSetup(loadProject);
 
 	useEffect(() => {
 		const onHash = () => setPage(pageFromHash());
@@ -220,304 +34,67 @@ export function App() {
 		return () => window.removeEventListener("hashchange", onHash);
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: the filter belongs to one brand, so it clears when it changes
 	useEffect(() => {
-		setData(null);
-		setSuggestions(null);
-		setSuggesting(false);
-		setIdeas(null);
-		setFinding(false);
 		setAnswerFilter("");
-		setTurns([]);
-		if (currentId) void guard(() => loadProject(currentId));
-	}, [currentId, guard, loadProject]);
+	}, [projectId]);
 
-	const running = data?.report.run?.status === "running" || data?.audit.audit?.status === "running";
 	useEffect(() => {
-		if (!running || !currentId) return;
-		let misses = 0;
-		const timer = window.setInterval(() => {
-			loadProject(currentId).then(
-				() => {
-					misses = 0;
-				},
-				() => {
-					misses += 1;
-					if (misses === 3)
-						setError(
-							"OpenAEO stopped responding. Check that it is still running in your terminal, then reload this page.",
-						);
-				},
-			);
-		}, 2000);
-		return () => window.clearInterval(timer);
-	}, [running, currentId, loadProject]);
-
-	const runDone = data?.report.run?.status === "done";
-	const auditDone = data?.audit.audit?.status === "done";
-	const noRivals = data ? data.competitors.length === 0 : false;
-	const engineReady = engines.some((e) => e.available && e.enabled);
-	useEffect(() => {
-		if (!currentId || !noRivals || !engineReady || finding || ideas !== null) return;
-		if (!(runDone || auditDone || page === "competitors")) return;
-		const key = `openaeo.ideas.${currentId}`;
-		if (window.localStorage.getItem(key)) return;
-		window.localStorage.setItem(key, "1");
-		findCompetitors(currentId, page !== "competitors");
-	}, [currentId, noRivals, engineReady, finding, ideas, runDone, auditDone, page, findCompetitors]);
+		if (data && !window.location.hash && !data.report.run) setPage("prompts");
+	}, [data]);
 
 	const navigate = (next: PageId) => {
 		window.location.hash = next;
 		setPage(next);
-		setError(null);
+		workspace.clearError();
 	};
-	const select = (id: string) => {
-		window.localStorage.setItem("openaeo.project", id);
-		setProjectId(id);
+	const openBrand = (id: string) => {
+		setCreating(false);
+		workspace.select(id);
 	};
-
-	const shell = (children: React.ReactNode, active: string) => (
-		<AppShell
-			active={active}
-			workspace={project?.name ?? "OpenAEO"}
-			workspaceMeta="Local"
-			user={{ name: "This computer" }}
-			nav={project ? NAV.map((p) => ({ label: p.label, icon: p.icon })) : []}
-			groups={
-				projects && projects.length > 0
-					? [
-							{
-								label: "Brands",
-								items: [
-									...projects.map((p) => ({ label: p.name, icon: Globe02Icon })),
-									{ label: NEW_BRAND, icon: PlusSignIcon },
-								],
-							},
-						]
-					: []
-			}
-			sideCards={false}
-			workspaceItems={[
-				...(projects ?? []).map((p) => ({
-					label: p.name,
-					description: p.domains[0],
-					checked: p.id === project?.id,
-					onSelect: () => {
-						setCreating(false);
-						select(p.id);
-					},
-				})),
-				{ label: NEW_BRAND, icon: PlusSignIcon, divider: true, onSelect: () => setCreating(true) },
-				...(project ? [{ label: "Brand settings", icon: Settings01Icon, onSelect: () => navigate("settings") }] : []),
-			]}
-			accountItems={[
-				{
-					label: "Appearance",
-					icon: PaintBoardIcon,
-					submenu: (
-						[
-							["System", ComputerIcon],
-							["Light", Sun03Icon],
-							["Dark", Moon02Icon],
-						] as const
-					).map(([mode, icon]) => ({
-						label: mode,
-						icon,
-						checked: mode === theme,
-						onSelect: () => {
-							saveTheme(mode);
-							setTheme(mode);
-						},
-					})),
-				},
-				...(project
-					? [
-							{ label: "Connect your AI agent", icon: Plug01Icon, onSelect: () => navigate("settings") },
-							{ label: "Settings", icon: Settings01Icon, onSelect: () => navigate("settings") },
-						]
-					: []),
-			]}
-			commands={
-				project
-					? [
-							{
-								id: "suggestions",
-								label: "Suggestions",
-								commands: [
-									{
-										id: "run",
-										label: "Run now",
-										hint: "Ask every engine your questions",
-										logo: <RunMark />,
-										keywords: "start ask engines",
-									},
-									{
-										id: "audit",
-										label: "Audit your website",
-										hint: "Check what AI engines can read",
-										logo: <AuditMark />,
-										keywords: "check site crawl robots",
-									},
-									{
-										id: "suggest",
-										label: "Suggest questions",
-										hint: "Ideas from your AI engine",
-										logo: <SuggestMark />,
-										keywords: "prompts ideas",
-									},
-									{
-										id: "brief",
-										label: "Copy fix brief",
-										hint: "For Claude Code or Codex",
-										logo: <BriefMark />,
-										keywords: "agent fix findings",
-									},
-									{
-										id: "agent",
-										label: "Connect your AI agent",
-										hint: "Claude Code or Codex",
-										logo: <AgentMark />,
-										keywords: "mcp connect",
-									},
-								],
-							},
-							{
-								id: "brands",
-								label: "Brands",
-								commands: [
-									{
-										id: "new",
-										label: NEW_BRAND,
-										hint: "Start tracking a new name",
-										logo: <BrandMark />,
-										keywords: "add project",
-									},
-								],
-							},
-						]
-					: []
-			}
-			typedCommand={{
-				group: "Questions",
-				label: (text) => `Track “${text}” as a question`,
-				done: (text) => `Tracking “${text}”`,
-			}}
-			onCommand={(id, text) => commandRef.current(id, text)}
-			onNavigate={(label) => {
-				const target = PAGES.find((p) => p.label === label);
-				if (target) {
-					setCreating(false);
-					return navigate(target.id);
-				}
-				if (label === NEW_BRAND) return setCreating(true);
-				const brand = projects?.find((p) => p.name === label);
-				if (brand) {
-					setCreating(false);
-					select(brand.id);
-				}
-			}}
-		>
-			{children}
-		</AppShell>
-	);
-
-	const nav = NAV.map((p) => ({ label: p.label, icon: p.icon }));
 
 	if (projects === null)
-		return shell(<div className="ui-as-page">{error ? <p className="ui-as-page-sub">{error}</p> : null}</div>, "");
+		return (
+			<Shell
+				projects={[]}
+				project={null}
+				page={null}
+				onPage={navigate}
+				onBrand={openBrand}
+				onNewBrand={() => setCreating(true)}
+				onCommand={() => {}}
+			>
+				<div className="ui-as-page">{workspace.error ? <p className="ui-as-page-sub">{workspace.error}</p> : null}</div>
+			</Shell>
+		);
 
-	if (setup && project && setup.id === project.id && !creating) {
-		const audit = data?.audit.audit;
-		const run = data?.report.run;
-		const auditState =
-			setup.audit === "skipped"
-				? "skipped"
-				: audit?.status === "done" || audit?.status === "interrupted"
-					? "done"
-					: "working";
-		const runState =
-			setup.run === "skipped"
-				? "skipped"
-				: setup.run === "waiting"
-					? "waiting"
-					: run && run.status !== "running"
-						? "done"
-						: "working";
-		const finished =
-			(runState === "done" || runState === "skipped") && auditState !== "working" && setup.questions !== "working";
-		const ready = engines.filter((e) => e.available && e.enabled);
+	if (setup && project && setup.id === project.id && !creating)
 		return (
 			<>
-				<FirstRunStep
-					frame={{ product: "OpenAEO", email: "Runs on this computer", steps: 5, logo: <Mark size={20} /> }}
-					step={5}
-					brand={project.name}
-					finished={finished}
-					preview={
-						<SetupPreview
-							brand={project.name}
-							domains={project.domains}
-							competitors={data?.competitors.map((c) => c.name) ?? []}
-							engines={engines}
-							nav={nav}
-						/>
-					}
-					tasks={[
-						{
-							id: "audit",
-							label: "Checking whether AI can read your website",
-							state: auditState,
-							detail:
-								auditState === "done" && audit
-									? `${audit.pages.length} pages read, score ${audit.score ?? 0} of 100`
-									: auditState === "skipped"
-										? "Skipped. Run it later from the Audit page."
-										: undefined,
-						},
-						{
-							id: "questions",
-							label: "Writing the questions your buyers ask",
-							state: setup.questions,
-							detail:
-								setup.questions === "done"
-									? `${setup.count} questions tracked`
-									: setup.questions === "skipped"
-										? "None could be written. Add your own on the Prompts page."
-										: undefined,
-						},
-						{
-							id: "run",
-							label: `Asking ${ready.map((e) => e.label).join(" and ") || "your engines"}`,
-							state: runState,
-							detail:
-								runState === "working" && run
-									? `${run.completed} of ${run.total} answers so far`
-									: runState === "done" && run
-										? `${run.completed} answers collected`
-										: runState === "skipped"
-											? "Skipped. Press Run now once you have questions."
-											: `About ${Math.max(1, Math.ceil((8 * Math.max(1, ready.length)) / 4))} minutes`,
-						},
-					]}
+				<FirstRun
+					setup={setup}
+					project={project}
+					data={data}
+					engines={engines}
 					onOpen={() => {
-						setSetup(null);
+						finishSetup();
 						navigate("overview");
 					}}
 				/>
 				<Toaster position="bottom-right" />
 			</>
 		);
-	}
 
-	if (!project || creating) {
+	if (!project || creating)
 		return (
 			<>
 				<OnboardingFlow
 					engines={engines}
-					nav={nav}
+					nav={NAV}
 					busy={busy}
 					onCancel={project ? () => setCreating(false) : undefined}
 					onFindCompetitors={
-						engines.some((e) => e.available && e.enabled)
+						workspace.engineReady
 							? async (name, domain) => (await api.competitorIdeasFor(name, domain)).competitors
 							: undefined
 					}
@@ -526,7 +103,7 @@ export function App() {
 						void guard(async () => {
 							const created = await api.createProject(input);
 							await loadState();
-							select(created.project.id);
+							workspace.select(created.project.id);
 							setCreating(false);
 							navigate("overview");
 							void beginSetup(created.project.id);
@@ -544,273 +121,85 @@ export function App() {
 				<Toaster position="bottom-right" />
 			</>
 		);
-	}
 
 	const id = project.id;
-	const refresh = () => loadProject(id);
 	const act = (work: () => Promise<unknown>) =>
 		void guard(async () => {
 			await work();
-			await refresh();
+			await loadProject(id);
 		});
-
-	commandRef.current = (command, text) => {
-		if (command === "run") startRun();
-		else if (command === "audit") navigate("audit");
-		else if (command === "agent") navigate("settings");
-		else if (command === "brief") {
-			const audit = data?.audit.audit;
-			if (audit?.status !== "done") {
-				navigate("audit");
-				toast("Run an audit first", { description: "The fix brief is built from its findings." });
-			} else {
-				void guard(async () => {
-					await navigator.clipboard.writeText(await api.auditBrief(audit.id));
-					toast.success("Fix brief copied", {
-						description: "Paste it into Claude Code or Codex in your website's code.",
-					});
-				});
-			}
-		} else if (command === "new") setCreating(true);
-		else if (command === "suggest") {
-			navigate("prompts");
-			setSuggesting(true);
-			void guard(async () => {
-				const result = await api.suggest(id);
-				if (liveId.current === id) setSuggestions(result);
-			}).finally(() => liveId.current === id && setSuggesting(false));
-		} else if (command === "ask" && text?.trim()) {
-			act(async () => {
-				await api.addPrompts(id, [text.trim()]);
-				toast.success("Question tracked");
-			});
-			navigate("prompts");
-		}
-	};
-
 	const startRun = () =>
 		act(async () => {
 			await api.startRun(id);
 			toast("Run started", { description: "Each engine is being asked every active question." });
 		});
+	const cancelRun = () => act(async () => (data?.report.run ? api.cancelRun(data.report.run.id) : undefined));
+	const trackQuestion = (text: string) =>
+		act(async () => {
+			await api.addPrompts(id, [text]);
+			toast.success("Question tracked", { description: "Press Run now to ask the AI engines." });
+		});
+	const copyBrief = () => {
+		const audit = data?.audit.audit;
+		if (audit?.status !== "done") {
+			navigate("audit");
+			toast("Run an audit first", { description: "The fix brief is built from its findings." });
+			return;
+		}
+		void guard(async () => {
+			await navigator.clipboard.writeText(await api.auditBrief(audit.id));
+			toast.success("Fix brief copied", { description: BRIEF_COPIED });
+		});
+	};
 
-	const body =
-		page === "overview" ? (
-			<OverviewScreen
-				project={project}
-				report={data?.report ?? EMPTY_REPORT}
-				engines={engines}
-				loading={!data}
-				onNavigate={navigate}
-				onRun={startRun}
-				onCancel={() => act(async () => (data?.report.run ? api.cancelRun(data.report.run.id) : undefined))}
-			/>
-		) : !data ? (
-			<div className="ui-as-page" />
-		) : page === "prompts" ? (
-			<PromptsScreen
-				brand={project.name}
-				prompts={data.prompts}
-				stats={data.stats}
-				suggestions={suggestions}
-				suggesting={suggesting}
-				onAdd={async (texts) => {
-					try {
-						await api.addPrompts(id, texts);
-						await refresh();
-						toast.success(texts.length === 1 ? "Question tracked" : `${texts.length} questions tracked`, {
-							description: "Press Run now to ask the AI engines.",
-						});
-					} catch (caught) {
-						toast.error("That question was not tracked", { description: messageOf(caught) });
-						throw caught;
-					}
-				}}
-				onToggle={(promptId, active) => act(() => api.setPromptActive(promptId, active))}
-				onRemove={(promptId) => act(() => api.removePrompt(promptId))}
-				onDismissSuggestions={() => setSuggestions(null)}
-				onSuggest={() => {
-					setSuggesting(true);
-					void guard(async () => {
-						const result = await api.suggest(id);
-						if (liveId.current === id) setSuggestions(result);
-					}).finally(() => liveId.current === id && setSuggesting(false));
-				}}
-				onOpen={(text) => {
-					setAnswerFilter(text);
-					navigate("answers");
-				}}
-			/>
-		) : page === "answers" ? (
-			<AnswersScreen
-				answers={data.answers}
-				project={project}
-				engines={engines}
-				live={data.report.run?.status === "running"}
-				filter={answerFilter}
-				onFilter={setAnswerFilter}
-				onRunAgain={startRun}
-				onNavigate={navigate}
-			/>
-		) : page === "sources" ? (
-			<SourcesScreen project={project} report={data.report} />
-		) : page === "competitors" ? (
-			<CompetitorsScreen
-				key={data.competitors.map((c) => c.name).join("|")}
-				project={project}
-				report={data.report}
-				competitors={data.competitors}
-				onSave={(next) =>
-					act(async () => {
-						await api.saveCompetitors(id, next);
-						toast.success("Competitors saved", { description: "They apply from the next run." });
-					})
-				}
-				ideas={ideas}
-				finding={finding}
-				canFind={engines.some((e) => e.available && e.enabled)}
-				onDismissIdeas={() => setIdeas(null)}
-				onFind={() => findCompetitors(id, false)}
-			/>
-		) : page === "audit" ? (
-			<AuditScreen
-				key={`${id}:${data.audit.audit?.id ?? "none"}`}
-				project={project}
-				audit={data.audit.audit}
-				findings={data.audit.findings}
-				artefacts={data.audit.artefacts}
-				defaultUrl={data.audit.audit?.origin ?? project.domains[0] ?? ""}
-				onRun={(url) => act(() => api.startAudit(id, url))}
-				onCancel={() => act(async () => (data.audit.audit ? api.cancelAudit(data.audit.audit.id) : undefined))}
-				onCopyBrief={() =>
-					void guard(async () => {
-						if (!data.audit.audit) return;
-						await navigator.clipboard.writeText(await api.auditBrief(data.audit.audit.id));
-						toast.success("Fix brief copied", {
-							description: "Paste it into Claude Code or Codex in your website's code.",
-						});
-					})
-				}
-			/>
-		) : page === "opportunities" ? (
-			<OpportunitiesScreen
-				project={project}
-				engines={engines}
-				found={data.found}
-				onNavigate={navigate}
-				onOpenQuestion={(text) => {
-					setAnswerFilter(text);
-					navigate("answers");
-				}}
-			/>
-		) : page === "ask" ? (
-			<AskScreen
-				project={project}
-				engines={engines}
-				turns={turns}
-				onClear={() => setTurns([])}
-				onAction={(action) => {
-					if (action.type === "run") startRun();
-					else if (action.type === "audit") navigate("audit");
-					else if (action.type === "open")
-						navigate((PAGES.find((p) => p.id === action.page)?.id ?? "overview") as PageId);
-					else
-						act(async () => {
-							await api.addPrompts(id, [action.question]);
-							toast.success("Question tracked", { description: "Press Run now to ask the AI engines." });
-						});
-				}}
-				onAsk={(question, engine) => {
-					if (turns.some((t) => t.pending)) return;
-					const kept = turns.filter((t) => !t.failed);
-					if (kept[kept.length - 1]?.role === "user") kept.pop();
-					const history = kept.slice(-8).map((t) => ({ role: t.role, text: t.text }));
-					const reply = crypto.randomUUID();
-					setTurns([
-						...kept,
-						{ id: crypto.randomUUID(), role: "user", text: question },
-						{ id: reply, role: "assistant", text: "", engine, pending: true },
-					]);
-					const asked = Date.now();
-					api.ask(id, { question, history, engine: engine || undefined }).then(
-						(result) =>
-							setTurns((now) =>
-								now.map((t) =>
-									t.id === reply
-										? {
-												...t,
-												text: result.text,
-												engine: result.engine,
-												actions: result.actions,
-												pending: false,
-												took: Math.round((Date.now() - asked) / 100) / 10,
-											}
-										: t,
-								),
-							),
-						(caught) =>
-							setTurns((now) =>
-								now.map((t) => (t.id === reply ? { ...t, text: messageOf(caught), pending: false, failed: true } : t)),
-							),
-					);
-				}}
-			/>
-		) : page === "runs" ? (
-			<RunsScreen
-				project={project}
-				engines={engines}
-				report={data.report}
-				schedule={settings.schedule ?? "off"}
-				onSchedule={(value, label) =>
-					void guard(async () => {
-						await api.saveSettings({ schedule: value });
-						await loadState();
-						toast.success(`Schedule: ${label.toLowerCase()}`);
-					})
-				}
-				onStart={startRun}
-				onCancel={() => act(async () => (data.report.run ? api.cancelRun(data.report.run.id) : undefined))}
-				onOpenAnswers={() => navigate("answers")}
-			/>
-		) : (
-			<SettingsScreen
-				key={id}
-				engines={engines}
-				settings={settings}
-				project={project}
-				onSave={(next, message) =>
-					void guard(async () => {
-						await api.saveSettings(next);
-						await loadState();
-						toast.success(message);
-					})
-				}
-				onSaveProject={(next, message) =>
-					void guard(async () => {
-						await api.updateProject(id, next);
-						await loadState();
-						await refresh();
-						toast.success(message);
-					})
-				}
-				onDeleteProject={() =>
-					void guard(async () => {
-						await api.deleteProject(id);
-						window.localStorage.removeItem("openaeo.project");
-						setProjectId(null);
-						await loadState();
-						navigate("overview");
-						toast(`${project.name} deleted`);
-					})
-				}
-			/>
-		);
+	const runCommand = (command: string, text?: string) => {
+		if (command === "run") startRun();
+		else if (command === "audit") navigate("audit");
+		else if (command === "agent") navigate("settings");
+		else if (command === "brief") copyBrief();
+		else if (command === "new") setCreating(true);
+		else if (command === "suggest") {
+			navigate("prompts");
+			suggestions.suggest(id);
+		} else if (command === "ask" && text?.trim()) {
+			trackQuestion(text.trim());
+			navigate("prompts");
+		}
+	};
 
-	return shell(
-		<>
-			{body}
+	return (
+		<Shell
+			projects={projects}
+			project={project}
+			page={page}
+			onPage={(next) => {
+				setCreating(false);
+				navigate(next);
+			}}
+			onBrand={openBrand}
+			onNewBrand={() => setCreating(true)}
+			onCommand={runCommand}
+		>
+			<Screen
+				page={page}
+				context={{
+					workspace,
+					project,
+					data,
+					suggestions,
+					rivals,
+					chat,
+					answerFilter,
+					setAnswerFilter,
+					navigate,
+					act,
+					startRun,
+					cancelRun,
+					copyBrief,
+					trackQuestion,
+				}}
+			/>
 			<Toaster position="bottom-right" />
-		</>,
-		PAGES.find((p) => p.id === page)?.label ?? "Overview",
+		</Shell>
 	);
 }

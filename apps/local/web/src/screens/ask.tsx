@@ -7,11 +7,12 @@ import { Avatar } from "@/components/ui/avatar-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { ChatComposer } from "@/components/ui/chat-composer-clean";
+import { ThinkingState } from "@/components/ui/thinking-state-clean";
 import { toast } from "@/components/ui/toaster-clean";
 import { toAnswerMarkup } from "./answer-markup";
 import { engineLabel, Page } from "./shared";
 
-export type Turn = { id: string; role: "user" | "assistant"; text: string; engine?: string; pending?: boolean; failed?: boolean };
+export type Turn = { id: string; role: "user" | "assistant"; text: string; engine?: string; pending?: boolean; failed?: boolean; took?: number };
 
 type Props = { project: ProjectView; engines: EngineInfo[]; turns: Turn[]; onAsk: (question: string, engine: string) => void; onClear: () => void };
 
@@ -30,6 +31,8 @@ export function AskScreen({ project, engines, turns, onAsk, onClear }: Props) {
 	const end = useRef<HTMLDivElement>(null);
 	const picked = useRef(ready[0]?.id ?? "");
 	const last = turns[turns.length - 1];
+	const fresh = useRef(new Set<string>());
+	for (const turn of turns) if (turn.pending) fresh.current.add(turn.id);
 
 	useEffect(() => {
 		end.current?.scrollIntoView({ block: "end", behavior: "smooth" });
@@ -81,15 +84,18 @@ export function AskScreen({ project, engines, turns, onAsk, onClear }: Props) {
 										</CardContent>
 									) : null}
 								</Card>
-							) : (
-								<AIAnswer
+							) : turn.pending ? (
+								<ThinkingState
 									key={turn.id}
-									className="oa-reply"
-									sources={[]}
-									answer={turn.pending ? "" : toAnswerMarkup(turn.text, [], brand).answer}
-									streaming={turn.pending}
-									onCopy={() => toast.success("Answer copied")}
+									hold
+									stepMs={900}
+									steps={[
+										{ kind: "step", label: "Reading your latest run and site audit" },
+										{ kind: "step", label: `Asking ${engineLabel(engines, turn.engine ?? "")} what it makes of them` },
+									]}
 								/>
+							) : (
+								<AIAnswer key={turn.id} className="oa-reply" sources={[]} answer={toAnswerMarkup(turn.text, [], brand).answer} animate={turn === last && fresh.current.has(turn.id)} tookSeconds={turn.took} onCopy={() => toast.success("Answer copied")} />
 							),
 						)}
 						<div ref={end} />

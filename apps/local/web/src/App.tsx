@@ -376,8 +376,9 @@ export function App() {
 					const history = kept.map((t) => ({ role: t.role, text: t.text }));
 					const reply = crypto.randomUUID();
 					setTurns([...kept, { id: crypto.randomUUID(), role: "user", text: question }, { id: reply, role: "assistant", text: "", engine, pending: true }]);
+					const asked = Date.now();
 					api.ask(id, { question, history, engine: engine || undefined }).then(
-						(result) => setTurns((now) => now.map((t) => (t.id === reply ? { ...t, text: result.text, engine: result.engine, pending: false } : t))),
+						(result) => setTurns((now) => now.map((t) => (t.id === reply ? { ...t, text: result.text, engine: result.engine, pending: false, took: Math.round((Date.now() - asked) / 100) / 10 } : t))),
 						(caught) => setTurns((now) => now.map((t) => (t.id === reply ? { ...t, text: messageOf(caught), pending: false, failed: true } : t))),
 					);
 				}}

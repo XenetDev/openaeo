@@ -1,5 +1,5 @@
 import type { EntityView, ProjectView, ReportView } from "@openaeo/ui";
-import { Add01Icon, News01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon, News01Icon, SparklesIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { Spinner } from "@/components/ui/spinner-clean";
@@ -84,11 +84,11 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 			actions={
 				<>
 					{canFind ? (
-						<Button variant="ghost" size="sm" loading={finding} onClick={onFind}>
+						<Button variant="ghost" size="sm" loading={finding} onClick={onFind} icon={<Icon icon={SparklesIcon} size={14} />}>
 							Find competitors
 						</Button>
 					) : null}
-					<Button size="sm" onClick={() => setOpen(true)}>
+					<Button size="sm" onClick={() => setOpen(true)} icon={<Icon icon={Add01Icon} size={14} />}>
 						Add competitor
 					</Button>
 				</>
@@ -134,7 +134,7 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 						action={
 							<span className="oa-inline">
 								{fresh.length > 1 ? (
-									<Button size="sm" onClick={() => onSave([...competitors, ...fresh.map(toEntity)])}>
+									<Button size="sm" onClick={() => onSave([...competitors, ...fresh.map(toEntity)])} icon={<Icon icon={Add01Icon} size={14} />}>
 										Add all {fresh.length}
 									</Button>
 								) : null}
@@ -146,7 +146,7 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 					/>
 					<CardContent>
 						{fresh.length === 0 ? (
-							<EmptyState bare icon={null} title={ideas.length ? "You already track all of these" : "No competitors found"} text={ideas.length ? "Press Find competitors again after your next run." : "The engine could not tell who you compete with. Add them yourself, or try again after a run."} />
+							<EmptyState bare icon={UserMultipleIcon} title={ideas.length ? "You already track all of these" : "No competitors found"} text={ideas.length ? "Press Find competitors again after your next run." : "The engine could not tell who you compete with. Add them yourself, or try again after a run."} />
 						) : (
 							<div className="oa-suggest">
 								{fresh.map((idea) => (
@@ -174,7 +174,7 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 					title="No competitors yet"
 					text="Add the businesses you lose work to. OpenAEO then shows how often each is named beside you, and which questions they win."
 					action={
-						<Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+						<Button variant="secondary" size="sm" onClick={() => setOpen(true)} icon={<Icon icon={Add01Icon} size={14} />}>
 							Add competitor
 						</Button>
 					}
@@ -216,7 +216,7 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 						<Button variant="secondary" onClick={() => setOpen(false)}>
 							Cancel
 						</Button>
-						<Button disabled={!clean || taken} onClick={add}>
+						<Button disabled={!clean || taken} onClick={add} icon={<Icon icon={Add01Icon} size={14} />}>
 							Add competitor
 						</Button>
 					</>

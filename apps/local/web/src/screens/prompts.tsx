@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
-import { Add01Icon, BubbleChatIcon, Delete02Icon, MoreHorizontalIcon, PauseIcon, PlayIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon, BubbleChatIcon, Delete02Icon, MoreHorizontalIcon, PauseIcon, PlayIcon, SparklesIcon } from "@hugeicons/core-free-icons";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { DropdownMenu } from "@/components/ui/dropdown-menu-clean";
 import { IconButton } from "@/components/ui/icon-button-clean";
@@ -86,7 +86,7 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 					});
 				}}
 				actions={
-					<Button variant="ghost" size="sm" loading={suggesting} onClick={onSuggest}>
+					<Button variant="ghost" size="sm" loading={suggesting} onClick={onSuggest} icon={<Icon icon={SparklesIcon} size={14} />}>
 						Suggest questions
 					</Button>
 				}
@@ -114,7 +114,7 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 							action={
 								<span className="oa-inline">
 									{fresh.length > 1 ? (
-										<Button size="sm" onClick={() => void onAdd(fresh)}>
+										<Button size="sm" onClick={() => void onAdd(fresh)} icon={<Icon icon={Add01Icon} size={14} />}>
 											Track all {fresh.length}
 										</Button>
 									) : null}
@@ -126,7 +126,7 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 						/>
 						<CardContent>
 							{fresh.length === 0 ? (
-								<EmptyState bare icon={null} title="You already track all of these" text="Press Suggest questions again for a fresh set." />
+								<EmptyState bare icon={BubbleChatIcon} title="You already track all of these" text="Press Suggest questions again for a fresh set." />
 							) : (
 								<div className="oa-suggest">
 									{fresh.map((text) => (

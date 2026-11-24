@@ -1,7 +1,7 @@
 import type { EngineInfo, ProjectView } from "@openaeo/ui";
-import { AiChat02Icon, CheckListIcon, News01Icon, Search01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon, AiChat02Icon, ArrowRight02Icon, CheckListIcon, News01Icon, PencilEdit02Icon, PlayIcon, Refresh01Icon, Search01Icon, Settings01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { EmptyState } from "@/components/app-shell";
+import { EmptyState, Icon } from "@/components/app-shell";
 import { AssistantStart } from "@/components/assistant-start";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -85,7 +85,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 			title="Ask Aeo"
 			actions={
 				turns.length > 0 && !busy ? (
-					<Button variant="ghost" size="sm" onClick={onClear}>
+					<Button variant="ghost" size="sm" onClick={onClear} icon={<Icon icon={PencilEdit02Icon} size={14} />}>
 						New chat
 					</Button>
 				) : undefined
@@ -97,7 +97,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 					title="No AI engine is ready"
 					text="Aeo uses your own Claude Code or Codex. Install and sign in to one, then check Settings."
 					action={
-						<Button variant="secondary" size="sm" onClick={() => onAction({ type: "open", page: "settings" })}>
+						<Button variant="secondary" size="sm" onClick={() => onAction({ type: "open", page: "settings" })} icon={<Icon icon={Settings01Icon} size={14} />}>
 							Open Settings
 						</Button>
 					}
@@ -124,7 +124,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 									<CardHeader title="That question could not be answered" description={turn.text} />
 									{retry && turn === last ? (
 										<CardContent>
-											<Button variant="secondary" size="sm" onClick={() => onAsk(retry, picked.current)}>
+											<Button variant="secondary" size="sm" onClick={() => onAsk(retry, picked.current)} icon={<Icon icon={Refresh01Icon} size={14} />}>
 												Try again
 											</Button>
 										</CardContent>
@@ -146,7 +146,14 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 									{turn.actions?.length ? (
 										<div className="oa-actions">
 											{turn.actions.map((action) => (
-												<Button key={JSON.stringify(action)} variant="secondary" size="sm" onClick={() => onAction(action)}>
+												<Button
+													key={JSON.stringify(action)}
+													variant="secondary"
+													size="sm"
+													icon={action.type === "open" ? undefined : <Icon icon={action.type === "run" ? PlayIcon : action.type === "audit" ? CheckListIcon : Add01Icon} size={14} />}
+													iconRight={action.type === "open" ? <Icon icon={ArrowRight02Icon} size={14} /> : undefined}
+													onClick={() => onAction(action)}
+												>
 													{actionLabel(action)}
 												</Button>
 											))}

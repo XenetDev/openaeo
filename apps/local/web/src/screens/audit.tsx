@@ -1,7 +1,7 @@
 import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@openaeo/ui";
-import { CheckListIcon, Globe02Icon } from "@hugeicons/core-free-icons";
+import { CheckListIcon, Copy01Icon, Globe02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
-import { EmptyState } from "@/components/app-shell";
+import { EmptyState, Icon } from "@/components/app-shell";
 import { PillButton, PillField } from "@/components/pill-field";
 import { AgentFindings, type Finding, type FindingAgent } from "@/components/ui/agent-findings-clean";
 import { Badge } from "@/components/ui/badge-clean";
@@ -90,7 +90,7 @@ function FixCard({ count, own, onCopyBrief }: { count: number; own: boolean; onC
 							</ol>
 							{own ? (
 								<span>
-									<Button size="lg" onClick={onCopyBrief}>
+									<Button size="lg" onClick={onCopyBrief} icon={<Icon icon={Copy01Icon} size={14} />}>
 										Copy fix brief
 									</Button>
 								</span>

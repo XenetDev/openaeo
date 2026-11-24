@@ -1,7 +1,7 @@
 import type { AnswerView, EngineInfo, ProjectView, ReportView, RunView } from "@openaeo/ui";
-import { Clock01Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight02Icon, Clock01Icon, PlayIcon, StopIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useState } from "react";
-import { EmptyState } from "@/components/app-shell";
+import { EmptyState, Icon } from "@/components/app-shell";
 import { Badge, type BadgeTone } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
@@ -81,11 +81,11 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 			title="Runs"
 			actions={
 				live ? (
-					<Button variant="secondary" size="sm" onClick={onCancel}>
+					<Button variant="secondary" size="sm" onClick={onCancel} icon={<Icon icon={StopIcon} size={14} />}>
 						Stop run
 					</Button>
 				) : (
-					<Button size="sm" onClick={onStart}>
+					<Button size="sm" onClick={onStart} icon={<Icon icon={PlayIcon} size={14} />}>
 						Run now
 					</Button>
 				)
@@ -94,13 +94,13 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 			{runs === null ? null : runs.length === 0 ? (
 				<EmptyState icon={Clock01Icon} title="No runs yet" text="A run asks every AI engine each of your questions once. Every run is kept here, so you can see how the answers change over time."
 					action={
-						<Button variant="secondary" size="sm" onClick={onStart}>
+						<Button variant="secondary" size="sm" onClick={onStart} icon={<Icon icon={PlayIcon} size={14} />}>
 							Run now
 						</Button>
 					}
 				/>
 			) : (
-				<div className="oa-answers">
+				<div className="oa-answers" data-wide="">
 					<Card className="oa-qlist">
 						<CardHeader title="History" description={`${runs.length} ${runs.length === 1 ? "run" : "runs"}, newest first`} />
 						<nav aria-label="Runs">
@@ -143,7 +143,7 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 										]}
 									/>
 									{shown.run.id === latest?.id ? (
-										<Button variant="secondary" size="sm" style={{ marginTop: 12 }} onClick={onOpenAnswers}>
+										<Button variant="secondary" size="sm" style={{ marginTop: 12 }} onClick={onOpenAnswers} iconRight={<Icon icon={ArrowRight02Icon} size={14} />}>
 											Read the answers
 										</Button>
 									) : null}

@@ -13,7 +13,9 @@ import { OpportunitiesScreen } from "./screens/opportunities";
 import { RunsScreen } from "./screens/runs";
 import { OverviewScreen } from "./screens/overview";
 import { type PromptStat, PromptsScreen } from "./screens/prompts";
-import { OnboardingFlow } from "./screens/onboarding";
+import { OnboardingFlow, SetupPreview } from "./screens/onboarding";
+import { FirstRunStep } from "./screens/onboarding-steps";
+import { Monogram } from "@/components/onboarding-website";
 import { SettingsScreen } from "./screens/settings";
 import { Toaster, toast } from "@/components/ui/toaster-clean";
 
@@ -61,6 +63,7 @@ export function App() {
 	const [turns, setTurns] = useState<Turn[]>([]);
 	const [ideas, setIdeas] = useState<CompetitorIdea[] | null>(null);
 	const [finding, setFinding] = useState(false);
+	const [setup, setSetup] = useState<{ id: string; audit: "working" | "skipped"; questions: "waiting" | "working" | "done" | "skipped"; run: "waiting" | "working" | "skipped"; count: number } | null>(null);
 	const [theme, setTheme] = useState<Theme>(storedTheme);
 	const commandRef = useRef<(id: string, text?: string) => void>(() => {});
 	const loading = useRef(0);
@@ -99,6 +102,33 @@ export function App() {
 			})
 			.finally(() => liveId.current === pid && setFinding(false));
 	}, []);
+
+	const beginSetup = useCallback(
+		async (pid: string) => {
+			setSetup({ id: pid, audit: "working", questions: "working", run: "waiting", count: 0 });
+			const patch = (next: Partial<NonNullable<typeof setup>>) => setSetup((now) => (now && now.id === pid ? { ...now, ...next } : now));
+			api.startAudit(pid, "").then(
+				() => loadProject(pid),
+				() => patch({ audit: "skipped" }),
+			);
+			let picks: string[] = [];
+			try {
+				picks = (await api.suggest(pid)).prompts.slice(0, 8);
+				if (picks.length) await api.addPrompts(pid, picks);
+			} catch {
+				picks = [];
+			}
+			if (picks.length === 0) return patch({ questions: "skipped", run: "skipped" });
+			patch({ questions: "done", count: picks.length, run: "working" });
+			try {
+				await api.startRun(pid);
+			} catch {
+				patch({ run: "skipped" });
+			}
+			await loadProject(pid).catch(() => {});
+		},
+		[loadProject],
+	);
 
 	const guard = useCallback(async (work: () => Promise<void>) => {
 		setError(null);
@@ -259,6 +289,41 @@ export function App() {
 
 	if (projects === null) return shell(<div className="ui-as-page">{error ? <p className="ui-as-page-sub">{error}</p> : null}</div>, "");
 
+	if (setup && project && setup.id === project.id && !creating) {
+		const audit = data?.audit.audit;
+		const run = data?.report.run;
+		const auditState = setup.audit === "skipped" ? "skipped" : audit?.status === "done" || audit?.status === "interrupted" ? "done" : "working";
+		const runState = setup.run === "skipped" ? "skipped" : setup.run === "waiting" ? "waiting" : run && run.status !== "running" ? "done" : "working";
+		const finished = (runState === "done" || runState === "skipped") && auditState !== "working" && setup.questions !== "working";
+		const ready = engines.filter((e) => e.available && e.enabled);
+		return (
+			<>
+				<FirstRunStep
+					frame={{ product: "OpenAEO", email: "Runs on this computer", steps: 5, logo: <Monogram name="OpenAEO" size={20} /> }}
+					step={5}
+					brand={project.name}
+					finished={finished}
+					preview={<SetupPreview brand={project.name} domains={project.domains} competitors={data?.competitors.map((c) => c.name) ?? []} engines={engines} nav={nav} />}
+					tasks={[
+						{ id: "audit", label: "Checking whether AI can read your website", state: auditState, detail: auditState === "done" && audit ? `${audit.pages.length} pages read, score ${audit.score ?? 0} of 100` : auditState === "skipped" ? "Skipped. Run it later from the Audit page." : undefined },
+						{ id: "questions", label: "Writing the questions your buyers ask", state: setup.questions, detail: setup.questions === "done" ? `${setup.count} questions tracked` : setup.questions === "skipped" ? "None could be written. Add your own on the Prompts page." : undefined },
+						{
+							id: "run",
+							label: `Asking ${ready.map((e) => e.label).join(" and ") || "your engines"}`,
+							state: runState,
+							detail: runState === "working" && run ? `${run.completed} of ${run.total} answers so far` : runState === "done" && run ? `${run.completed} answers collected` : runState === "skipped" ? "Skipped. Press Run now once you have questions." : `About ${Math.max(1, Math.ceil((8 * Math.max(1, ready.length)) / 4))} minutes`,
+						},
+					]}
+					onOpen={() => {
+						setSetup(null);
+						navigate("overview");
+					}}
+				/>
+				<Toaster position="bottom-right" />
+			</>
+		);
+	}
+
 	if (!project || creating) {
 		return (
 			<>
@@ -275,9 +340,17 @@ export function App() {
 							await loadState();
 							select(created.project.id);
 							setCreating(false);
-							navigate("prompts");
-							toast.success(`${created.project.name} is set up`, { description: "Add the questions your buyers ask, then run them." });
+							navigate("overview");
+							void beginSetup(created.project.id);
 						}).finally(() => setBusy(false));
+					}}
+					onSaveKey={async (engineId, key) => {
+						try {
+							await api.saveSettings({ [`${engineId}.apiKey`]: key });
+							await loadState();
+						} catch (caught) {
+							toast.error("That key was not saved", { description: messageOf(caught) });
+						}
 					}}
 				/>
 				<Toaster position="bottom-right" />

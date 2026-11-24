@@ -1,7 +1,7 @@
 import type { AnswerView, EngineInfo, PageId, ProjectView } from "@openaeo/ui";
-import { BubbleChatIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import { ArrowRight02Icon, BubbleChatIcon, PlayIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { EmptyState } from "@/components/app-shell";
+import { EmptyState, Icon } from "@/components/app-shell";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
 import { Badge, type BadgeTone } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -106,7 +106,7 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 					text="After a run, every question shows here with what each AI engine answered, who it named and the sites it relied on."
 					action={
 						live ? undefined : (
-							<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")}>
+							<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")} iconRight={<Icon icon={ArrowRight02Icon} size={14} />}>
 								Go to Prompts
 							</Button>
 						)
@@ -139,7 +139,12 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 							onChange={setPicked}
 							options={ids.map((id) => {
 								const state = standing(group.find((a) => a.engine === id));
-								return { value: id, label: engineLabel(engines, id), icon: <EngineLogo engine={id} label={engineLabel(engines, id)} />, badge: <Badge tone={state.tone}>{state.text}</Badge> };
+								return { value: id, label: engineLabel(engines, id), icon: <EngineLogo engine={id} label={engineLabel(engines, id)} />, badge: (
+										<span className="oa-tab-badge">
+											<Badge tone={state.tone}>{state.text}</Badge>
+										</span>
+									),
+								};
 							})}
 						/>
 						{!answer ? (
@@ -154,7 +159,7 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 							<Card>
 								<CardHeader title={`${label} could not answer`} description={answer.errorMessage ?? "No reason was given."} />
 								<CardContent>
-									<Button variant="secondary" size="sm" onClick={onRunAgain}>
+									<Button variant="secondary" size="sm" onClick={onRunAgain} icon={<Icon icon={PlayIcon} size={14} />}>
 										Run again
 									</Button>
 								</CardContent>

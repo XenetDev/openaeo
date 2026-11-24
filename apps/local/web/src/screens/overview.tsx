@@ -1,6 +1,6 @@
 import type { EngineInfo, PageId, ProjectView, ReportView } from "@openaeo/ui";
-import { Analytics01Icon } from "@hugeicons/core-free-icons";
-import { EmptyState } from "@/components/app-shell";
+import { Analytics01Icon, ArrowRight02Icon, ChartIncreaseIcon, News01Icon, PlayIcon, StopIcon } from "@hugeicons/core-free-icons";
+import { EmptyState, Icon } from "@/components/app-shell";
 import { ChartCard } from "@/components/analytics";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -49,12 +49,12 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 				<Badge tone="info" live>
 					Asking {run.completed} of {run.total}
 				</Badge>
-				<Button variant="secondary" size="sm" onClick={onCancel}>
+				<Button variant="secondary" size="sm" onClick={onCancel} icon={<Icon icon={StopIcon} size={14} />}>
 					Stop
 				</Button>
 			</>
 		) : (
-			<Button size="sm" onClick={onRun} disabled={usable.length === 0}>
+			<Button size="sm" onClick={onRun} disabled={usable.length === 0} icon={<Icon icon={PlayIcon} size={14} />}>
 				Run now
 			</Button>
 		);
@@ -119,7 +119,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 						text="A run asks each AI engine every question on your Prompts page, then records who was mentioned and which sites were cited. It takes about half a minute per question."
 						action={
 							running ? undefined : (
-								<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")}>
+								<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")} iconRight={<Icon icon={ArrowRight02Icon} size={14} />}>
 									Review your questions
 								</Button>
 							)
@@ -215,7 +215,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 						/>
 					</CardContent>
 				</Card>
-				<Card>
+				<Card className="oa-card-fill">
 					<CardHeader title="Most cited sites" description="Links in the latest answers" />
 					<CardContent>
 						<ShareList
@@ -225,15 +225,18 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 								share: (d.citations / Math.max(1, report.topDomains[0]?.citations ?? 1)) * 100,
 								badge: d.isBrand ? <Badge>Yours</Badge> : undefined,
 							}))}
-							empty={<EmptyState bare icon={null} title="No links cited" text="The engines answered this run without linking to any site." />}
+							empty={<EmptyState bare icon={News01Icon} title="No links cited" text="The engines answered this run without linking to any site." />}
 						/>
 					</CardContent>
 				</Card>
 				{changes.length > 0 ? (
 					<ChangeSummary title="Since the last run" period={previous ? when(previous.startedAt) : ""} changes={changes} />
 				) : (
-					<Card>
-						<CardHeader title="Since the last run" description="What moved between runs shows here after a second run." />
+					<Card className="oa-card-fill">
+						<CardHeader title="Since the last run" />
+						<CardContent>
+							<EmptyState bare icon={ChartIncreaseIcon} title="Nothing to compare yet" text="After a second run, this shows what went up and what went down." />
+						</CardContent>
 					</Card>
 				)}
 			</div>

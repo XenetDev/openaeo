@@ -185,7 +185,7 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 				onRun={(url) => act(() => api.startAudit(project.id, url))}
 				onCancel={() => act(async () => (audit ? api.cancelAudit(audit.id) : undefined))}
 				onCopyBrief={copyBrief}
-				planSteps={data.plan.steps.filter((step) => !step.done).length}
+				flagged={data.plan.steps.filter((step) => !step.done && step.id !== "website")}
 				onPlan={() => navigate("plan")}
 			/>
 		);

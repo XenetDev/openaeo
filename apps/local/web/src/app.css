@@ -233,6 +233,14 @@ body,
 	overflow-wrap: anywhere;
 }
 
+.oa-flagged + .oa-flagged {
+	margin-top: 16px;
+}
+
+.oa-flagged p:last-child {
+	margin-bottom: 0;
+}
+
 .oa-urls {
 	margin: 8px 0 0;
 	padding: 0;
@@ -1328,6 +1336,7 @@ body,
 	color: var(--muted);
 }
 
+.oa-flagged ul,
 .oa-step-body :is(ul, ol) {
 	display: grid;
 	gap: 6px;

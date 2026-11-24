@@ -1,4 +1,4 @@
-import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@api";
+import type { ArtefactsView, AuditView, FindingView, PlanStepView, ProjectView } from "@api";
 import { ArrowRight02Icon, CheckListIcon, Copy01Icon, Globe02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
@@ -22,7 +22,7 @@ type Props = {
 	onRun: (url: string) => void;
 	onCancel: () => void;
 	onCopyBrief: () => void;
-	planSteps: number;
+	flagged: PlanStepView[];
 	onPlan: () => void;
 };
 
@@ -59,6 +59,9 @@ const AREAS: { id: string; name: string; checks: string[] }[] = [
 	},
 ];
 const SEVERITY = { high: "critical", medium: "warning", low: "note" } as const;
+const SEVERITIES = ["high", "medium", "low"] as const;
+const MAX_EVIDENCE = 5;
+
 const LEVELS = [
 	{
 		id: "high",
@@ -177,7 +180,7 @@ export function AuditScreen({
 	onRun,
 	onCancel,
 	onCopyBrief,
-	planSteps,
+	flagged,
 	onPlan,
 }: Props) {
 	const [url, setUrl] = useState(defaultUrl);
@@ -279,11 +282,31 @@ export function AuditScreen({
 							/>
 						</Card>
 					) : null}
-					{planSteps > 0 ? (
+					<div className="oa-cols-3">
+						<StatCard
+							label="Audit score"
+							value={audit.score ?? 0}
+							format={(n) => `${Math.round(n)} / 100`}
+							footer="Covers your website only. It does not predict whether AI names you."
+						/>
+						<StatCard
+							label="Pages read"
+							value={read}
+							footer={unread.length > 0 ? `${unread.length} could not be read` : "All readable"}
+						/>
+						<StatCard
+							label="Findings"
+							value={findings.length + flagged.length}
+							footer={`${findings.length} on your site · ${flagged.length} from AI answers · ${when(audit.startedAt)}`}
+						/>
+					</div>
+
+					{flagged.length > 0 ? (
 						<Card>
 							<CardHeader
-								title="A good audit score does not mean AI recommends you"
-								description={`The audit only checks whether AI can read your pages. Whether it names ${project.name}, and what to change if it does not, is in your plan: ${planSteps} ${planSteps === 1 ? "step" : "steps"} left.`}
+								icon={<AgentMark />}
+								title="What AI engines flagged"
+								description={`These come from what the engines said about ${project.name} in your latest run, not from reading your site. Your plan has the steps for each one.`}
 								action={
 									<Button
 										variant="secondary"
@@ -295,26 +318,33 @@ export function AuditScreen({
 									</Button>
 								}
 							/>
+							<CardContent>
+								{SEVERITIES.map((severity) => {
+									const steps = flagged.filter((step) => step.severity === severity);
+									return steps.length > 0 ? (
+										<div key={severity} className="oa-finding-list oa-flagged" data-tone={severity}>
+											{steps.map((step) => (
+												<article key={step.id}>
+													<h3>{step.title}</h3>
+													<p>{step.why}</p>
+													{step.evidence.length > 0 ? (
+														<ul>
+															{step.evidence.slice(0, MAX_EVIDENCE).map((item) => (
+																<li key={item}>{item}</li>
+															))}
+															{step.evidence.length > MAX_EVIDENCE ? (
+																<li>and {step.evidence.length - MAX_EVIDENCE} more</li>
+															) : null}
+														</ul>
+													) : null}
+												</article>
+											))}
+										</div>
+									) : null;
+								})}
+							</CardContent>
 						</Card>
 					) : null}
-					<div className="oa-cols-3">
-						<StatCard
-							label="Audit score"
-							value={audit.score ?? 0}
-							format={(n) => `${Math.round(n)} / 100`}
-							footer="A rough guide. It counts problems; it does not predict AI visibility."
-						/>
-						<StatCard
-							label="Pages read"
-							value={read}
-							footer={unread.length > 0 ? `${unread.length} could not be read` : "All readable"}
-						/>
-						<StatCard
-							label="Findings"
-							value={findings.length}
-							footer={`${findings.filter((f) => f.severity === "high").length} high · ${when(audit.startedAt)}`}
-						/>
-					</div>
 
 					{findings.length === 0 ? (
 						<EmptyState icon={CheckListIcon} title="No problems found" text="Every check passed on the pages read." />

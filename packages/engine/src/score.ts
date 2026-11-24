@@ -34,3 +34,19 @@ export function metrics(results: MatchResult[]): Metrics {
 		citationRate: answers ? cited / answers : 0,
 	};
 }
+
+const WEIGHTS = { mentions: 40, rank: 25, shareOfVoice: 20, citations: 15 };
+
+const unit = (value: number) => (Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0);
+
+export function visibility(m: Metrics): number {
+	const mentionRate = unit(m.mentionRate);
+	const rank = m.averageRank === null || !Number.isFinite(m.averageRank) ? null : Math.max(1, m.averageRank);
+	const rankQuality = rank === null ? 0 : 2 / (rank + 1);
+	const score =
+		WEIGHTS.mentions * mentionRate +
+		WEIGHTS.rank * rankQuality * mentionRate +
+		WEIGHTS.shareOfVoice * unit(m.shareOfVoice) +
+		WEIGHTS.citations * unit(m.citationRate);
+	return Math.round(Math.min(100, Math.max(0, score)) * 10) / 10;
+}

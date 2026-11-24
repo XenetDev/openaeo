@@ -20,12 +20,12 @@ const ORDINARY_WORD = /^\p{Lu}\p{Ll}*$/u;
 type Term = { entity: number; firstChar: string | null };
 
 const keyOf = (text: string) => text.toLowerCase().replace(/\s+/g, " ");
-const escape = (term: string) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+const escapeTerm = (term: string) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
 
 function buildPattern(terms: string[]): RegExp | null {
 	const longestFirst = [...terms].sort((a, b) => b.length - a.length);
-	const spaced = longestFirst.filter((t) => !UNSPACED_SCRIPT.test(t)).map(escape);
-	const unspaced = longestFirst.filter((t) => UNSPACED_SCRIPT.test(t)).map(escape);
+	const spaced = longestFirst.filter((t) => !UNSPACED_SCRIPT.test(t)).map(escapeTerm);
+	const unspaced = longestFirst.filter((t) => UNSPACED_SCRIPT.test(t)).map(escapeTerm);
 	const parts: string[] = [];
 	if (spaced.length) parts.push(`(?<![\\p{L}\\p{N}])(?:${spaced.join("|")})(?![\\p{L}\\p{N}])`);
 	if (unspaced.length) parts.push(`(?:${unspaced.join("|")})`);

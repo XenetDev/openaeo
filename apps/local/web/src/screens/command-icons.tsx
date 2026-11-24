@@ -92,7 +92,9 @@ export const AgentMark = () => (
 function Level({ tone, children }: { tone: "high" | "medium" | "low" | "files" | "skipped"; children: ReactNode }) {
 	return (
 		<span className="oa-level" data-tone={tone} aria-hidden="true">
-			<svg viewBox="0 0 24 24">{children}</svg>
+			<svg viewBox="0 0 24 24" aria-hidden="true">
+				{children}
+			</svg>
 		</span>
 	);
 }

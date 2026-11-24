@@ -48,6 +48,7 @@ export function PillField({
 	const field = fieldRef ?? own;
 	const [multi, setMulti] = useState(false);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: the height follows the text, so it is measured again when the value changes
 	useEffect(() => {
 		const el = field.current;
 		if (!el) return;

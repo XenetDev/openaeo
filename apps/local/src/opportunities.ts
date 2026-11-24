@@ -62,7 +62,7 @@ export function buildOpportunities(store: Store, projectId: string): Opportuniti
 
 function auditFixes(store: Store, projectId: string): Opportunities["fixes"] {
 	const audit = store.audits.latest(projectId, { ownOnly: true });
-	if (!audit || audit.status !== "done") return [];
+	if (audit?.status !== "done") return [];
 	const groups = new Map<string, { severity: string; pages: number }>();
 	for (const finding of store.audits.findings(audit.id))
 		groups.set(finding.title, { severity: finding.severity, pages: (groups.get(finding.title)?.pages ?? 0) + 1 });

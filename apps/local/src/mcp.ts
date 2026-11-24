@@ -218,7 +218,7 @@ export function createMcpServer(deps: {
 			const found = resolve(project);
 			if (isReply(found)) return found;
 			const audit = store.audits.latest(found.id, { ownOnly: true });
-			if (!audit || audit.status !== "done") return say(`No audit yet for ${found.name}. Use run_audit to run one.`);
+			if (audit?.status !== "done") return say(`No audit yet for ${found.name}. Use run_audit to run one.`);
 			return say(buildFixBrief(resultOf(audit, store.audits.findings(audit.id))));
 		},
 	);

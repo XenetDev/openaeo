@@ -202,7 +202,7 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 						accept: "text/html,application/xhtml+xml,text/plain,application/xml;q=0.9,*/*;q=0.5",
 					},
 				});
-			} catch (error) {
+			} catch {
 				if (signal.aborted) throw new AuditFetchError("timeout", "The page took too long to load.");
 				throw new AuditFetchError("network", "The site could not be reached.");
 			}

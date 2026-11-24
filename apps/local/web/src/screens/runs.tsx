@@ -56,6 +56,7 @@ export function RunsScreen({
 	const beat = `${latest?.id}:${latest?.status}:${latest?.completed}`;
 	const selected = runs?.find((r) => r.id === picked)?.id ?? runs?.[0]?.id ?? null;
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: beat changes whenever the latest run moves on
 	useEffect(() => {
 		let stale = false;
 		void api.runs(project.id).then(
@@ -67,6 +68,7 @@ export function RunsScreen({
 		};
 	}, [project.id, beat]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: beat changes whenever the latest run moves on
 	useEffect(() => {
 		if (!selected) return setDetail(null);
 		let stale = false;

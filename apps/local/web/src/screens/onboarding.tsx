@@ -123,10 +123,12 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 		asked.current = key;
 		setFound(null);
 		setLooking(true);
-		onFindCompetitors(name, domain).then(
-			(list) => asked.current === key && (setFound(list), setLooking(false)),
-			() => asked.current === key && (setFound([]), setLooking(false)),
-		);
+		const settle = (list: CompetitorIdea[]) => {
+			if (asked.current !== key) return;
+			setFound(list);
+			setLooking(false);
+		};
+		onFindCompetitors(name, domain).then(settle, () => settle([]));
 	};
 	const prefill = found && found.length > 0 && !touched.current ? found.map((c) => c.name) : [];
 

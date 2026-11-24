@@ -86,6 +86,7 @@ Requires [Bun](https://bun.sh).
 
 ```sh
 bun install
+bun run lint
 bun run typecheck
 bun run test
 

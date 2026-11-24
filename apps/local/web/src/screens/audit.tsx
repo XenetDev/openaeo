@@ -172,7 +172,6 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 	const unread = audit?.pages.filter((p) => p.error) ?? [];
 	const read = (audit?.pages.length ?? 0) - unread.length;
 	const at = audit?.finishedAt ?? audit?.startedAt ?? 0;
-	const done = audit?.status === "done";
 
 	const agents: FindingAgent[] = AREAS.map((area) => {
 		const count = findings.filter((f) => area.checks.includes(f.checkId)).length;
@@ -186,7 +185,11 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 	});
 	const seen = new Set<string>();
 	const feed: Finding[] = findings
-		.filter((f) => (seen.has(f.title) ? false : (seen.add(f.title), true)))
+		.filter((f) => {
+			if (seen.has(f.title)) return false;
+			seen.add(f.title);
+			return true;
+		})
 		.map((f, i) => ({
 			id: `${f.checkId}-${i}`,
 			agentId: AREAS.find((a) => a.checks.includes(f.checkId))?.id ?? "answers",
@@ -228,7 +231,7 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 						Reading the site
 					</Badge>
 				) : (
-					<div className="oa-crawlers" aria-label="Crawlers checked">
+					<div className="oa-crawlers">
 						<span>Checks access for</span>
 						{["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"].map((bot) => (
 							<Badge key={bot}>{bot}</Badge>

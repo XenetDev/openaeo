@@ -94,6 +94,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 	const fresh = useRef(new Set<string>());
 	for (const turn of turns) if (turn.pending) fresh.current.add(turn.id);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: scrolls when a turn is added or finishes
 	useEffect(() => {
 		end.current?.scrollIntoView({ block: "end", behavior: "smooth" });
 	}, [turns.length, last?.pending]);

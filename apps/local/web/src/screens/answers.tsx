@@ -83,9 +83,10 @@ function Answer({
 	onNavigate: (page: PageId) => void;
 }) {
 	const [streamed] = useState(animate);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: marks the answer as seen once, when it first appears
 	useEffect(() => {
 		onSeen();
-	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+	}, []);
 	const markup = useMemo(() => toAnswerMarkup(answer.text, answer.citations, brand), [answer, brand]);
 	return (
 		<AIAnswer

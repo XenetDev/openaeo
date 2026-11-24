@@ -18,7 +18,7 @@ import {
 	UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppShell, Icon, type ShellNavItem } from "@/components/app-shell";
+import { AppShell, type ShellNavItem } from "@/components/app-shell";
 import { Mark } from "@/components/mark";
 import { Toaster, toast } from "@/components/ui/toaster-clean";
 import type {
@@ -298,7 +298,10 @@ export function App() {
 					label: p.name,
 					description: p.domains[0],
 					checked: p.id === project?.id,
-					onSelect: () => (setCreating(false), select(p.id)),
+					onSelect: () => {
+						setCreating(false);
+						select(p.id);
+					},
 				})),
 				{ label: NEW_BRAND, icon: PlusSignIcon, divider: true, onSelect: () => setCreating(true) },
 				...(project ? [{ label: "Brand settings", icon: Settings01Icon, onSelect: () => navigate("settings") }] : []),
@@ -554,7 +557,7 @@ export function App() {
 		else if (command === "agent") navigate("settings");
 		else if (command === "brief") {
 			const audit = data?.audit.audit;
-			if (!audit || audit.status !== "done") {
+			if (audit?.status !== "done") {
 				navigate("audit");
 				toast("Run an audit first", { description: "The fix brief is built from its findings." });
 			} else {

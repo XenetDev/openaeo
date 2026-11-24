@@ -1,0 +1,73 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"ignoreUnknown": true,
+		"includes": [
+			"**",
+			"!**/dist",
+			"!**/fixtures",
+			"!apps/local/src/embedded.ts",
+			"!apps/local/web/src/components/ui",
+			"!apps/local/web/src/components/analytics.tsx",
+			"!apps/local/web/src/components/app-shell.tsx",
+			"!apps/local/web/src/components/assistant-start.tsx",
+			"!apps/local/web/src/components/onboarding-brand.tsx",
+			"!apps/local/web/src/components/onboarding-website.tsx",
+			"!apps/local/web/src/components/prompt-explorer.tsx",
+			"!apps/local/web/src/components/settings-general.tsx",
+			"!apps/local/web/src/components/settings-profile.tsx"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"lineWidth": 120
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"style": {
+				"noDescendingSpecificity": "off"
+			},
+			"a11y": {
+				"noLabelWithoutControl": {
+					"level": "error",
+					"options": {
+						"inputComponents": ["TextField", "TagInput"]
+					}
+				}
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["**/test/**"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noExplicitAny": "off"
+					}
+				}
+			}
+		}
+	]
+}

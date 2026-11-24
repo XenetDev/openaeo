@@ -147,7 +147,7 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 		>
 			<section className="oa-audit-hero" data-tall={!audit || undefined}>
 				<h2>Can AI read your website?</h2>
-				<p>OpenAEO reads up to 25 pages the way an AI crawler does and lists what stops engines quoting you. No AI calls, a few seconds.</p>
+				<p>Reads up to 25 pages the way an AI crawler does and shows what stops engines quoting you.</p>
 				<form
 					className="oa-search"
 					onSubmit={(e) => {

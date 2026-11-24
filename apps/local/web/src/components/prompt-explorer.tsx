@@ -201,13 +201,7 @@ export type PromptExplorerScreenProps = Pick<AppShellProps, "className"> & {
 
 export function PromptExplorerScreen({
   workspace = "Northwind",
-  title = (
-    <>
-      What do your buyers{" "}
-      <br />
-      ask AI?
-    </>
-  ),
+  title = "What do your buyers ask AI?",
   prompts = samplePrompts,
   popular = samplePopular,
   rising = sampleRising,
@@ -314,7 +308,7 @@ export function PromptExplorerScreen({
         {/* The hero: a soft gradient with the heading and the field */}
         <section className="oa-audit-hero oa-prompt-hero" aria-labelledby={`${id}-title`}>
           <h2 id={`${id}-title`}>{title}</h2>
-          <p>Track the questions people ask AI assistants before they pick a business like yours. Every run asks each engine all of them.</p>
+          <p>Track the questions people ask AI before they choose a business like yours.</p>
 
           <div className="ui-pex-box oa-pill" data-open={showList || undefined} data-bulk={bulk || undefined}>
             <label htmlFor={`${id}-field`} className="ui-pex-sr">

@@ -515,16 +515,16 @@ body,
 	font-weight: 500;
 	letter-spacing: -0.025em;
 	color: var(--ink);
-	text-wrap: balance;
+	text-wrap: pretty;
 }
 
 .oa-audit-hero > p {
-	max-width: 52ch;
+	max-width: 90ch;
 	margin: -4px 0 8px;
 	font-size: 13px;
 	line-height: 20px;
 	color: var(--muted);
-	text-wrap: balance;
+	text-wrap: pretty;
 }
 
 .oa-search {

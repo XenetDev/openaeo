@@ -27,19 +27,19 @@ export const PatchPromptSchema = z.object({ active: z.boolean() });
 const toggle = z.enum(["true", "false"]);
 const model = z.string().trim().max(100);
 
+const API_IDS = ["openai", "anthropic", "xai", "gemini", "perplexity"] as const;
+const ENGINE_IDS = ["claude-cli", "codex-cli", ...API_IDS] as const;
+
 export const SettingsSchema = z
 	.object({
-		"openai.apiKey": z.string().trim().max(400),
-		"openai.model": model,
+		...Object.fromEntries(API_IDS.flatMap((id) => [[`${id}.apiKey`, z.string().trim().max(400)], [`${id}.model`, model]])),
 		"claude.model": model,
 		"codex.model": model,
 		schedule: z.enum(["off", "daily", "weekly"]),
-		"engine.claude-cli.enabled": toggle,
-		"engine.codex-cli.enabled": toggle,
-		"engine.openai.enabled": toggle,
-	})
+		...Object.fromEntries(ENGINE_IDS.map((id) => [`engine.${id}.enabled`, toggle])),
+	} as Record<string, z.ZodType<string>>)
 	.partial()
 	.strict();
 
-export const SECRET_SETTINGS = new Set(["openai.apiKey"]);
+export const SECRET_SETTINGS = new Set(API_IDS.map((id) => `${id}.apiKey`));
 export const MASK = "••••";

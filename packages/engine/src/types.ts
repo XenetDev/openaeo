@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const EngineIdSchema = z.enum(["claude-cli", "codex-cli", "openai", "anthropic", "gemini", "perplexity"]);
+export const EngineIdSchema = z.enum(["claude-cli", "codex-cli", "openai", "anthropic", "gemini", "perplexity", "xai"]);
 export type EngineId = z.infer<typeof EngineIdSchema>;
 
 export const SourceSchema = z.object({

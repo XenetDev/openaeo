@@ -77,10 +77,10 @@ export function span(ms: number): string {
 }
 
 export function EngineLogo({ engine, label, size = 16 }: { engine: string; label: string; size?: number }) {
-	if (engine === "claude-cli" || engine === "codex-cli" || engine === "openai") {
+	if (engine === "claude-cli" || engine === "anthropic" || engine === "codex-cli" || engine === "openai") {
 		return (
 			<span className="oa-engine-logo" style={{ width: size, height: size }}>
-				{engine === "claude-cli" ? <ClaudeLogo /> : <ChatGPTLogo />}
+				{engine === "claude-cli" || engine === "anthropic" ? <ClaudeLogo /> : <ChatGPTLogo />}
 			</span>
 		);
 	}

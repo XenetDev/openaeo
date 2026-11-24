@@ -20,10 +20,50 @@ type Props = {
 };
 
 
+const API_ENGINES = [
+	{ id: "openai", name: "OpenAI", model: "gpt-6.1-terra" },
+	{ id: "anthropic", name: "Anthropic", model: "claude-sonnet-5-5" },
+	{ id: "xai", name: "xAI (Grok)", model: "grok-4.7" },
+	{ id: "gemini", name: "Google Gemini", model: "gemini-3.8-flash" },
+	{ id: "perplexity", name: "Perplexity", model: "perplexity/sonar" },
+];
+
+function ApiRow({ api, savedKey, savedModel, onSave }: { api: (typeof API_ENGINES)[number]; savedKey: string; savedModel: string; onSave: (next: Record<string, string>, message: string) => void }) {
+	const [key, setKey] = useState(savedKey);
+	const [model, setModel] = useState(savedModel);
+	return (
+		<div className="ui-sg-row">
+			<span className="ui-sg-label">
+				<b>{api.name}</b>
+				<small>{savedKey ? "Key saved" : "No key"} · model {savedModel || api.model}</small>
+			</span>
+			<span className="oa-key-fields">
+				<TextField
+					aria-label={`${api.name} API key`}
+					type="password"
+					value={key}
+					placeholder="API key"
+					autoComplete="off"
+					spellCheck={false}
+					onChange={(e) => setKey(e.target.value)}
+					onBlur={() => key !== savedKey && onSave({ [`${api.id}.apiKey`]: key }, key ? `${api.name} key saved` : `${api.name} key removed`)}
+				/>
+				<TextField
+					aria-label={`${api.name} model`}
+					value={model}
+					placeholder={api.model}
+					autoComplete="off"
+					spellCheck={false}
+					onChange={(e) => setModel(e.target.value)}
+					onBlur={() => model !== savedModel && onSave({ [`${api.id}.model`]: model }, model ? `${api.name} model saved` : `${api.name} model reset`)}
+				/>
+			</span>
+		</div>
+	);
+}
+
 export function SettingsScreen({ engines, settings, project, onSave, onSaveProject, onDeleteProject }: Props) {
 	const [name, setName] = useState(project.name);
-	const [key, setKey] = useState(settings["openai.apiKey"] ?? "");
-	const [model, setModel] = useState(settings["openai.model"] ?? "");
 	const [deleting, setDeleting] = useState(false);
 	const [confirm, setConfirm] = useState("");
 	const canDelete = confirm.trim() === project.name.trim();
@@ -39,10 +79,12 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 
 			<header className="ui-sg-head">
 				<h2>AI engines</h2>
-				<p>OpenAEO asks the AI tools already signed in on this computer. Nothing is sent anywhere else.</p>
+				<p>OpenAEO asks the AI tools signed in on this computer, and any provider you add a key for below.</p>
 			</header>
 			<section className="ui-sg-card" aria-label="AI engines">
-				{engines.map((engine) => (
+				{engines
+					.filter((engine) => engine.id.endsWith("-cli") || engine.available)
+					.map((engine) => (
 					<div key={engine.id} className="ui-sg-row">
 						<span className="ui-sg-label">
 							<b>{engine.label}</b>
@@ -59,37 +101,16 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 						</span>
 					</div>
 				))}
-				<label className="ui-sg-row">
-					<span className="ui-sg-label">
-						<b>OpenAI API key</b>
-						<small>Optional. Also asks OpenAI's API directly. Stored only on this computer.</small>
-					</span>
-					<TextField
-						className="ui-sg-field"
-						aria-label="OpenAI API key"
-						value={key}
-						placeholder="sk-…"
-						autoComplete="off"
-						spellCheck={false}
-						onChange={(e) => setKey(e.target.value)}
-						onBlur={() => key !== (settings["openai.apiKey"] ?? "") && onSave({ "openai.apiKey": key }, key ? "API key saved" : "API key removed")}
-					/>
-				</label>
-				<label className="ui-sg-row">
-					<span className="ui-sg-label">
-						<b>OpenAI model</b>
-						<small>The model name to ask, as OpenAI lists it</small>
-					</span>
-					<TextField
-						className="ui-sg-field"
-						aria-label="OpenAI model"
-						value={model}
-						autoComplete="off"
-						spellCheck={false}
-						onChange={(e) => setModel(e.target.value)}
-						onBlur={() => model !== (settings["openai.model"] ?? "") && onSave({ "openai.model": model }, "Model saved")}
-					/>
-				</label>
+			</section>
+
+			<header className="ui-sg-head">
+				<h2>API keys</h2>
+				<p>Optional. Each key adds that provider as an engine. Keys are stored only on this computer and are never shown again in full.</p>
+			</header>
+			<section className="ui-sg-card" aria-label="API keys">
+				{API_ENGINES.map((api) => (
+					<ApiRow key={api.id} api={api} savedKey={settings[`${api.id}.apiKey`] ?? ""} savedModel={settings[`${api.id}.model`] ?? ""} onSave={onSave} />
+				))}
 			</section>
 
 			<header className="ui-sg-head">

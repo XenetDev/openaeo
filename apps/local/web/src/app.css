@@ -815,3 +815,89 @@ body,
 	font-size: 12px;
 	line-height: 16px;
 }
+
+.oa-ob-list {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	margin-top: 24px;
+	border-radius: calc(var(--aui-radius-lg, 10px) + 2px);
+	background: var(--obw-card, var(--card));
+	box-shadow: var(--aui-shadow-card, 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05));
+	text-align: left;
+}
+
+.oa-ob-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 14px;
+	font-size: 13px;
+	line-height: 20px;
+}
+
+.oa-ob-row + .oa-ob-row {
+	border-top: 0.5px solid var(--obw-line, rgba(127, 127, 127, 0.2));
+}
+
+.oa-ob-row[data-key] {
+	align-items: flex-start;
+}
+
+.oa-ob-row[data-key] > .oa-engine-logo {
+	margin-top: 1px;
+}
+
+.oa-ob-row b {
+	display: block;
+	font-weight: 500;
+}
+
+.oa-ob-row small {
+	display: block;
+	font-size: 12px;
+	line-height: 18px;
+	opacity: 0.6;
+}
+
+.oa-ob-row[data-state="waiting"] {
+	opacity: 0.5;
+}
+
+.oa-ob-key {
+	display: flex;
+	gap: 8px;
+	margin-top: 6px;
+}
+
+.oa-ob-key > :first-child {
+	flex: 1;
+	min-width: 0;
+}
+
+.oa-ob-mark {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 20px;
+	height: 20px;
+	color: var(--aui-success, #1e8a4f);
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.oa-ob-foot {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	width: 100%;
+	margin-top: 16px;
+}
+
+.oa-key-fields {
+	display: grid;
+	grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+	gap: 8px;
+	width: min(420px, 55%);
+}

@@ -87,3 +87,11 @@ test("an empty question is rejected", async () => {
 	const result = await api(store, runs, fakeProvider("claude-cli", () => "x"))(`/api/projects/${project.id}/ask`, { question: "  ", history: [] });
 	expect(result.status).toBe(400);
 });
+
+test("the prompt explains the product so it can say where to do things", () => {
+	const store = freshStore();
+	const project = seed(store, ["best crm?"]);
+	const prompt = buildAskPrompt(askContext(store, project), [], "How do I fix my site?");
+	expect(prompt).toContain("Audit page");
+	expect(prompt).toContain("fix brief");
+});

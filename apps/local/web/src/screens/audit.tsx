@@ -9,8 +9,9 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { CodeBlock } from "@/components/ui/code-block-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
 import { TextField } from "@/components/ui/text-field-clean";
-import { FilesMark, HighMark, LowMark, MediumMark, SkippedMark } from "./command-icons";
-import { Page, when } from "./shared";
+import { AgentMark, FilesMark, HighMark, LowMark, MediumMark, SkippedMark } from "./command-icons";
+import { EngineLogo, Page, when } from "./shared";
+import { SegmentedControl } from "@/components/ui/segmented-control-clean";
 
 type Props = {
 	project: ProjectView;
@@ -48,6 +49,73 @@ const pathOf = (url: string) => {
 		return url;
 	}
 };
+
+function FixCard({ count, own, onCopyBrief }: { count: number; own: boolean; onCopyBrief: () => void }) {
+	const [way, setWay] = useState<"paste" | "connect">("paste");
+	return (
+		<Card className="oa-cta">
+			<CardHeader
+				icon={
+					<span className="oa-cta-mark">
+						<AgentMark />
+					</span>
+				}
+				title={`Let your AI agent fix ${count === 1 ? "this finding" : `all ${count} findings`}`}
+				description="OpenAEO writes the instructions. Your own Claude Code or Codex makes the changes in your website's code, and you review them."
+				action={
+					<span className="oa-cta-engines">
+						<EngineLogo engine="claude-cli" label="Claude" size={18} />
+						<EngineLogo engine="codex-cli" label="ChatGPT" size={18} />
+					</span>
+				}
+			/>
+			<CardContent>
+				<div className="oa-stack">
+					<SegmentedControl
+						aria-label="How to hand over the fixes"
+						size="sm"
+						value={way}
+						onChange={setWay}
+						options={[
+							{ value: "paste", label: "Copy and paste" },
+							{ value: "connect", label: "Connect once" },
+						]}
+					/>
+					{way === "paste" ? (
+						<>
+							<ol className="oa-steps">
+								<li>Copy the fix brief. It lists every finding, the pages affected and how to fix each one.</li>
+								<li>Open your website's code in Claude Code or Codex and paste it.</li>
+								<li>Review the changes, publish them, then run the audit again.</li>
+							</ol>
+							{own ? (
+								<span>
+									<Button size="lg" onClick={onCopyBrief}>
+										Copy fix brief
+									</Button>
+								</span>
+							) : (
+								<p className="oa-quiet">The brief is only offered for your own website.</p>
+							)}
+						</>
+					) : (
+						<>
+							<ol className="oa-steps">
+								<li>Run one of these once in a terminal. Your agent can then read your reports and findings by itself.</li>
+							</ol>
+							<CodeBlock language="sh" filename="Claude Code" code="claude mcp add openaeo --scope user -- openaeo mcp" />
+							<CodeBlock language="sh" filename="Codex" code="codex mcp add openaeo -- openaeo mcp" />
+							<ol className="oa-steps" start={2}>
+								<li>In your website's code, tell your agent:</li>
+							</ol>
+							<CodeBlock language="txt" filename="Say this" code="Get the OpenAEO fix brief and fix the findings." wrap />
+						</>
+					)}
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
 
 export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, onRun, onCancel, onCopyBrief }: Props) {
 	const [url, setUrl] = useState(defaultUrl);
@@ -139,23 +207,7 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 						<>
 							<div className="oa-cols-2">
 								<AgentFindings title={`Checks on ${audit.origin.replace(/^https?:\/\//, "")}`} agents={agents} findings={feed} rows={Math.min(6, feed.length)} now={at} />
-								<Card>
-									<CardHeader title="Fix these with your AI agent" description="OpenAEO finds the problems. Your own Claude Code or Codex fixes them in your site's code, under your supervision." />
-									<CardContent>
-										<div className="oa-stack">
-											<p className="oa-quiet">1. Connect your agent once (the command is in Settings).</p>
-											<p className="oa-quiet">2. Open your website's code and ask: “get the OpenAEO fix brief and fix the findings”.</p>
-											<p className="oa-quiet">3. Run the audit again to confirm the findings are gone.</p>
-											{audit.own !== false ? (
-												<span>
-													<Button size="sm" onClick={onCopyBrief}>
-														Copy fix brief
-													</Button>
-												</span>
-											) : null}
-										</div>
-									</CardContent>
-								</Card>
+								<FixCard count={findings.length} own={audit.own !== false} onCopyBrief={onCopyBrief} />
 							</div>
 							{LEVELS.map((level) => {
 								const groups = new Map<string, FindingView[]>();

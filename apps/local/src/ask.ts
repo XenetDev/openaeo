@@ -6,6 +6,17 @@ export type AskTurn = { role: "user" | "assistant"; text: string };
 export type AskContext = { facts: string[]; quoted: string[] };
 
 const MAX_TURNS = 8;
+const GUIDE = [
+	"Prompts page: add the questions buyers ask AI assistants; Suggest questions drafts some. Each question is asked on every run.",
+	"Run now (search bar or Runs page) asks every enabled engine each question once. Runs page: history, a timeline of each run, and a daily or weekly schedule that works while OpenAEO is open.",
+	"Overview: visibility score (0 to 100, from how often the brand is named, how early, share against competitors and how often its own site is linked), trend and problems.",
+	"Answers page: what each engine said per question, where the brand ranked, and the sources it linked.",
+	"Sources page: the sites engines cite most; getting mentioned on those is how a brand gets named. Competitors page: add rivals and compare how often each is named.",
+	"Audit page: reads up to 25 pages of a website without AI and lists what stops AI engines reading or quoting it, with a fix for each.",
+	"OpenAEO never edits a website. On the Audit page the user copies a fix brief and pastes it into Claude Code or Codex inside their website's code, or connects the agent once (commands are on the Audit page and in Settings) so it can fetch reports and the brief itself.",
+	"Settings: turn engines on or off, add an OpenAI key, edit the brand's names and websites.",
+	"Engines are Claude and ChatGPT (through Codex) on the user's own subscription. Results are what those tools answer, which can differ from the consumer apps.",
+];
 const pct = (value: number) => `${Math.round((Number.isFinite(value) ? value : 0) * 100)}%`;
 const oneLine = (text: string, max: number) => {
 	const flat = text.replace(/\s+/g, " ").trim();
@@ -58,6 +69,9 @@ export function buildAskPrompt(context: AskContext, history: AskTurn[], question
 		"Answer the user's question using only the data below. Do not search the web and do not invent figures.",
 		"Write for a non-technical owner: plain words, specific, under 180 words unless asked for more. Use short paragraphs or a short list. No tables, no headings.",
 		"If the data cannot answer the question, say so and say what to do in OpenAEO to find out (add questions on Prompts, press Run now, or run an Audit).",
+		"",
+		"How OpenAEO works, for when the user asks what to do or where to find something:",
+		...GUIDE.map((line) => `- ${line}`),
 		"",
 		"Data:",
 		...context.facts.map((fact) => `- ${fact}`),

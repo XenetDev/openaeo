@@ -3,7 +3,6 @@ import { BubbleChatIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/app-shell";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
-import { Avatar } from "@/components/ui/avatar-clean";
 import { Badge, type BadgeTone } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
@@ -11,7 +10,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
 import { toast } from "@/components/ui/toaster-clean";
 import { toAnswerMarkup } from "./answer-markup";
-import { engineLabel, Facts, ordinal, Page, ShareList } from "./shared";
+import { EngineLogo, engineLabel, Facts, ordinal, Page, ShareList } from "./shared";
 
 type Props = {
 	answers: AnswerView[];
@@ -128,7 +127,7 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 							onChange={setPicked}
 							options={ids.map((id) => {
 								const state = standing(group.find((a) => a.engine === id));
-								return { value: id, label: engineLabel(engines, id), icon: <Avatar kind="agent" name={engineLabel(engines, id)} seed={id} size={20} />, badge: <Badge tone={state.tone}>{state.text}</Badge> };
+								return { value: id, label: engineLabel(engines, id), icon: <EngineLogo engine={id} label={engineLabel(engines, id)} />, badge: <Badge tone={state.tone}>{state.text}</Badge> };
 							})}
 						/>
 						{!answer ? (

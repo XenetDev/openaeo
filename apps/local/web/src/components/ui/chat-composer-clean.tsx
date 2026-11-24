@@ -1266,7 +1266,7 @@ const CancelIcon = () => (
 );
 
 /* Model logos */
-const ClaudeLogo = () => (
+export const ClaudeLogo = () => (
   <svg viewBox="0 0 1200 1200" aria-hidden="true">
     <path
       fill="#D97757"
@@ -1275,7 +1275,7 @@ const ClaudeLogo = () => (
   </svg>
 );
 
-const ChatGPTLogo = () => (
+export const ChatGPTLogo = () => (
   <svg viewBox="0 0 68.614 68.002" aria-hidden="true">
     <path
       fill="currentColor"

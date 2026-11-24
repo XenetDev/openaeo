@@ -390,3 +390,16 @@ body,
 	padding-left: 14px;
 	border-left: 2px solid color-mix(in srgb, var(--oa-tone) 55%, transparent);
 }
+
+.oa-engine-logo {
+	display: inline-grid;
+	flex: none;
+	place-items: center;
+	color: var(--strong);
+}
+
+.oa-engine-logo > svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+}

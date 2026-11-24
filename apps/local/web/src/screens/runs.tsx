@@ -2,7 +2,6 @@ import type { AnswerView, EngineInfo, ProjectView, ReportView, RunView } from "@
 import { Clock01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/app-shell";
-import { Avatar } from "@/components/ui/avatar-clean";
 import { Badge, type BadgeTone } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
@@ -10,7 +9,7 @@ import { Select } from "@/components/ui/select-clean";
 import { TraceWaterfall, type TraceSpan } from "@/components/ui/trace-waterfall-clean";
 import { api } from "../api";
 import { runTree } from "./run-tree";
-import { engineLabel, Facts, Page, percent, span, when } from "./shared";
+import { EngineLogo, engineLabel, Facts, Page, percent, span, when } from "./shared";
 
 type Props = {
 	project: ProjectView;
@@ -35,7 +34,7 @@ const STATUS: Record<RunView["status"], { label: string; tone: BadgeTone }> = {
 	interrupted: { label: "Stopped early", tone: "warning" },
 };
 
-const withMarks = (root: TraceSpan): TraceSpan => ({ ...root, children: root.children?.map((child) => ({ ...child, icon: <Avatar kind="agent" name={child.name} seed={child.id} size={20} /> })) });
+const withMarks = (root: TraceSpan): TraceSpan => ({ ...root, children: root.children?.map((child) => ({ ...child, icon: <EngineLogo engine={child.id} label={child.name} /> })) });
 
 export function RunsScreen({ project, engines, report, schedule, onSchedule, onStart, onCancel, onOpenAnswers }: Props) {
 	const [runs, setRuns] = useState<RunView[] | null>(null);

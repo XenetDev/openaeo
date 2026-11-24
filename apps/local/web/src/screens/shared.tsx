@@ -1,6 +1,8 @@
 import type { EngineInfo } from "@openaeo/ui";
 import type { ReactNode } from "react";
 import { css as pageCss } from "@/components/analytics";
+import { Avatar } from "@/components/ui/avatar-clean";
+import { ChatGPTLogo, ClaudeLogo } from "@/components/ui/chat-composer-clean";
 
 export const percent = (value: number) => `${Math.round((Number.isFinite(value) ? value : 0) * 100)}%`;
 export const engineLabel = (engines: EngineInfo[], id: string) => engines.find((e) => e.id === id)?.label ?? id;
@@ -72,4 +74,15 @@ export function Facts({ rows }: { rows: [string, ReactNode][] }) {
 export function span(ms: number): string {
 	const s = Math.max(0, Math.round(ms / 1000));
 	return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
+}
+
+export function EngineLogo({ engine, label, size = 16 }: { engine: string; label: string; size?: number }) {
+	if (engine === "claude-cli" || engine === "codex-cli" || engine === "openai") {
+		return (
+			<span className="oa-engine-logo" style={{ width: size, height: size }}>
+				{engine === "claude-cli" ? <ClaudeLogo /> : <ChatGPTLogo />}
+			</span>
+		);
+	}
+	return <Avatar kind="agent" name={label} seed={engine} size={20} />;
 }

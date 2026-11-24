@@ -3,14 +3,13 @@ import { CheckListIcon, News01Icon, Search01Icon, UserMultipleIcon } from "@huge
 import { useEffect, useMemo, useRef } from "react";
 import { AssistantStart } from "@/components/assistant-start";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
-import { Avatar } from "@/components/ui/avatar-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { ChatComposer } from "@/components/ui/chat-composer-clean";
 import { ThinkingState } from "@/components/ui/thinking-state-clean";
 import { toast } from "@/components/ui/toaster-clean";
 import { toAnswerMarkup } from "./answer-markup";
-import { engineLabel, Page } from "./shared";
+import { EngineLogo, engineLabel, Page } from "./shared";
 
 export type Turn = { id: string; role: "user" | "assistant"; text: string; engine?: string; pending?: boolean; failed?: boolean; took?: number };
 
@@ -25,7 +24,7 @@ const STARTERS = [
 
 export function AskScreen({ project, engines, turns, onAsk, onClear }: Props) {
 	const ready = engines.filter((e) => e.available && e.enabled);
-	const models = useMemo(() => ready.map((e) => ({ id: e.id, name: e.label, Logo: () => <Avatar kind="agent" name={e.label} seed={e.id} size={20} /> })), [ready.map((e) => e.id).join()]); // eslint-disable-line react-hooks/exhaustive-deps
+	const models = useMemo(() => ready.map((e) => ({ id: e.id, name: e.label, Logo: () => <EngineLogo engine={e.id} label={e.label} size={14} /> })), [ready.map((e) => e.id).join()]); // eslint-disable-line react-hooks/exhaustive-deps
 	const brand = useMemo(() => [project.name, ...project.aliases], [project]);
 	const busy = turns.some((t) => t.pending);
 	const end = useRef<HTMLDivElement>(null);

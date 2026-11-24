@@ -1,0 +1,36 @@
+export type PageId = "overview" | "prompts" | "answers" | "sources" | "competitors" | "settings";
+
+export type EngineInfo = { id: string; label: string; available: boolean; reason: string | null; enabled: boolean };
+export type EntityView = { name: string; aliases: string[]; domains: string[] };
+export type ProjectView = EntityView & { id: string };
+export type PromptView = { id: string; text: string; active: boolean };
+export type RunView = { id: string; status: "running" | "done" | "interrupted"; startedAt: number; finishedAt: number | null; total: number; completed: number };
+export type MetricsView = { answers: number; mentionRate: number; averageRank: number | null; rankScore: number; shareOfVoice: number; citationRate: number };
+export type SourceView = { url: string; domain: string; title?: string };
+
+export type ReportView = {
+	run: RunView | null;
+	overall: { metrics: MetricsView; visibility: number };
+	engines: { engine: string; metrics: MetricsView; visibility: number; errors: number }[];
+	competitors: { name: string; mentionRate: number; averageRank: number | null; isBrand: boolean }[];
+	topDomains: { domain: string; citations: number; isBrand: boolean }[];
+	trend: { runId: string; startedAt: number; visibility: number; mentionRate: number }[];
+};
+
+export type AnswerView = {
+	id: string;
+	engine: string;
+	promptText: string;
+	text: string;
+	searched: boolean;
+	durationMs: number;
+	errorCode: string | null;
+	errorMessage: string | null;
+	mentions: { entity: string; rank: number; firstIndex: number; count: number }[];
+	brandRank: number | null;
+	brandCited: boolean;
+	citations: SourceView[];
+	sources: SourceView[];
+};
+
+export type NewProject = EntityView & { competitors: EntityView[]; prompts: string[] };

@@ -1,3 +1,4 @@
+import type { AnswerView, EngineView, PageId, ProjectView } from "@api";
 import { ArrowRight02Icon, BubbleChatIcon, PlayIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
@@ -8,14 +9,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { SegmentedControl } from "@/components/ui/segmented-control-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
 import { toast } from "@/components/ui/toaster-clean";
-import type { AnswerView, EngineInfo, PageId, ProjectView } from "@/types";
 import { toAnswerMarkup } from "./answer-markup";
 import { EngineLogo, engineLabel, Facts, ordinal, Page, ShareList } from "./shared";
 
 type Props = {
 	answers: AnswerView[];
 	project: ProjectView;
-	engines: EngineInfo[];
+	engines: EngineView[];
 	live: boolean;
 	filter: string;
 	onFilter: (text: string) => void;

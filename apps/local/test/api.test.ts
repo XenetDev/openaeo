@@ -13,7 +13,7 @@ function setup(opts: { delayMs?: number; log?: Log } = {}) {
 	const claude = fakeProvider("claude-cli", () => "Pipedrive is best, HubSpot second.", opts.delayMs ?? 0);
 	const runs = createRunService({ store, providers: () => [claude.provider] });
 	const engines = (): EngineStatus[] => [
-		{ id: "claude-cli", label: "Claude", available: true, reason: null, enabled: true },
+		{ id: "claude-cli", label: "Claude", available: true, reason: null, enabled: true, api: null },
 	];
 	const assets = (path: string) =>
 		path === "/index.html"

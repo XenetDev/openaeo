@@ -1,3 +1,19 @@
+import type {
+	AnswerView,
+	ArtefactsView,
+	AuditView,
+	CompetitorIdea,
+	EngineView,
+	EntityView,
+	FindingView,
+	OpportunitiesView,
+	PageId,
+	ProjectView,
+	PromptStatView,
+	PromptView,
+	ReportView,
+	Suggestions,
+} from "@api";
 import {
 	AiChat02Icon,
 	BubbleChatIcon,
@@ -21,21 +37,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, type ShellNavItem } from "@/components/app-shell";
 import { Mark } from "@/components/mark";
 import { Toaster, toast } from "@/components/ui/toaster-clean";
-import type {
-	AnswerView,
-	ArtefactsView,
-	AuditView,
-	EngineInfo,
-	EntityView,
-	FindingView,
-	OpportunitiesView,
-	PageId,
-	ProjectView,
-	PromptView,
-	ReportView,
-	Suggestions,
-} from "@/types";
-import { ApiError, api, type CompetitorIdea } from "./api";
+import { ApiError, api } from "./api";
 import { AnswersScreen } from "./screens/answers";
 import { AskScreen, type Turn } from "./screens/ask";
 import { AuditScreen } from "./screens/audit";
@@ -45,7 +47,7 @@ import { OnboardingFlow, SetupPreview } from "./screens/onboarding";
 import { FirstRunStep } from "./screens/onboarding-steps";
 import { OpportunitiesScreen } from "./screens/opportunities";
 import { OverviewScreen } from "./screens/overview";
-import { type PromptStat, PromptsScreen } from "./screens/prompts";
+import { PromptsScreen } from "./screens/prompts";
 import { RunsScreen } from "./screens/runs";
 import { SettingsScreen } from "./screens/settings";
 import { saveTheme, storedTheme, type Theme } from "./theme";
@@ -75,6 +77,7 @@ const EMPTY_REPORT: ReportView = {
 	competitors: [],
 	topDomains: [],
 	trend: [],
+	problems: [],
 };
 const messageOf = (error: unknown) => (error instanceof ApiError ? error.message : "Something went wrong. Try again.");
 
@@ -82,7 +85,7 @@ type AuditData = { audit: AuditView | null; findings: FindingView[]; artefacts: 
 type Data = {
 	competitors: EntityView[];
 	prompts: PromptView[];
-	stats: PromptStat[];
+	stats: PromptStatView[];
 	report: ReportView;
 	answers: AnswerView[];
 	audit: AuditData;
@@ -91,7 +94,7 @@ type Data = {
 
 export function App() {
 	const [projects, setProjects] = useState<ProjectView[] | null>(null);
-	const [engines, setEngines] = useState<EngineInfo[]>([]);
+	const [engines, setEngines] = useState<EngineView[]>([]);
 	const [settings, setSettings] = useState<Record<string, string>>({});
 	const [projectId, setProjectId] = useState<string | null>(() => window.localStorage.getItem("openaeo.project"));
 	const [data, setData] = useState<Data | null>(null);

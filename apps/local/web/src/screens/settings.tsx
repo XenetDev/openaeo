@@ -1,3 +1,4 @@
+import type { EngineView, EntityView, ProjectView } from "@api";
 import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { Icon } from "@/components/app-shell";
@@ -8,10 +9,9 @@ import { CodeBlock } from "@/components/ui/code-block-clean";
 import { Switch } from "@/components/ui/switch-clean";
 import { TagInput } from "@/components/ui/tag-input-clean";
 import { TextField } from "@/components/ui/text-field-clean";
-import type { EngineInfo, EntityView, ProjectView } from "@/types";
 
 type Props = {
-	engines: EngineInfo[];
+	engines: EngineView[];
 	settings: Record<string, string>;
 	project: ProjectView;
 	onSave: (settings: Record<string, string>, message: string) => void;
@@ -19,21 +19,13 @@ type Props = {
 	onDeleteProject: () => void;
 };
 
-const API_ENGINES = [
-	{ id: "openai", name: "OpenAI", model: "gpt-6.1-terra" },
-	{ id: "anthropic", name: "Anthropic", model: "claude-sonnet-5-5" },
-	{ id: "xai", name: "xAI (Grok)", model: "grok-4.7" },
-	{ id: "gemini", name: "Google Gemini", model: "gemini-3.8-flash" },
-	{ id: "perplexity", name: "Perplexity", model: "perplexity/sonar" },
-];
-
 function ApiRow({
 	api,
 	savedKey,
 	savedModel,
 	onSave,
 }: {
-	api: (typeof API_ENGINES)[number];
+	api: { id: string; name: string; model: string };
 	savedKey: string;
 	savedModel: string;
 	onSave: (next: Record<string, string>, message: string) => void;
@@ -138,15 +130,19 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 				</p>
 			</header>
 			<section className="ui-sg-card" aria-label="API keys">
-				{API_ENGINES.map((api) => (
-					<ApiRow
-						key={api.id}
-						api={api}
-						savedKey={settings[`${api.id}.apiKey`] ?? ""}
-						savedModel={settings[`${api.id}.model`] ?? ""}
-						onSave={onSave}
-					/>
-				))}
+				{engines
+					.flatMap((engine) =>
+						engine.api ? [{ id: engine.id, name: engine.api.name, model: engine.api.defaultModel }] : [],
+					)
+					.map((api) => (
+						<ApiRow
+							key={api.id}
+							api={api}
+							savedKey={settings[`${api.id}.apiKey`] ?? ""}
+							savedModel={settings[`${api.id}.model`] ?? ""}
+							onSave={onSave}
+						/>
+					))}
 			</section>
 
 			<header className="ui-sg-head">

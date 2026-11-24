@@ -1,3 +1,4 @@
+import type { AskAction, EngineView, ProjectView } from "@api";
 import {
 	Add01Icon,
 	AiChat02Icon,
@@ -21,8 +22,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { DropdownMenu } from "@/components/ui/dropdown-menu-clean";
 import { ThinkingState } from "@/components/ui/thinking-state-clean";
 import { toast } from "@/components/ui/toaster-clean";
-import type { EngineInfo, ProjectView } from "@/types";
-import type { AskAction } from "../api";
 import { toAnswerMarkup } from "./answer-markup";
 import { EngineLogo, engineLabel, Page } from "./shared";
 
@@ -39,7 +38,7 @@ export type Turn = {
 
 type Props = {
 	project: ProjectView;
-	engines: EngineInfo[];
+	engines: EngineView[];
 	turns: Turn[];
 	onAsk: (question: string, engine: string) => void;
 	onClear: () => void;

@@ -1,3 +1,4 @@
+import type { CompetitorIdea, EntityView, ProjectView, ReportView } from "@api";
 import { Add01Icon, News01Icon, SparklesIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
@@ -9,8 +10,6 @@ import { Dialog } from "@/components/ui/dialog-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
 import { TagInput } from "@/components/ui/tag-input-clean";
 import { TextField } from "@/components/ui/text-field-clean";
-import type { EntityView, ProjectView, ReportView } from "@/types";
-import type { CompetitorIdea } from "../api";
 import { SuggestMark } from "./command-icons";
 import { Page } from "./shared";
 

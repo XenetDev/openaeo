@@ -1,4 +1,4 @@
-import { type Fetched, runAudit, sameSite, toDomain } from "@openaeo/engine";
+import { type AuditResult, type Fetched, type Finding, runAudit, sameSite, toDomain } from "@openaeo/engine";
 import { type Log, logError } from "./log";
 import type { Store, StoredAudit } from "./store/store";
 
@@ -98,3 +98,14 @@ export function createAuditService(deps: {
 }
 
 export type AuditService = ReturnType<typeof createAuditService>;
+
+export function resultOf(audit: StoredAudit, findings: Finding[]): AuditResult {
+	return {
+		origin: audit.origin,
+		startedAt: audit.startedAt,
+		pages: audit.pages,
+		findings,
+		score: audit.score ?? 0,
+		skipped: [],
+	};
+}

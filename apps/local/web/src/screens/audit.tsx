@@ -1,3 +1,4 @@
+import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@api";
 import { CheckListIcon, Copy01Icon, Globe02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
@@ -9,7 +10,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { CodeBlock } from "@/components/ui/code-block-clean";
 import { SegmentedControl } from "@/components/ui/segmented-control-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
-import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@/types";
 import { AgentMark, FilesMark, HighMark, LowMark, MediumMark, SkippedMark } from "./command-icons";
 import { EngineLogo, Page, when } from "./shared";
 

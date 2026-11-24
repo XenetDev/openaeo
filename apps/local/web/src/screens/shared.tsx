@@ -1,11 +1,12 @@
+import type { EngineView } from "@api";
 import type { ReactNode } from "react";
 import { css as pageCss } from "@/components/analytics";
+import { GeminiLogo, GrokLogo, PerplexityLogo } from "@/components/engine-logos";
 import { Avatar } from "@/components/ui/avatar-clean";
 import { ChatGPTLogo, ClaudeLogo } from "@/components/ui/chat-composer-clean";
-import type { EngineInfo } from "@/types";
 
 export const percent = (value: number) => `${Math.round((Number.isFinite(value) ? value : 0) * 100)}%`;
-export const engineLabel = (engines: EngineInfo[], id: string) => engines.find((e) => e.id === id)?.label ?? id;
+export const engineLabel = (engines: EngineView[], id: string) => engines.find((e) => e.id === id)?.label ?? id;
 export const when = (ms: number) =>
 	new Date(ms).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 export const day = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -93,11 +94,22 @@ export function span(ms: number): string {
 	return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
 }
 
+const ENGINE_LOGOS: Record<string, ReactNode> = {
+	"claude-cli": <ClaudeLogo />,
+	anthropic: <ClaudeLogo />,
+	"codex-cli": <ChatGPTLogo />,
+	openai: <ChatGPTLogo />,
+	xai: <GrokLogo />,
+	gemini: <GeminiLogo />,
+	perplexity: <PerplexityLogo />,
+};
+
 export function EngineLogo({ engine, label, size = 16 }: { engine: string; label: string; size?: number }) {
-	if (engine === "claude-cli" || engine === "anthropic" || engine === "codex-cli" || engine === "openai") {
+	const logo = ENGINE_LOGOS[engine];
+	if (logo) {
 		return (
 			<span className="oa-engine-logo" style={{ width: size, height: size }}>
-				{engine === "claude-cli" || engine === "anthropic" ? <ClaudeLogo /> : <ChatGPTLogo />}
+				{logo}
 			</span>
 		);
 	}

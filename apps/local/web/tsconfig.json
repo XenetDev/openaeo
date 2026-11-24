@@ -6,9 +6,10 @@
 		"types": ["vite/client"],
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@api": ["../src/api-types.ts"]
 		},
 		"noUncheckedIndexedAccess": false
 	},
-	"include": ["src"]
+	"include": ["src", "../src/api-types.ts"]
 }

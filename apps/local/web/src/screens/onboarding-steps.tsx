@@ -1,3 +1,4 @@
+import type { EngineView } from "@api";
 import { ArrowRight02Icon, Plug01Icon } from "@hugeicons/core-free-icons";
 import { type ReactNode, useState } from "react";
 import { Icon } from "@/components/app-shell";
@@ -6,7 +7,6 @@ import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
 import { TextField } from "@/components/ui/text-field-clean";
-import type { EngineInfo } from "@/types";
 import { EngineLogo } from "./shared";
 
 type Frame = { product: string; email: string; steps: number; logo: ReactNode };
@@ -29,7 +29,7 @@ export function EnginesStep({
 }: {
 	frame: Frame;
 	step: number;
-	engines: EngineInfo[];
+	engines: EngineView[];
 	preview: ReactNode;
 	onBack: () => void;
 	onContinue: () => void;

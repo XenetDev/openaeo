@@ -1,3 +1,4 @@
+import type { CompetitorIdea, EngineView, NewProject } from "@api";
 import { useRef, useState } from "react";
 import { AppShell, type ShellNavItem } from "@/components/app-shell";
 import { Mark } from "@/components/mark";
@@ -6,13 +7,11 @@ import { brandFrom, OnboardingWebsiteScreen } from "@/components/onboarding-webs
 import { Badge } from "@/components/ui/badge-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
-import type { EngineInfo, NewProject } from "@/types";
-import type { CompetitorIdea } from "../api";
 import { EnginesStep } from "./onboarding-steps";
 import { Page, ShareList } from "./shared";
 
 type Props = {
-	engines: EngineInfo[];
+	engines: EngineView[];
 	nav: ShellNavItem[];
 	busy: boolean;
 	onCreate: (project: NewProject) => void;
@@ -31,7 +30,7 @@ export function SetupPreview({
 	brand: string;
 	domains: string[];
 	competitors: string[];
-	engines: EngineInfo[];
+	engines: EngineView[];
 	nav: ShellNavItem[];
 }) {
 	const name = brand || "Your brand";

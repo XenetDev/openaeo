@@ -80,16 +80,22 @@ export function OverviewScreen({
 	const leader = report.competitors.find((c) => !c.isBrand && c.mentionRate > 0);
 	const previous = trend.length > 1 ? trend[trend.length - 2] : undefined;
 	const labels = trend.map((t) => day(t.startedAt));
-	const spark = (label: string, values: number[]) => {
-		const points = values.length > 1 ? values : [values[0] ?? 0, values[0] ?? 0];
+	const moments = trend.map((t) => when(t.startedAt));
+	const spark = (label: string, values: (number | null)[], format: (n: number) => string) => {
+		const runs = values.flatMap((value, index) => (value === null ? [] : [{ value, index }]));
+		const known = runs.length > 0;
+		const shown = known ? runs : [{ value: 0, index: -1 }];
+		const points = shown.length === 1 ? [...shown, ...shown] : shown;
 		return (
 			<TrendChart
 				variant="sparkline"
 				height={36}
-				tooltip={false}
+				tooltip={known}
 				label={`${label} by run`}
-				labels={points.map((_, index) => labels[index] ?? "")}
-				series={[{ label, values: points }]}
+				labels={points.map((point) => labels[point.index] ?? "")}
+				tooltipLabels={points.map((point) => moments[point.index] ?? "")}
+				format={format}
+				series={[{ label, values: points.map((point) => point.value) }]}
 			/>
 		);
 	};
@@ -128,7 +134,7 @@ export function OverviewScreen({
 					: undefined,
 			changeFormat: (n: number) => n.toFixed(1),
 			lowerIsBetter: true,
-			series: trend.flatMap((t) => (t.averageRank === null ? [] : [t.averageRank])),
+			series: trend.map((t) => t.averageRank),
 		},
 		{
 			label: "Sentiment",
@@ -137,7 +143,7 @@ export function OverviewScreen({
 			change:
 				tone.score !== null && typeof previous?.sentiment === "number" ? tone.score - previous.sentiment : undefined,
 			changeFormat: (n: number) => `${Math.round(n)} pts`,
-			series: trend.flatMap((t) => (t.sentiment === null ? [] : [t.sentiment])),
+			series: trend.map((t) => t.sentiment),
 		},
 	];
 
@@ -297,7 +303,7 @@ export function OverviewScreen({
 						change={stat.change}
 						changeFormat={stat.changeFormat}
 						lowerIsBetter={stat.lowerIsBetter}
-						chart={spark(stat.label, stat.series)}
+						chart={spark(stat.label, stat.series, stat.format)}
 					/>
 				))}
 			</div>

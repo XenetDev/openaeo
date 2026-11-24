@@ -187,7 +187,7 @@ export const Flag = ({ code }: { code: "gb" | "de" | "fr" | "es" }) => (
   </svg>
 );
 
-export type ShellNavItem = { label: string; icon: IconSvgElement; /** Small number at the end, e.g. unread items */ count?: number };
+export type ShellNavItem = { label: string; /** Passed to onNavigate and compared with `active` instead of the label */ id?: string; icon: IconSvgElement; /** Small number at the end, e.g. unread items */ count?: number };
 /** A labelled list under the menu – replaces Projects when given */
 export type ShellGroup = { label: string; items: ShellNavItem[]; /** Text shown while the list is empty */ empty?: string };
 
@@ -476,8 +476,8 @@ export function AppShell({
   const goTo: CommandGroup = {
     id: "go",
     label: "Go to",
-    commands: [...(commands ? nav : []), ...(groups ? groups.flatMap((g) => g.items) : nav), ...(groups ? [] : projects.map((label) => ({ label, icon: FolderOpenIcon })))].map((item, i) => ({
-      id: `go:${i}:${item.label}`,
+    commands: ([...(commands ? nav : []), ...(groups ? groups.flatMap((g) => g.items) : nav), ...(groups ? [] : projects.map((label) => ({ label, icon: FolderOpenIcon })))] as ShellNavItem[]).map((item, i) => ({
+      id: `go:${i}:${item.id ?? item.label}`,
       label: item.label,
       icon: <Icon icon={item.icon} size={16} />,
     })),
@@ -772,9 +772,9 @@ export function AppShell({
                   key={`${i}-${item.label}`}
                   type="button"
                   className="ui-as-side__item"
-                  aria-current={active === item.label ? "page" : undefined}
+                  aria-current={active === (item.id ?? item.label) ? "page" : undefined}
                   title={rail ? item.label : undefined}
-                  onClick={() => go(item.label)}
+                  onClick={() => go(item.id ?? item.label)}
                 >
                   <Icon icon={item.icon} size={16} />
                   <span className="ui-as-side__text" title={item.label}>
@@ -794,9 +794,9 @@ export function AppShell({
                       key={`${i}-${item.label}`}
                       type="button"
                       className="ui-as-side__item"
-                      aria-current={active === item.label ? "page" : undefined}
+                      aria-current={active === (item.id ?? item.label) ? "page" : undefined}
                       title={rail ? item.label : undefined}
-                      onClick={() => go(item.label)}
+                      onClick={() => go(item.id ?? item.label)}
                     >
                       <Icon icon={item.icon} size={16} />
                       <span className="ui-as-side__text" title={item.label}>

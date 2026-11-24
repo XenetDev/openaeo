@@ -1,6 +1,6 @@
 import type { EngineInfo, ProjectView } from "@openaeo/ui";
 import { CheckListIcon, News01Icon, Search01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
-import { useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef } from "react";
 import { AssistantStart } from "@/components/assistant-start";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -8,12 +8,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { ChatComposer } from "@/components/ui/chat-composer-clean";
 import { ThinkingState } from "@/components/ui/thinking-state-clean";
 import { toast } from "@/components/ui/toaster-clean";
+import type { AskAction } from "../api";
 import { toAnswerMarkup } from "./answer-markup";
 import { EngineLogo, engineLabel, Page } from "./shared";
 
-export type Turn = { id: string; role: "user" | "assistant"; text: string; engine?: string; pending?: boolean; failed?: boolean; took?: number };
+export type Turn = { id: string; role: "user" | "assistant"; text: string; engine?: string; pending?: boolean; failed?: boolean; took?: number; actions?: AskAction[] };
 
-type Props = { project: ProjectView; engines: EngineInfo[]; turns: Turn[]; onAsk: (question: string, engine: string) => void; onClear: () => void };
+type Props = { project: ProjectView; engines: EngineInfo[]; turns: Turn[]; onAsk: (question: string, engine: string) => void; onClear: () => void; onAction: (action: AskAction) => void };
 
 const STARTERS = [
 	{ label: "Why am I not named?", icon: Search01Icon, question: "Why am I not being named, and what should I do first?" },
@@ -22,7 +23,11 @@ const STARTERS = [
 	{ label: "What to fix first", icon: CheckListIcon, question: "What should I fix on my website first?" },
 ];
 
-export function AskScreen({ project, engines, turns, onAsk, onClear }: Props) {
+const PAGE_NAMES: Record<string, string> = { overview: "Overview", prompts: "Prompts", answers: "Answers", sources: "Sources", competitors: "Competitors", opportunities: "Opportunities", audit: "Audit", runs: "Runs", settings: "Settings" };
+const actionLabel = (action: AskAction) =>
+	action.type === "run" ? "Run now" : action.type === "audit" ? "Check my website" : action.type === "open" ? `Open ${PAGE_NAMES[action.page] ?? action.page}` : `Track “${action.question}”`;
+
+export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }: Props) {
 	const ready = engines.filter((e) => e.available && e.enabled);
 	const models = useMemo(() => ready.map((e) => ({ id: e.id, name: e.label, Logo: () => <EngineLogo engine={e.id} label={e.label} size={14} /> })), [ready.map((e) => e.id).join()]); // eslint-disable-line react-hooks/exhaustive-deps
 	const brand = useMemo(() => [project.name, ...project.aliases], [project]);
@@ -107,7 +112,18 @@ export function AskScreen({ project, engines, turns, onAsk, onClear }: Props) {
 									]}
 								/>
 							) : (
-								<AIAnswer key={turn.id} className="oa-reply" sources={[]} answer={toAnswerMarkup(turn.text, [], brand).answer} animate={turn === last && fresh.current.has(turn.id)} tookSeconds={turn.took} onCopy={() => toast.success("Answer copied")} />
+								<Fragment key={turn.id}>
+									<AIAnswer className="oa-reply" sources={[]} answer={toAnswerMarkup(turn.text, [], brand).answer} animate={turn === last && fresh.current.has(turn.id)} tookSeconds={turn.took} onCopy={() => toast.success("Answer copied")} />
+									{turn.actions?.length ? (
+										<div className="oa-actions">
+											{turn.actions.map((action) => (
+												<Button key={JSON.stringify(action)} variant="secondary" size="sm" onClick={() => onAction(action)}>
+													{actionLabel(action)}
+												</Button>
+											))}
+										</div>
+									) : null}
+								</Fragment>
 							),
 						)}
 						<div ref={end} />

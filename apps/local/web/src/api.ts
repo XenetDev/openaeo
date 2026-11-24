@@ -1,4 +1,4 @@
-import type { ArtefactsView, AuditView, FindingView, AnswerView, EngineInfo, EntityView, NewProject, ProjectView, PromptView, ReportView, RunView, Suggestions } from "@openaeo/ui";
+import type { OpportunitiesView, ArtefactsView, AuditView, FindingView, AnswerView, EngineInfo, EntityView, NewProject, ProjectView, PromptView, ReportView, RunView, Suggestions } from "@openaeo/ui";
 
 const token = document.querySelector<HTMLMetaElement>('meta[name="openaeo-token"]')?.content ?? "";
 
@@ -20,6 +20,7 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 	return data;
 }
 
+export type AskAction = { type: "run" } | { type: "audit" } | { type: "track"; question: string } | { type: "open"; page: string };
 export type ProjectDetail = { project: ProjectView; competitors: EntityView[]; prompts: PromptView[] };
 
 export const api = {
@@ -36,7 +37,8 @@ export const api = {
 	removePrompt: (id: string) => call<{ ok: true }>("DELETE", `/api/prompts/${id}`),
 	startRun: (id: string) => call<{ run: RunView }>("POST", `/api/projects/${id}/runs`),
 	cancelRun: (id: string) => call<{ ok: true }>("POST", `/api/runs/${id}/cancel`),
-	ask: (id: string, body: { question: string; history: { role: "user" | "assistant"; text: string }[]; engine?: string }) => call<{ text: string; engine: string }>("POST", `/api/projects/${id}/ask`, body),
+	ask: (id: string, body: { question: string; history: { role: "user" | "assistant"; text: string }[]; engine?: string }) => call<{ text: string; engine: string; actions: AskAction[] }>("POST", `/api/projects/${id}/ask`, body),
+	opportunities: (id: string) => call<OpportunitiesView>("GET", `/api/projects/${id}/opportunities`),
 	runs: (id: string) => call<{ runs: RunView[] }>("GET", `/api/projects/${id}/runs`),
 	run: (id: string) => call<{ run: RunView; answers: AnswerView[] }>("GET", `/api/runs/${id}`),
 	report: (id: string) => call<ReportView>("GET", `/api/projects/${id}/report`),

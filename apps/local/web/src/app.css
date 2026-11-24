@@ -337,6 +337,7 @@ body,
 
 .oa-ask-note {
 	max-width: 60ch;
+	margin-inline: auto;
 	margin-top: 8px;
 	text-align: center;
 }
@@ -445,4 +446,47 @@ body,
 .oa-steps li::marker {
 	color: var(--muted);
 	font-variant-numeric: tabular-nums;
+}
+
+.oa-missed {
+	display: flex;
+	flex-direction: column;
+}
+
+.oa-missed > div {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 0;
+	border-top: 0.5px solid var(--line);
+	font-size: 13px;
+	line-height: 20px;
+	color: var(--text);
+}
+
+.oa-missed > div:first-child {
+	border-top: 0;
+	padding-top: 0;
+}
+
+.oa-missed > div:last-child {
+	padding-bottom: 0;
+}
+
+.oa-missed b {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: 500;
+	color: var(--ink);
+}
+
+.oa-missed .oa-grow > b:only-child {
+	margin-bottom: 0;
+}
+
+.oa-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: -8px;
 }

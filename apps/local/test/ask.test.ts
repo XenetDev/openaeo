@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { EngineStatus } from "../src/engines";
-import { ASK_NOTICE, askContext, buildAskPrompt } from "../src/ask";
+import { ASK_NOTICE, askContext, buildAskPrompt, splitActions } from "../src/ask";
 import { createRunService } from "../src/runs";
 import { createHandler } from "../src/server/handler";
 import { fakeProvider, freshStore, seed, src } from "./helpers";
@@ -64,7 +64,7 @@ test("asking returns the model's reply and which engine wrote it", async () => {
 	const analyst = fakeProvider("codex-cli", () => "  Get listed on G2.  ");
 	const result = await api(store, runs, analyst)(`/api/projects/${project.id}/ask`, { question: "What should I do?", history: [] });
 	expect(result.status).toBe(200);
-	expect(result.json).toEqual({ text: "Get listed on G2.", engine: "codex-cli" });
+	expect(result.json).toEqual({ text: "Get listed on G2.", actions: [], engine: "codex-cli" });
 	expect(analyst.calls[0]).toContain("Question: What should I do?");
 });
 
@@ -94,4 +94,15 @@ test("the prompt explains the product so it can say where to do things", () => {
 	const prompt = buildAskPrompt(askContext(store, project), [], "How do I fix my site?");
 	expect(prompt).toContain("Audit page");
 	expect(prompt).toContain("fix brief");
+});
+
+test("suggested next steps are lifted out of the reply and checked", () => {
+	const out = splitActions('Add more questions.\n[[action:run]]\n[[action:track|Who builds websites in Durban?]]\n[[action:open|sources]]\n[[action:open|../etc]]\n[[action:delete]]');
+	expect(out.text).toBe("Add more questions.");
+	expect(out.actions).toEqual([{ type: "run" }, { type: "track", question: "Who builds websites in Durban?" }, { type: "open", page: "sources" }]);
+});
+
+test("at most three next steps are offered and repeats are dropped", () => {
+	const out = splitActions("x\n[[action:run]]\n[[action:run]]\n[[action:audit]]\n[[action:open|audit]]\n[[action:open|runs]]");
+	expect(out.actions).toEqual([{ type: "run" }, { type: "audit" }, { type: "open", page: "audit" }]);
 });

@@ -6,7 +6,8 @@ import { buildReport, promptStats } from "../report";
 import { RunError, type RunService } from "../runs";
 import type { Store, StoredAudit } from "../store/store";
 import type { Provider } from "@openaeo/engine";
-import { askContext, buildAskPrompt } from "../ask";
+import { askContext, buildAskPrompt, splitActions } from "../ask";
+import { buildOpportunities } from "../opportunities";
 import { fallbackPrompts, type SuggestContext } from "../suggest";
 import { allowedHost, validToken } from "./guard";
 import { AddPromptsSchema, AskSchema, CompetitorsSchema, CreateProjectSchema, EntitySchema, MASK, PatchPromptSchema, SECRET_SETTINGS, SettingsSchema, StartAuditSchema } from "./schemas";
@@ -159,10 +160,14 @@ export function createHandler(deps: HandlerDeps) {
 				if (!provider) throw new HttpError(503, "No AI engine is ready to answer. Connect Claude Code or Codex, then check Settings.");
 				try {
 					const answer = await provider.ask(buildAskPrompt(askContext(store, found), input.history, input.question), { timeoutMs: 180_000 });
-					return json({ text: answer.text.trim(), engine: provider.id });
+					return json({ ...splitActions(answer.text), engine: provider.id });
 				} catch (error) {
 					throw new HttpError(502, error instanceof Error && error.message ? `The engine could not answer: ${error.message}` : "The engine could not answer. Try again.");
 				}
+			}
+			if (c === "opportunities" && method === "GET") {
+				project(b);
+				return json(buildOpportunities(store, b));
 			}
 			if (c === "report" && method === "GET") {
 				project(b);

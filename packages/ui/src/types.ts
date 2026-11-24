@@ -1,4 +1,4 @@
-export type PageId = "overview" | "prompts" | "answers" | "sources" | "competitors" | "audit" | "runs" | "settings";
+export type PageId = "overview" | "prompts" | "answers" | "sources" | "competitors" | "audit" | "runs" | "ask" | "settings";
 
 export type EngineInfo = { id: string; label: string; available: boolean; reason: string | null; enabled: boolean };
 export type EntityView = { name: string; aliases: string[]; domains: string[] };

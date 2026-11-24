@@ -101,7 +101,12 @@ const first = args.port ?? 4747;
 let server: ReturnType<typeof Bun.serve> | null = null;
 for (let port = first; port < first + (args.port ? 1 : 20) && !server; port += 1) {
 	try {
-		const handler = createHandler({ store, runs, audits, engines: () => detectEngines(engineDeps), token, port, assets, suggest: (context) => suggestPrompts(buildProviders(engineDeps)[0] ?? null, context) });
+		const handler = createHandler({ store, runs, audits, engines: () => detectEngines(engineDeps), token, port, assets, suggest: (context) => suggestPrompts(buildProviders(engineDeps)[0] ?? null, context),
+			askProvider: (engine) => {
+				const ready = buildProviders(engineDeps);
+				return ready.find((p) => p.id === engine) ?? ready[0] ?? null;
+			},
+		});
 		server = Bun.serve({ hostname: "127.0.0.1", port, fetch: handler, idleTimeout: 255 });
 	} catch (error) {
 		if (!(error instanceof Error) || !/EADDRINUSE|in use/i.test(`${error.message} ${"code" in error ? String(error.code) : ""}`)) throw error;

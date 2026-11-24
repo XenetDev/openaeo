@@ -1,5 +1,5 @@
 import type { AnswerView, ArtefactsView, AuditView, EngineInfo, EntityView, FindingView, PageId, ProjectView, PromptView, ReportView, Suggestions } from "@openaeo/ui";
-import { BubbleChatIcon, CheckListIcon, Clock01Icon, ComputerIcon, DashboardSquare01Icon, Globe02Icon, Moon02Icon, News01Icon, PaintBoardIcon, Plug01Icon, PlusSignIcon, Search01Icon, Settings01Icon, Sun03Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import { AiChat02Icon, BubbleChatIcon, CheckListIcon, Clock01Icon, ComputerIcon, DashboardSquare01Icon, Globe02Icon, Moon02Icon, News01Icon, PaintBoardIcon, Plug01Icon, PlusSignIcon, Search01Icon, Settings01Icon, Sun03Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, Icon, type ShellNavItem } from "@/components/app-shell";
 import { AgentMark, AuditMark, BrandMark, BriefMark, RunMark, SuggestMark } from "./screens/command-icons";
@@ -8,6 +8,7 @@ import { ApiError, api } from "./api";
 import { AnswersScreen } from "./screens/answers";
 import { AuditScreen } from "./screens/audit";
 import { CompetitorsScreen, SourcesScreen } from "./screens/lists";
+import { AskScreen, type Turn } from "./screens/ask";
 import { RunsScreen } from "./screens/runs";
 import { OverviewScreen } from "./screens/overview";
 import { type PromptStat, PromptsScreen } from "./screens/prompts";
@@ -23,6 +24,7 @@ const PAGES: { id: PageId; label: string; icon: ShellNavItem["icon"] }[] = [
 	{ id: "competitors", label: "Competitors", icon: UserMultipleIcon },
 	{ id: "audit", label: "Audit", icon: CheckListIcon },
 	{ id: "runs", label: "Runs", icon: Clock01Icon },
+	{ id: "ask", label: "Ask OpenAEO", icon: AiChat02Icon },
 	{ id: "settings", label: "Settings", icon: Settings01Icon },
 ];
 const NEW_BRAND = "Track another brand";
@@ -53,6 +55,7 @@ export function App() {
 	const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
 	const [suggesting, setSuggesting] = useState(false);
 	const [answerFilter, setAnswerFilter] = useState("");
+	const [turns, setTurns] = useState<Turn[]>([]);
 	const [theme, setTheme] = useState<Theme>(storedTheme);
 	const commandRef = useRef<(id: string, text?: string) => void>(() => {});
 	const loading = useRef(0);
@@ -100,6 +103,7 @@ export function App() {
 		setData(null);
 		setSuggestions(null);
 		setAnswerFilter("");
+		setTurns([]);
 		if (currentId) void guard(() => loadProject(currentId));
 	}, [currentId, guard, loadProject]);
 
@@ -358,6 +362,25 @@ export function App() {
 						toast.success("Fix brief copied", { description: "Paste it into Claude Code or Codex in your website's code." });
 					})
 				}
+			/>
+		) : page === "ask" ? (
+			<AskScreen
+				project={project}
+				engines={engines}
+				turns={turns}
+				onClear={() => setTurns([])}
+				onAsk={(question, engine) => {
+					if (turns.some((t) => t.pending)) return;
+					const kept = turns.filter((t) => !t.failed);
+					if (kept[kept.length - 1]?.role === "user") kept.pop();
+					const history = kept.map((t) => ({ role: t.role, text: t.text }));
+					const reply = crypto.randomUUID();
+					setTurns([...kept, { id: crypto.randomUUID(), role: "user", text: question }, { id: reply, role: "assistant", text: "", engine, pending: true }]);
+					api.ask(id, { question, history, engine: engine || undefined }).then(
+						(result) => setTurns((now) => now.map((t) => (t.id === reply ? { ...t, text: result.text, engine: result.engine, pending: false } : t))),
+						(caught) => setTurns((now) => now.map((t) => (t.id === reply ? { ...t, text: messageOf(caught), pending: false, failed: true } : t))),
+					);
+				}}
 			/>
 		) : page === "runs" ? (
 			<RunsScreen

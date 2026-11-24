@@ -36,6 +36,7 @@ export const api = {
 	removePrompt: (id: string) => call<{ ok: true }>("DELETE", `/api/prompts/${id}`),
 	startRun: (id: string) => call<{ run: RunView }>("POST", `/api/projects/${id}/runs`),
 	cancelRun: (id: string) => call<{ ok: true }>("POST", `/api/runs/${id}/cancel`),
+	ask: (id: string, body: { question: string; history: { role: "user" | "assistant"; text: string }[]; engine?: string }) => call<{ text: string; engine: string }>("POST", `/api/projects/${id}/ask`, body),
 	runs: (id: string) => call<{ runs: RunView[] }>("GET", `/api/projects/${id}/runs`),
 	run: (id: string) => call<{ run: RunView; answers: AnswerView[] }>("GET", `/api/runs/${id}`),
 	report: (id: string) => call<ReportView>("GET", `/api/projects/${id}/report`),

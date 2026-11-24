@@ -265,3 +265,83 @@ body,
 .oa-answer-main > .ui-trwc {
 	max-width: none;
 }
+
+.oa-ask {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+	max-width: 720px;
+	margin: 0 auto;
+}
+
+.oa-ask-start {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+.oa-ask-starters {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+	width: 100%;
+}
+
+.oa-ask-starters > * {
+	height: auto;
+	min-height: 44px;
+	padding-block: 10px;
+	white-space: normal;
+	text-align: left;
+	justify-content: flex-start;
+}
+
+.oa-thread {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 20px;
+	padding: 8px 0 24px;
+}
+
+.oa-said {
+	align-self: flex-end;
+	max-width: 80%;
+	margin: 0;
+	padding: 8px 12px;
+	border-radius: calc(var(--aui-radius-lg, 10px) + 2px);
+	background: var(--select);
+	color: var(--ink);
+	font-size: 13px;
+	line-height: 20px;
+	overflow-wrap: anywhere;
+	white-space: pre-wrap;
+}
+
+.oa-thread > .ui-ansc,
+.oa-ask-dock > .ui-ccc {
+	max-width: none;
+}
+
+.oa-ask-dock {
+	position: sticky;
+	bottom: 0;
+	padding-bottom: 4px;
+	background: linear-gradient(to bottom, transparent, var(--panel) 20px);
+}
+
+.oa-ask-note {
+	margin-top: 8px;
+	text-align: center;
+}
+
+@media (max-width: 700px) {
+	.oa-ask-starters {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

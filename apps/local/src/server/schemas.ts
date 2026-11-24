@@ -16,6 +16,11 @@ export const CreateProjectSchema = EntitySchema.extend({
 export const CompetitorsSchema = z.object({ competitors: z.array(EntitySchema).max(50) });
 export const AddPromptsSchema = z.object({ texts: z.array(z.string().max(2000)).min(1).max(200) });
 export const StartAuditSchema = z.object({ url: z.string().trim().max(2000).optional() });
+export const AskSchema = z.object({
+	question: z.string().trim().min(1, "Type a question first").max(2000),
+	history: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(20_000) })).max(40).default([]),
+	engine: z.string().max(40).optional(),
+});
 export const PatchPromptSchema = z.object({ active: z.boolean() });
 
 const toggle = z.enum(["true", "false"]);

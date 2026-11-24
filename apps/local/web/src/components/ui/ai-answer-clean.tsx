@@ -499,12 +499,12 @@ export function AIAnswer({
                 <Glyph d={icons.thumb} solid />
               </button>}
             </div>
-          ) : (
+          ) : onStop ? (
             <button type="button" className="ui-ansc__stop" key="stop" onClick={stop}>
               <span className="ui-ansc__stop-icon" aria-hidden="true" />
               Stop
             </button>
-          )}
+          ) : null}
           {finished && (
             <span className="ui-ansc__status" key={status} aria-live="polite" title={status}>
               {status.startsWith("Answered in ") ? (

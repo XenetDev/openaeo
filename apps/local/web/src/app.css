@@ -336,6 +336,7 @@ body,
 }
 
 .oa-ask-note {
+	max-width: 60ch;
 	margin-top: 8px;
 	text-align: center;
 }

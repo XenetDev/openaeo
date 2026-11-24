@@ -6642,7 +6642,7 @@ const css = /* css */ `
 .ui-as-side__back:hover svg { translate: -2px 0; }
 .ui-as-user-menu { display: flex; }
 .ui-as-user-menu > .ui-as-user { flex: 1; min-width: 0; }
-.ui-as-user-menu .ui-as-menu { width: 100%; }
+.ui-as-user-menu .ui-as-menu { width: 232px; }
 /* The account menu's head: picture, name and email */
 .ui-as-account { display: flex; align-items: center; gap: 10px; padding: 8px 10px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
 .ui-as-account img, .ui-as-account .ui-as-user__initials { flex: none; width: 30px; height: 30px; border-radius: 50%; font-size: 11px; }

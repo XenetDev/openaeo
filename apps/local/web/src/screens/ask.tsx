@@ -1,7 +1,7 @@
 import type { EngineInfo, ProjectView } from "@openaeo/ui";
-import { AiChat02Icon } from "@hugeicons/core-free-icons";
+import { CheckListIcon, News01Icon, Search01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useMemo, useRef } from "react";
-import { EmptyState } from "@/components/app-shell";
+import { AssistantStart } from "@/components/assistant-start";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
 import { Avatar } from "@/components/ui/avatar-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -17,10 +17,10 @@ export type Turn = { id: string; role: "user" | "assistant"; text: string; engin
 type Props = { project: ProjectView; engines: EngineInfo[]; turns: Turn[]; onAsk: (question: string, engine: string) => void; onClear: () => void };
 
 const STARTERS = [
-	"Why am I not being named, and what should I do first?",
-	"Which sites should I try to get mentioned on?",
-	"Which competitor is ahead of me, and on which questions?",
-	"What should I fix on my website first?",
+	{ label: "Why am I not named?", icon: Search01Icon, question: "Why am I not being named, and what should I do first?" },
+	{ label: "Where to get mentioned", icon: News01Icon, question: "Which sites should I try to get mentioned on?" },
+	{ label: "Who is ahead of me?", icon: UserMultipleIcon, question: "Which competitor is ahead of me, and on which questions?" },
+	{ label: "What to fix first", icon: CheckListIcon, question: "What should I fix on my website first?" },
 ];
 
 export function AskScreen({ project, engines, turns, onAsk, onClear }: Props) {
@@ -38,6 +38,19 @@ export function AskScreen({ project, engines, turns, onAsk, onClear }: Props) {
 		end.current?.scrollIntoView({ block: "end", behavior: "smooth" });
 	}, [turns.length, last?.pending]);
 
+	const composer = (
+		<ChatComposer
+			plain
+			tray={false}
+			busy={busy}
+			placeholder={turns.length ? "Ask a follow-up…" : "Ask about your visibility, competitors or site…"}
+			models={models}
+			onModelChange={(model) => {
+				picked.current = model.id;
+			}}
+			onSend={(message, details) => onAsk(message, details.model || picked.current)}
+		/>
+	);
 	const retry = [...turns].reverse().find((t) => t.role === "user")?.text;
 
 	return (
@@ -52,21 +65,21 @@ export function AskScreen({ project, engines, turns, onAsk, onClear }: Props) {
 				) : undefined
 			}
 		>
-			<div className="oa-ask">
-				{turns.length === 0 ? (
-					<div className="oa-ask-start">
-						<EmptyState bare icon={AiChat02Icon} title={`Ask about ${project.name}'s results`} text="Answers are written from your own runs and site audit, not from the web. Nothing here is saved." />
-						{ready.length > 0 ? (
-							<div className="oa-ask-starters">
-								{STARTERS.map((text) => (
-									<Button key={text} variant="secondary" onClick={() => onAsk(text, picked.current)}>
-										{text}
-									</Button>
-								))}
-							</div>
-						) : null}
-					</div>
-				) : (
+			{ready.length === 0 ? (
+				<div className="oa-ask">
+					<Card>
+						<CardHeader title="No AI engine is ready" description="Ask OpenAEO uses your own Claude Code or Codex. Install and sign in to one, then check Settings." />
+					</Card>
+				</div>
+			) : turns.length === 0 ? (
+				<AssistantStart
+					title={`What do you want to know about ${project.name}?`}
+					composer={composer}
+					chips={STARTERS.map((s) => ({ label: s.label, icon: s.icon, onSelect: () => onAsk(s.question, picked.current) }))}
+					note={<p className="oa-quiet oa-ask-note">Written by your own Claude or Codex from your runs and site audit, not from the web. Chats are not saved.</p>}
+				/>
+			) : (
+				<div className="oa-ask">
 					<div className="oa-thread" aria-live="polite">
 						{turns.map((turn) =>
 							turn.role === "user" ? (
@@ -100,33 +113,14 @@ export function AskScreen({ project, engines, turns, onAsk, onClear }: Props) {
 						)}
 						<div ref={end} />
 					</div>
-				)}
-
-				<div className="oa-ask-dock">
-					{ready.length === 0 ? (
-						<Card>
-							<CardHeader title="No AI engine is ready" description="Ask OpenAEO uses your own Claude Code or Codex. Install and sign in to one, then check Settings." />
-						</Card>
-					) : (
-						<>
-							<ChatComposer
-								plain
-								tray={false}
-								busy={busy}
-								placeholder={turns.length ? "Ask a follow-up…" : "Ask about your visibility, competitors or site…"}
-								models={models}
-								onModelChange={(model) => {
-									picked.current = model.id;
-								}}
-								onSend={(message, details) => onAsk(message, details.model || picked.current)}
-							/>
-							<p className="oa-quiet oa-ask-note">
-								Written by {engineLabel(engines, last?.engine ?? picked.current)} on your own subscription, from your OpenAEO data only.
-							</p>
-						</>
-					)}
+					<div className="oa-ask-dock">
+						{composer}
+						<p className="oa-quiet oa-ask-note">
+							Written by {engineLabel(engines, last?.engine ?? picked.current)} on your own subscription, from your OpenAEO data only.
+						</p>
+					</div>
 				</div>
-			</div>
+			)}
 		</Page>
 	);
 }

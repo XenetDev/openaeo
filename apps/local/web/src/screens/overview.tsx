@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { ChangeSummary, type MetricChange } from "@/components/ui/change-summary-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
 import { TrendChart } from "@/components/ui/trend-chart-clean";
-import { day, EngineLogo, engineLabel, Facts, Page, percent, ShareList, when } from "./shared";
+import { day, EngineLogo, engineLabel, Page, percent, ShareList, when } from "./shared";
 
 type Props = {
 	project: ProjectView;
@@ -358,21 +358,27 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 										<Badge tone={KNOWS[check.knows ?? "unclear"].tone}>{KNOWS[check.knows ?? "unclear"].label}</Badge>
 									</header>
 									{check.summary ? <p>{check.summary}</p> : null}
-									<Facts
-										rows={[
-											["Your own site", check.ownSiteUsed ? "Used as a source" : "Not used as a source"],
-											["Relied on", check.sources.slice(0, 5).join(", ") || "Its own memory"],
-										]}
-									/>
+									<section>
+										<small>Where it got this</small>
+										<span className="oa-inline">
+											<Badge tone={check.ownSiteUsed ? "success" : "warning"}>
+												{check.ownSiteUsed ? "Your site was used" : "Your site was not used"}
+											</Badge>
+											{check.sources.slice(0, 6).map((domain) => (
+												<Badge key={domain}>{domain}</Badge>
+											))}
+											{check.sources.length === 0 ? <Badge>Its own memory</Badge> : null}
+										</span>
+									</section>
 									{check.concerns.length > 0 ? (
-										<div className="oa-doubts">
+										<section>
 											<small>Doubts it raised</small>
 											<ul>
 												{check.concerns.map((concern) => (
 													<li key={concern}>{concern}</li>
 												))}
 											</ul>
-										</div>
+										</section>
 									) : null}
 								</article>
 							))}

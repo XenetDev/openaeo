@@ -1245,3 +1245,38 @@ body,
 	line-height: 20px;
 	color: var(--text);
 }
+
+.oa-brand {
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: 12px;
+}
+
+.oa-brand article {
+	gap: 14px;
+	padding: 16px;
+	border-radius: 12px;
+	background: var(--chip);
+}
+
+.oa-brand section {
+	display: grid;
+	gap: 8px;
+}
+
+.oa-brand section small {
+	font-family: var(--aui-font-mono);
+	font-size: 10.5px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.oa-brand ul {
+	display: grid;
+	gap: 6px;
+	margin: 0;
+	padding-left: 18px;
+	font-size: 13px;
+	line-height: 20px;
+	color: var(--text);
+}

@@ -1,5 +1,5 @@
 import type { AnswerView, ArtefactsView, AuditView, EngineInfo, EntityView, FindingView, PageId, ProjectView, PromptView, ReportView, Suggestions } from "@openaeo/ui";
-import { BubbleChatIcon, CheckListIcon, ComputerIcon, DashboardSquare01Icon, Globe02Icon, Moon02Icon, News01Icon, PaintBoardIcon, Plug01Icon, PlusSignIcon, Search01Icon, Settings01Icon, Sun03Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import { BubbleChatIcon, CheckListIcon, Clock01Icon, ComputerIcon, DashboardSquare01Icon, Globe02Icon, Moon02Icon, News01Icon, PaintBoardIcon, Plug01Icon, PlusSignIcon, Search01Icon, Settings01Icon, Sun03Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, Icon, type ShellNavItem } from "@/components/app-shell";
 import { AgentMark, AuditMark, BrandMark, BriefMark, RunMark, SuggestMark } from "./screens/command-icons";
@@ -8,6 +8,7 @@ import { ApiError, api } from "./api";
 import { AnswersScreen } from "./screens/answers";
 import { AuditScreen } from "./screens/audit";
 import { CompetitorsScreen, SourcesScreen } from "./screens/lists";
+import { RunsScreen } from "./screens/runs";
 import { OverviewScreen } from "./screens/overview";
 import { type PromptStat, PromptsScreen } from "./screens/prompts";
 import { OnboardingFlow } from "./screens/onboarding";
@@ -21,6 +22,7 @@ const PAGES: { id: PageId; label: string; icon: ShellNavItem["icon"] }[] = [
 	{ id: "sources", label: "Sources", icon: News01Icon },
 	{ id: "competitors", label: "Competitors", icon: UserMultipleIcon },
 	{ id: "audit", label: "Audit", icon: CheckListIcon },
+	{ id: "runs", label: "Runs", icon: Clock01Icon },
 	{ id: "settings", label: "Settings", icon: Settings01Icon },
 ];
 const NEW_BRAND = "Track another brand";
@@ -356,6 +358,23 @@ export function App() {
 						toast.success("Fix brief copied", { description: "Paste it into Claude Code or Codex in your website's code." });
 					})
 				}
+			/>
+		) : page === "runs" ? (
+			<RunsScreen
+				project={project}
+				engines={engines}
+				report={data.report}
+				schedule={settings.schedule ?? "off"}
+				onSchedule={(value, label) =>
+					void guard(async () => {
+						await api.saveSettings({ schedule: value });
+						await loadState();
+						toast.success(`Schedule: ${label.toLowerCase()}`);
+					})
+				}
+				onStart={startRun}
+				onCancel={() => act(async () => (data.report.run ? api.cancelRun(data.report.run.id) : undefined))}
+				onOpenAnswers={() => navigate("answers")}
 			/>
 		) : (
 			<SettingsScreen

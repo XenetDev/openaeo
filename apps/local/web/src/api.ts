@@ -36,6 +36,7 @@ export const api = {
 	removePrompt: (id: string) => call<{ ok: true }>("DELETE", `/api/prompts/${id}`),
 	startRun: (id: string) => call<{ run: RunView }>("POST", `/api/projects/${id}/runs`),
 	cancelRun: (id: string) => call<{ ok: true }>("POST", `/api/runs/${id}/cancel`),
+	runs: (id: string) => call<{ runs: RunView[] }>("GET", `/api/projects/${id}/runs`),
 	run: (id: string) => call<{ run: RunView; answers: AnswerView[] }>("GET", `/api/runs/${id}`),
 	report: (id: string) => call<ReportView>("GET", `/api/projects/${id}/report`),
 	latestAudit: (id: string) => call<{ audit: AuditView | null; findings: FindingView[]; artefacts: ArtefactsView }>("GET", `/api/projects/${id}/audits/latest`),

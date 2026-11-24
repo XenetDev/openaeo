@@ -11,7 +11,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
 import { toast } from "@/components/ui/toaster-clean";
 import { toAnswerMarkup } from "./answer-markup";
-import { engineLabel, ordinal, Page, ShareList } from "./shared";
+import { engineLabel, Facts, ordinal, Page, ShareList } from "./shared";
 
 type Props = {
 	answers: AnswerView[];
@@ -47,23 +47,13 @@ function Favicon({ href }: { href: string }) {
 	}
 }
 
-function Facts({ answer, brand }: { answer: AnswerView; brand: string }) {
-	const rows: [string, string][] = [
+function facts(answer: AnswerView, brand: string): [string, string][] {
+	return [
 		["Position", answer.brandRank === null ? `${brand} is not named` : `${ordinal(answer.brandRank)} of ${answer.mentions.length} ${answer.mentions.length === 1 ? "brand" : "brands"}`],
 		["Your site", answer.brandCited ? "Linked as a source" : "Not linked"],
 		["Based on", answer.searched ? `A web search, ${answer.citations.length} ${answer.citations.length === 1 ? "source" : "sources"}` : "The engine's memory"],
 		...(answer.sentiment ? ([["Tone about you", answer.sentiment[0]?.toUpperCase() + answer.sentiment.slice(1)]] as [string, string][]) : []),
 	];
-	return (
-		<dl className="oa-facts">
-			{rows.map(([term, value]) => (
-				<div key={term}>
-					<dt>{term}</dt>
-					<dd>{value}</dd>
-				</div>
-			))}
-		</dl>
-	);
 }
 
 function Answer({ answer, question, brand, animate, onSeen, onNavigate }: { answer: AnswerView; question: string; brand: string[]; animate: boolean; onSeen: () => void; onNavigate: (page: PageId) => void }) {
@@ -164,7 +154,7 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 							<Card>
 								<CardHeader title={`How ${label} treated ${project.name}`} />
 								<CardContent>
-									<Facts answer={answer} brand={project.name} />
+									<Facts rows={facts(answer, project.name)} />
 								</CardContent>
 							</Card>
 							<Card>

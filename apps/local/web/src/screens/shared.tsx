@@ -55,3 +55,21 @@ export function ShareList({ items, empty }: { items: { label: string; value: str
 		</div>
 	);
 }
+
+export function Facts({ rows }: { rows: [string, ReactNode][] }) {
+	return (
+		<dl className="oa-facts">
+			{rows.map(([term, value]) => (
+				<div key={term}>
+					<dt>{term}</dt>
+					<dd>{value}</dd>
+				</div>
+			))}
+		</dl>
+	);
+}
+
+export function span(ms: number): string {
+	const s = Math.max(0, Math.round(ms / 1000));
+	return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
+}

@@ -6,7 +6,6 @@ import { css as settingsCss } from "@/components/settings-general";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { CodeBlock } from "@/components/ui/code-block-clean";
-import { Select } from "@/components/ui/select-clean";
 import { Switch } from "@/components/ui/switch-clean";
 import { TagInput } from "@/components/ui/tag-input-clean";
 import { TextField } from "@/components/ui/text-field-clean";
@@ -20,11 +19,6 @@ type Props = {
 	onDeleteProject: () => void;
 };
 
-const SCHEDULES = [
-	{ value: "off", label: "Only when I press Run now", description: "Nothing runs on its own" },
-	{ value: "daily", label: "Once a day", description: "While OpenAEO is open" },
-	{ value: "weekly", label: "Once a week", description: "While OpenAEO is open" },
-];
 
 export function SettingsScreen({ engines, settings, project, onSave, onSaveProject, onDeleteProject }: Props) {
 	const [name, setName] = useState(project.name);
@@ -96,25 +90,6 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 						onBlur={() => model !== (settings["openai.model"] ?? "") && onSave({ "openai.model": model }, "Model saved")}
 					/>
 				</label>
-			</section>
-
-			<header className="ui-sg-head">
-				<h2>Automatic runs</h2>
-			</header>
-			<section className="ui-sg-card" aria-label="Automatic runs">
-				<div className="ui-sg-row">
-					<span className="ui-sg-label">
-						<b>Run schedule</b>
-						<small>A brand you have never run is not started automatically</small>
-					</span>
-					<Select
-						className="ui-sg-field"
-						aria-label="Run schedule"
-						options={SCHEDULES}
-						value={settings.schedule ?? "off"}
-						onChange={(value, option) => onSave({ schedule: value }, `Schedule: ${String(option.label).toLowerCase()}`)}
-					/>
-				</div>
 			</section>
 
 			<header className="ui-sg-head">

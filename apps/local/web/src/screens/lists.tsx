@@ -1,5 +1,5 @@
 import type { EntityView, ProjectView, ReportView } from "@openaeo/ui";
-import { News01Icon } from "@hugeicons/core-free-icons";
+import { News01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState } from "@/components/app-shell";
 import { Avatar } from "@/components/ui/avatar-clean";
@@ -95,17 +95,18 @@ export function CompetitorsScreen({ project, report, competitors, onSave }: Comp
 			/>
 
 			{competitors.length === 0 ? (
-				<Card>
-					<CardHeader
-						title="You are not tracking any competitors yet"
-						description="Add the businesses you lose work to. OpenAEO then shows how often each is named beside you, and which questions they win."
-						action={
-							<Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
-								Add competitor
-							</Button>
-						}
-					/>
-				</Card>
+				<div>
+				<EmptyState
+					icon={UserMultipleIcon}
+					title="No competitors yet"
+					text="Add the businesses you lose work to. OpenAEO then shows how often each is named beside you, and which questions they win."
+					action={
+						<Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+							Add competitor
+						</Button>
+					}
+				/>
+				</div>
 			) : (
 				<Card>
 					<CardHeader title="Tracked competitors" description="Changes apply from the next run." />

@@ -1,6 +1,7 @@
 import type { EngineInfo, ProjectView } from "@openaeo/ui";
-import { CheckListIcon, News01Icon, Search01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import { AiChat02Icon, CheckListIcon, News01Icon, Search01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { Fragment, useEffect, useMemo, useRef } from "react";
+import { EmptyState } from "@/components/app-shell";
 import { AssistantStart } from "@/components/assistant-start";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -70,11 +71,16 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 			}
 		>
 			{ready.length === 0 ? (
-				<div className="oa-ask">
-					<Card>
-						<CardHeader title="No AI engine is ready" description="Aeo uses your own Claude Code or Codex. Install and sign in to one, then check Settings." />
-					</Card>
-				</div>
+				<EmptyState
+					icon={AiChat02Icon}
+					title="No AI engine is ready"
+					text="Aeo uses your own Claude Code or Codex. Install and sign in to one, then check Settings."
+					action={
+						<Button variant="secondary" size="sm" onClick={() => onAction({ type: "open", page: "settings" })}>
+							Open Settings
+						</Button>
+					}
+				/>
 			) : turns.length === 0 ? (
 				<AssistantStart
 					title={`What do you want to know about ${project.name}?`}

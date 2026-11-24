@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
+import { EmptyState } from "@/components/app-shell";
 import { Spinner } from "@/components/ui/spinner-clean";
 
 export type PromptStat = {
@@ -102,7 +103,7 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 						/>
 						<CardContent>
 							{fresh.length === 0 ? (
-								<p className="oa-quiet">You already track all of these.</p>
+								<EmptyState bare icon={null} title="You already track all of these" text="Press Suggest questions again for a fresh set." />
 							) : (
 								<div className="oa-stack" style={{ gap: 4 }}>
 									{fresh.map((text) => (

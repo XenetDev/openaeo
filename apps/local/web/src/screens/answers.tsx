@@ -1,5 +1,5 @@
 import type { AnswerView, EngineInfo, PageId, ProjectView } from "@openaeo/ui";
-import { BubbleChatIcon } from "@hugeicons/core-free-icons";
+import { BubbleChatIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/app-shell";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
@@ -104,6 +104,13 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 					icon={BubbleChatIcon}
 					title={live ? "Waiting for the first answer" : "No answers yet"}
 					text="After a run, every question shows here with what each AI engine answered, who it named and the sites it relied on."
+					action={
+						live ? undefined : (
+							<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")}>
+								Go to Prompts
+							</Button>
+						)
+					}
 				/>
 			) : (
 				<div className="oa-answers">
@@ -136,9 +143,13 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 							})}
 						/>
 						{!answer ? (
-							<Card>
-								<CardHeader icon={live ? <Spinner /> : undefined} title={live ? `Waiting for ${label}` : `No answer from ${label}`} description={live ? "The answer appears here as soon as it arrives." : "This engine was not asked this question in the latest run."} />
-							</Card>
+							live ? (
+								<Card>
+									<CardHeader icon={<Spinner />} title={`Waiting for ${label}`} description="The answer appears here as soon as it arrives." />
+								</Card>
+							) : (
+								<EmptyState icon={BubbleChatIcon} title={`No answer from ${label}`} text="This engine was not asked this question in the latest run." />
+							)
 						) : answer.errorCode !== null ? (
 							<Card>
 								<CardHeader title={`${label} could not answer`} description={answer.errorMessage ?? "No reason was given."} />
@@ -165,7 +176,7 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 								<CardHeader title="Brands named, in order" description="The order they first appear in this answer." />
 								<CardContent>
 									<ShareList
-										empty={<p className="oa-quiet">No tracked brand is named in this answer.</p>}
+										empty={<EmptyState bare icon={UserMultipleIcon} title="No tracked brand named" text="This answer names neither you nor a competitor you track." />}
 										items={[...answer.mentions]
 											.sort((a, b) => a.rank - b.rank)
 											.map((m) => ({

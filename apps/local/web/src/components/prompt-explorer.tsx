@@ -504,7 +504,8 @@ function KeywordList({ items, loading, empty, label, spark, none, onPick }: { it
         ))}
       </Loading>
     );
-  if (empty || !items.length) return empty || !none ? <EmptyState bare title="No questions yet" text="Type a question above. After a run, each one shows how often AI answers mention you." /> : <EmptyState bare title={none} text="Run again after making changes to see what moved." />;
+  if (empty && none) return <EmptyState bare icon={ChartIncreaseIcon} title="Nothing to compare yet" text="After two runs, this shows which questions you gained or lost ground on." />;
+  if (empty || !items.length) return empty || !none ? <EmptyState bare icon={Search01Icon} title="No questions yet" text="Type a question above. After a run, each one shows how often AI answers mention you." /> : <EmptyState bare icon={ChartIncreaseIcon} title={none} text="Run again after making changes to see what moved." />;
   return (
     <ul className="ui-pex-kws" aria-label={label}>
       {items.map((k) => (

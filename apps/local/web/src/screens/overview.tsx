@@ -17,7 +17,6 @@ import { ChangeSummary, type MetricChange } from "@/components/ui/change-summary
 import { StatCard } from "@/components/ui/stat-card-clean";
 import { TrendChart } from "@/components/ui/trend-chart-clean";
 import { HighMark, LowMark, MediumMark } from "./command-icons";
-import { METRICS } from "./palette";
 import { day, EngineLogo, engineLabel, Page, percent, ShareList, when } from "./shared";
 
 type Props = {
@@ -81,7 +80,7 @@ export function OverviewScreen({
 	const leader = report.competitors.find((c) => !c.isBrand && c.mentionRate > 0);
 	const previous = trend.length > 1 ? trend[trend.length - 2] : undefined;
 	const labels = trend.map((t) => day(t.startedAt));
-	const spark = (label: string, values: number[], color: string) => {
+	const spark = (label: string, values: number[]) => {
 		const points = values.length > 1 ? values : [values[0] ?? 0, values[0] ?? 0];
 		return (
 			<TrendChart
@@ -90,7 +89,7 @@ export function OverviewScreen({
 				tooltip={false}
 				label={`${label} by run`}
 				labels={points.map((_, index) => labels[index] ?? "")}
-				series={[{ label, values: points, color }]}
+				series={[{ label, values: points }]}
 			/>
 		);
 	};
@@ -288,7 +287,7 @@ export function OverviewScreen({
 		<Page brand={project.name} title="Overview" actions={actions}>
 			{notices}
 			<div className="ui-as-rev__stats oa-stats-5">
-				{stats.map((stat, index) => (
+				{stats.map((stat) => (
 					<StatCard
 						key={stat.label}
 						className="ui-as-rev__stat oa-stat"
@@ -298,7 +297,7 @@ export function OverviewScreen({
 						change={stat.change}
 						changeFormat={stat.changeFormat}
 						lowerIsBetter={stat.lowerIsBetter}
-						chart={spark(stat.label, stat.series, METRICS[index % METRICS.length] as string)}
+						chart={spark(stat.label, stat.series)}
 					/>
 				))}
 			</div>
@@ -466,7 +465,6 @@ export function OverviewScreen({
 								value: percent(c.mentionRate),
 								share: c.mentionRate * 100,
 								badge: c.isBrand ? <Badge>You</Badge> : undefined,
-								own: c.isBrand,
 							}))}
 						/>
 					</CardContent>
@@ -480,7 +478,6 @@ export function OverviewScreen({
 								value: `${d.citations}`,
 								share: (d.citations / Math.max(1, report.topDomains[0]?.citations ?? 1)) * 100,
 								badge: d.isBrand ? <Badge>Yours</Badge> : undefined,
-								own: d.isBrand,
 							}))}
 							empty={
 								<EmptyState

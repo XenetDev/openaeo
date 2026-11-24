@@ -36,6 +36,7 @@ export type StoredAnswer = {
 	brandSourced: boolean;
 	citations: Source[];
 	sources: Source[];
+	sentiment: "positive" | "neutral" | "negative" | null;
 };
 
 type EntityRow = { id: string; name: string; aliases: string; domains: string };
@@ -64,6 +65,7 @@ type AnswerRow = {
 	citations: string;
 	sources: string;
 	created_at: number;
+	sentiment: StoredAnswer["sentiment"];
 };
 
 const clean = (values: string[]) => [...new Set(values.map((v) => v.trim()).filter(Boolean))];
@@ -102,6 +104,7 @@ const toAnswer = (r: AnswerRow): StoredAnswer => ({
 	brandSourced: r.brand_sourced === 1,
 	citations: JSON.parse(r.citations) as Source[],
 	sources: JSON.parse(r.sources) as Source[],
+	sentiment: r.sentiment,
 });
 
 export function createStore(db: Database) {
@@ -258,6 +261,9 @@ export function createStore(db: Database) {
 				Date.now(),
 			);
 			return toAnswer(db.query<AnswerRow, [string]>("SELECT * FROM answer WHERE id = ?").get(id) as AnswerRow);
+		},
+		setSentiment(id: string, sentiment: NonNullable<StoredAnswer["sentiment"]>): void {
+			db.query("UPDATE answer SET sentiment = ? WHERE id = ?").run(sentiment, id);
 		},
 		listByRun: (runId: string): StoredAnswer[] =>
 			db.query<AnswerRow, [string]>("SELECT * FROM answer WHERE run_id = ? ORDER BY created_at, rowid").all(runId).map(toAnswer),

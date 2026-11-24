@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type MatchResult, ProviderError, type RunItem } from "@openaeo/engine";
@@ -192,7 +192,8 @@ test("a file database keeps its data when reopened", () => {
 		first.close();
 		const second = openDb(path);
 		expect(createStore(second).projects.get(p.id)?.name).toBe("Kept");
-		expect(second.query("PRAGMA user_version").get()).toEqual({ user_version: 1 });
+		expect(statSync(path).mode & 0o777).toBe(0o600);
+		expect(second.query("PRAGMA user_version").get()).toEqual({ user_version: 2 });
 		second.close();
 	} finally {
 		rmSync(dir, { recursive: true, force: true });

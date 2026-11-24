@@ -31,6 +31,9 @@ export type AnswerView = {
 	brandCited: boolean;
 	citations: SourceView[];
 	sources: SourceView[];
+	sentiment?: "positive" | "neutral" | "negative" | null;
 };
 
 export type NewProject = EntityView & { competitors: EntityView[]; prompts: string[] };
+
+export type Suggestions = { prompts: string[]; fallback: boolean };

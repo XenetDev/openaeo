@@ -1,4 +1,5 @@
 import { match, type Provider, run as runEngine } from "@openaeo/engine";
+import { labelSentiment } from "./sentiment";
 import type { Run, Store } from "./store/store";
 
 export type RunErrorCode = "already_running" | "no_prompts" | "no_engines" | "not_found";
@@ -15,7 +16,7 @@ export class RunError extends Error {
 
 export type RunEvent = { runId: string; run: Run };
 
-export type RunServiceDeps = { store: Store; providers: () => Provider[]; concurrency?: number; retries?: number };
+export type RunServiceDeps = { store: Store; providers: () => Provider[]; concurrency?: number; retries?: number; sentiment?: boolean };
 
 export function createRunService(deps: RunServiceDeps) {
 	const { store } = deps;
@@ -52,6 +53,12 @@ export function createRunService(deps: RunServiceDeps) {
 				store.answers.save(runId, idByText.get(item.prompt) ?? "", item, matched);
 				store.runs.increment(runId);
 				notify(runId);
+			}
+			const judge = providers[0];
+			if (deps.sentiment && judge && !controller.signal.aborted) {
+				const mentioned = store.answers.listByRun(runId).filter((a) => a.errorCode === null && a.brandRank !== null);
+				const labels = await labelSentiment(judge, project.name, mentioned, { signal: controller.signal });
+				for (const [id, label] of labels) store.answers.setSentiment(id, label);
 			}
 		} catch {
 			failed = true;

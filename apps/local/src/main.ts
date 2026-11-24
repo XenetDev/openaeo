@@ -7,9 +7,11 @@ import { embedded } from "./embedded";
 import { buildProviders, detectEngines } from "./engines";
 import { dataDir, dbPath } from "./paths";
 import { createRunService } from "./runs";
+import { createScheduler } from "./scheduler";
 import { createHandler } from "./server/handler";
 import { openDb } from "./store/db";
 import { createStore } from "./store/store";
+import { suggestPrompts } from "./suggest";
 
 const out = (line: string) => process.stdout.write(`${line}\n`);
 const args = parseArgs(process.argv.slice(2));
@@ -30,7 +32,7 @@ if (args.command === "help") {
 const store = createStore(openDb(dbPath(dataDir())));
 store.runs.interruptStale();
 const engineDeps = { store, which: (bin: string) => Bun.which(bin) };
-const runs = createRunService({ store, providers: () => buildProviders(engineDeps) });
+const runs = createRunService({ store, providers: () => buildProviders(engineDeps), sentiment: true });
 
 const stop = () => {
 	runs.cancelAll();
@@ -58,7 +60,7 @@ const first = args.port ?? 4747;
 let server: ReturnType<typeof Bun.serve> | null = null;
 for (let port = first; port < first + (args.port ? 1 : 20) && !server; port += 1) {
 	try {
-		const handler = createHandler({ store, runs, engines: () => detectEngines(engineDeps), token, port, assets });
+		const handler = createHandler({ store, runs, engines: () => detectEngines(engineDeps), token, port, assets, suggest: (context) => suggestPrompts(buildProviders(engineDeps)[0] ?? null, context) });
 		server = Bun.serve({ hostname: "127.0.0.1", port, fetch: handler, idleTimeout: 60 });
 	} catch (error) {
 		if (!(error instanceof Error) || !/EADDRINUSE|in use/i.test(`${error.message} ${"code" in error ? String(error.code) : ""}`)) throw error;
@@ -69,6 +71,7 @@ if (!server) {
 	process.exit(1);
 }
 
+createScheduler({ store, runs }).start();
 const url = `http://127.0.0.1:${server.port}`;
 out(`OpenAEO is running at ${url}`);
 out("Press Ctrl+C to stop.");

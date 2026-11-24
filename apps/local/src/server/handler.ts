@@ -3,6 +3,7 @@ import type { EngineStatus } from "../engines";
 import { buildReport } from "../report";
 import { RunError, type RunService } from "../runs";
 import type { Store } from "../store/store";
+import { fallbackPrompts, type SuggestContext } from "../suggest";
 import { allowedHost, validToken } from "./guard";
 import { AddPromptsSchema, CompetitorsSchema, CreateProjectSchema, EntitySchema, MASK, PatchPromptSchema, SECRET_SETTINGS, SettingsSchema } from "./schemas";
 
@@ -13,6 +14,7 @@ export type HandlerDeps = {
 	token: string;
 	port: number;
 	assets: (path: string) => Response | null;
+	suggest?: (context: SuggestContext) => Promise<{ prompts: string[]; fallback: boolean }>;
 };
 
 class HttpError extends Error {
@@ -127,6 +129,11 @@ export function createHandler(deps: HandlerDeps) {
 					if (error instanceof RunError) throw new HttpError(RUN_STATUS[error.code] ?? 400, error.message);
 					throw error;
 				}
+			}
+			if (c === "suggestions" && method === "POST") {
+				const found = project(b);
+				const context = { brand: found.name, domains: found.domains, competitors: store.competitors.list(b).map((x) => x.name) };
+				return json(deps.suggest ? await deps.suggest(context) : { prompts: fallbackPrompts(context), fallback: true });
 			}
 			if (c === "report" && method === "GET") {
 				project(b);

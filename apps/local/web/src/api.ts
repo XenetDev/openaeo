@@ -1,4 +1,4 @@
-import type { AnswerView, EngineInfo, EntityView, NewProject, ProjectView, PromptView, ReportView, RunView } from "@openaeo/ui";
+import type { AnswerView, EngineInfo, EntityView, NewProject, ProjectView, PromptView, ReportView, RunView, Suggestions } from "@openaeo/ui";
 
 const token = document.querySelector<HTMLMetaElement>('meta[name="openaeo-token"]')?.content ?? "";
 
@@ -31,6 +31,7 @@ export const api = {
 	saveCompetitors: (id: string, competitors: EntityView[]) => call<{ competitors: EntityView[] }>("PUT", `/api/projects/${id}/competitors`, { competitors }),
 	addPrompts: (id: string, texts: string[]) => call<{ prompts: PromptView[] }>("POST", `/api/projects/${id}/prompts`, { texts }),
 	setPromptActive: (id: string, active: boolean) => call<{ prompt: PromptView }>("PATCH", `/api/prompts/${id}`, { active }),
+	suggest: (id: string) => call<Suggestions>("POST", `/api/projects/${id}/suggestions`),
 	removePrompt: (id: string) => call<{ ok: true }>("DELETE", `/api/prompts/${id}`),
 	startRun: (id: string) => call<{ run: RunView }>("POST", `/api/projects/${id}/runs`),
 	cancelRun: (id: string) => call<{ ok: true }>("POST", `/api/runs/${id}/cancel`),

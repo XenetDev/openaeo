@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import type { PromptView } from "./types";
+import type { PromptView, Suggestions } from "./types";
 
 export type PromptsPageProps = {
 	prompts: PromptView[];
@@ -9,10 +9,17 @@ export type PromptsPageProps = {
 	onRemove: (id: string) => void;
 	onSuggest?: () => void;
 	suggesting?: boolean;
+	suggestions?: Suggestions | null;
 };
 
-export function PromptsPage({ prompts, onAdd, onToggle, onRemove, onSuggest, suggesting }: PromptsPageProps) {
-	const [draft, setDraft] = useState("");
+export function PromptsPage({ prompts, onAdd, onToggle, onRemove, onSuggest, suggesting, suggestions }: PromptsPageProps) {
+	const seed = suggestions?.prompts.join("\n") ?? "";
+	const [draft, setDraft] = useState(seed);
+	const [seeded, setSeeded] = useState(seed);
+	if (seed !== seeded) {
+		setSeeded(seed);
+		setDraft(seed);
+	}
 	const texts = draft
 		.split("\n")
 		.map((t) => t.trim())
@@ -45,6 +52,13 @@ export function PromptsPage({ prompts, onAdd, onToggle, onRemove, onSuggest, sug
 					onChange={(e) => setDraft(e.target.value)}
 					placeholder="What is the best CRM for a small marketing agency?"
 				/>
+				{suggestions && draft === seed && seed ? (
+					<p className="oa-muted">
+						{suggestions.fallback
+							? "These are generic starting points, because no AI engine could suggest better ones. Edit them to match how your buyers talk."
+							: "Suggested by AI. Edit or delete any line, then add them."}
+					</p>
+				) : null}
 				<div className="oa-actions">
 					<button type="submit" className="oa-button" disabled={texts.length === 0}>
 						Add {texts.length > 1 ? `${texts.length} questions` : "question"}

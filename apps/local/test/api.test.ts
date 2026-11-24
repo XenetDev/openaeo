@@ -13,7 +13,7 @@ function setup(opts: { delayMs?: number } = {}) {
 	const runs = createRunService({ store, providers: () => [claude.provider] });
 	const engines = (): EngineStatus[] => [{ id: "claude-cli", label: "Claude", available: true, reason: null, enabled: true }];
 	const assets = (path: string) => (path === "/index.html" ? new Response("<html><head></head><body>app</body></html>", { headers: { "content-type": "text/html" } }) : null);
-	const handler = createHandler({ store, runs, engines, token: TOKEN, port: PORT, assets });
+	const handler = createHandler({ store, runs, engines, token: TOKEN, port: PORT, assets, suggest: async (context) => ({ prompts: [`Best alternative to ${context.competitors[0] ?? context.brand}?`], fallback: false }) });
 	const call = async (method: string, path: string, body?: unknown, headers: Record<string, string> = {}) => {
 		const response = await handler(
 			new Request(`http://127.0.0.1:${PORT}${path}`, {
@@ -188,4 +188,26 @@ test("an unexpected error is a 500 without internals", async () => {
 	const response = await call("GET", "/api/state");
 	expect(response.status).toBe(500);
 	expect(response.text).not.toContain("SQLITE_CORRUPT");
+});
+
+test("suggestions are offered for a project without being saved", async () => {
+	const { call } = setup();
+	const id = await project(call);
+	const response = await call("POST", `/api/projects/${id}/suggestions`);
+	expect(response.status).toBe(200);
+	expect(response.json.prompts).toEqual(["Best alternative to HubSpot?"]);
+	expect(response.json.fallback).toBe(false);
+	expect((await call("GET", `/api/projects/${id}/prompts`)).json.prompts.length).toBe(2);
+	expect((await call("POST", "/api/projects/missing/suggestions")).status).toBe(404);
+});
+
+test("answers carry their sentiment", async () => {
+	const { call, runs, store } = setup();
+	const id = await project(call);
+	const started = await call("POST", `/api/projects/${id}/runs`);
+	await runs.wait(started.json.run.id);
+	const first = store.answers.listByRun(started.json.run.id)[0];
+	store.answers.setSentiment(first?.id ?? "", "negative");
+	const run = await call("GET", `/api/runs/${started.json.run.id}`);
+	expect(run.json.answers[0].sentiment).toBe("negative");
 });

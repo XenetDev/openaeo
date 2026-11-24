@@ -12,6 +12,7 @@ import {
 	PromptsPage,
 	type PromptView,
 	type ReportView,
+	type Suggestions,
 	SettingsPage,
 	SourcesPage,
 } from "@openaeo/ui";
@@ -35,6 +36,8 @@ export function App() {
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
+	const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
+	const [suggesting, setSuggesting] = useState(false);
 	const loading = useRef(0);
 
 	const project = projects?.find((p) => p.id === projectId) ?? projects?.[0] ?? null;
@@ -76,6 +79,7 @@ export function App() {
 
 	useEffect(() => {
 		setData(null);
+		setSuggestions(null);
 		if (currentId) void guard(() => loadProject(currentId));
 	}, [currentId, guard, loadProject]);
 
@@ -150,6 +154,12 @@ export function App() {
 				onAdd={(texts) => act(() => api.addPrompts(id, texts))}
 				onToggle={(promptId, active) => act(() => api.setPromptActive(promptId, active))}
 				onRemove={(promptId) => act(() => api.removePrompt(promptId))}
+				suggestions={suggestions}
+				suggesting={suggesting}
+				onSuggest={() => {
+					setSuggesting(true);
+					void guard(async () => setSuggestions(await api.suggest(id))).finally(() => setSuggesting(false));
+				}}
 			/>
 		</>
 	) : page === "answers" ? (

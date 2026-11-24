@@ -123,3 +123,18 @@ test("onboarding asks for the brand, site, competitors and prompts and reports e
 	expect(blocked).toContain("Claude is not installed.");
 	expect(blocked).toContain("That name is taken");
 });
+
+test("an answer shows the tone towards the brand when known", () => {
+	const toned = [{ ...answers[0], sentiment: "negative" as const }] as typeof answers;
+	const out = html(<AnswersPage answers={toned} project={project} competitors={[]} engines={engines} />);
+	expect(out).toMatch(/negative tone/i);
+	expect(html(<AnswersPage answers={answers} project={project} competitors={[]} engines={engines} />)).not.toMatch(/tone/i);
+});
+
+test("suggested questions fill the box for review, with a note when they are generic", () => {
+	const out = html(<PromptsPage prompts={[]} onAdd={noop} onToggle={noop} onRemove={noop} onSuggest={noop} suggestions={{ prompts: ["Best CRM?", "Cheapest CRM?"], fallback: true }} />);
+	expect(out).toContain("Best CRM?\nCheapest CRM?");
+	expect(out).toMatch(/generic starting points/i);
+	expect(out).toContain("Suggest questions");
+	expect(out).toContain("Add 2 questions");
+});

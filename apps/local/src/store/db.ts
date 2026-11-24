@@ -1,4 +1,5 @@
 import { Database } from "bun:sqlite";
+import { chmodSync } from "node:fs";
 
 const MIGRATIONS = [
 	`
@@ -66,12 +67,16 @@ const MIGRATIONS = [
 		value TEXT NOT NULL
 	);
 	`,
+	"ALTER TABLE answer ADD COLUMN sentiment TEXT;",
 ];
 
 export function openDb(path: string): Database {
 	const db = new Database(path, { create: true });
 	db.exec("PRAGMA foreign_keys = ON");
-	if (path !== ":memory:") db.exec("PRAGMA journal_mode = WAL");
+	if (path !== ":memory:") {
+		chmodSync(path, 0o600);
+		db.exec("PRAGMA journal_mode = WAL");
+	}
 	const row = db.query<{ user_version: number }, []>("PRAGMA user_version").get();
 	const current = row?.user_version ?? 0;
 	for (let version = current; version < MIGRATIONS.length; version += 1) {

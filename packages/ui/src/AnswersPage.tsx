@@ -48,6 +48,7 @@ export function AnswersPage({ answers, project, competitors, engines }: AnswersP
 								<span className="oa-answer-verdict" data-good={answer.brandRank !== null}>
 									{answer.brandRank === null ? `${project.name} not mentioned` : `Mentioned ${ordinal(answer.brandRank)}`}
 									{answer.brandCited ? " · your site cited" : ""}
+									{answer.sentiment ? ` · ${answer.sentiment} tone` : ""}
 								</span>
 							) : null}
 						</header>

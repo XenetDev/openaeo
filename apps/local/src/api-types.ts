@@ -10,7 +10,14 @@ export type PageId =
 	| "ask"
 	| "settings";
 
-export type EngineInfo = { id: string; label: string; available: boolean; reason: string | null; enabled: boolean };
+export type EngineView = {
+	id: string;
+	label: string;
+	available: boolean;
+	reason: string | null;
+	enabled: boolean;
+	api: { name: string; defaultModel: string } | null;
+};
 export type EntityView = { name: string; aliases: string[]; domains: string[] };
 export type ProjectView = EntityView & { id: string };
 export type PromptView = { id: string; text: string; active: boolean };
@@ -39,13 +46,13 @@ export type ReportView = {
 	competitors: { name: string; mentionRate: number; averageRank: number | null; isBrand: boolean }[];
 	topDomains: { domain: string; citations: number; isBrand: boolean }[];
 	trend: { runId: string; startedAt: number; visibility: number; mentionRate: number }[];
-	problems?: { engine: string; message: string; count: number }[];
+	problems: { engine: string; message: string; count: number }[];
 };
 
 export type AnswerView = {
 	id: string;
 	engine: string;
-	promptId?: string;
+	promptId: string;
 	promptText: string;
 	text: string;
 	searched: boolean;
@@ -57,11 +64,11 @@ export type AnswerView = {
 	brandCited: boolean;
 	citations: SourceView[];
 	sources: SourceView[];
-	sentiment?: "positive" | "neutral" | "negative" | null;
-	createdAt?: number;
-	model?: string | null;
-	inputTokens?: number | null;
-	outputTokens?: number | null;
+	sentiment: "positive" | "neutral" | "negative" | null;
+	createdAt: number;
+	model: string | null;
+	inputTokens: number | null;
+	outputTokens: number | null;
 };
 
 export type NewProject = EntityView & { competitors: EntityView[]; prompts: string[] };
@@ -77,7 +84,7 @@ export type AuditView = {
 	score: number | null;
 	pages: { url: string; status: number; words: number; error?: string }[];
 	skipped: number;
-	own?: boolean;
+	own: boolean;
 };
 export type FindingView = {
 	checkId: string;
@@ -95,3 +102,30 @@ export type OpportunitiesView = {
 	sites: { domain: string; citations: number; questions: number }[];
 	fixes: { title: string; severity: string; pages: number }[];
 };
+
+export type PromptStatView = {
+	promptId: string;
+	text: string;
+	active: boolean;
+	history: { runId: string; startedAt: number; rate: number }[];
+	latest: number | null;
+	previous: number | null;
+	bestRank: number | null;
+};
+
+export type CompetitorIdea = { name: string; domain: string | null };
+
+export type AskTurn = { role: "user" | "assistant"; text: string };
+export type AskAction =
+	| { type: "run" }
+	| { type: "audit" }
+	| { type: "track"; question: string }
+	| { type: "open"; page: string };
+
+export type Ok = { ok: true };
+export type StateResponse = { projects: ProjectView[]; engines: EngineView[] };
+export type ProjectDetail = { project: ProjectView; competitors: EntityView[]; prompts: PromptView[] };
+export type RunDetail = { run: RunView; answers: AnswerView[] };
+export type LatestAudit = { audit: AuditView | null; findings: FindingView[]; artefacts: ArtefactsView };
+export type AskReply = { text: string; engine: string; actions: AskAction[] };
+export type SettingsResponse = { settings: Record<string, string> };

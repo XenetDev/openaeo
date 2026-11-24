@@ -1,7 +1,8 @@
 import { type Provider, toDomain } from "@openaeo/engine";
+import type { CompetitorIdea } from "./api-types";
 import { type Log, logError } from "./log";
 
-export type CompetitorIdea = { name: string; domain: string | null };
+export type { CompetitorIdea };
 export type CompetitorContext = {
 	brand: string;
 	domains: string[];

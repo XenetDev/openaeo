@@ -405,13 +405,6 @@ export function createStore(db: Database) {
 				.query<AnswerRow, [string]>("SELECT * FROM answer WHERE run_id = ? ORDER BY created_at, rowid")
 				.all(runId)
 				.map(toAnswer),
-		listByProject: (projectId: string, sinceMs: number): StoredAnswer[] =>
-			db
-				.query<AnswerRow, [string, number]>(
-					"SELECT * FROM answer WHERE project_id = ? AND created_at >= ? ORDER BY created_at, rowid",
-				)
-				.all(projectId, sinceMs)
-				.map(toAnswer),
 	};
 
 	const settings = {

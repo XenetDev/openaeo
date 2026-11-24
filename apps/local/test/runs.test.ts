@@ -95,22 +95,6 @@ test("cancel keeps finished answers and marks the run interrupted", async () => 
 	runs.cancel(again.id);
 });
 
-test("subscribers hear progress and can unsubscribe", async () => {
-	const store = freshStore();
-	const project = seed(store);
-	const runs = createRunService({ store, providers: () => [fakeProvider("claude-cli", () => "x").provider] });
-	const seen: number[] = [];
-	const off = runs.subscribe((event) => seen.push(event.run.completed));
-	const run = await runs.wait(runs.start(project.id).id);
-	expect(seen).toContain(1);
-	expect(seen.at(-1)).toBe(2);
-	expect(run.status).toBe("done");
-	off();
-	const count = seen.length;
-	await runs.wait(runs.start(project.id).id);
-	expect(seen.length).toBe(count);
-});
-
 test("wait on an unknown or finished run resolves", async () => {
 	const store = freshStore();
 	const project = seed(store, ["q"]);

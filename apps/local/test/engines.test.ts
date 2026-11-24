@@ -38,7 +38,7 @@ test("an API engine is ready as soon as it has a key, using a default model", ()
 	const store = freshStore();
 	const deps = { store, which: which([]) };
 	expect(detectEngines(deps).find((e) => e.id === "xai")).toMatchObject({ available: false });
-	expect(detectEngines(deps).find((e) => e.id === "xai")?.reason).toMatch(/xAI API key/);
+	expect(detectEngines(deps).find((e) => e.id === "xai")?.reason).toMatch(/xAI \(Grok\) API key/);
 	store.settings.set("xai.apiKey", "xai-1");
 	store.settings.set("openai.apiKey", "sk-1");
 	expect(detectEngines(deps).find((e) => e.id === "xai")).toMatchObject({ available: true, reason: null });

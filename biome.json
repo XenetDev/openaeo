@@ -20,7 +20,8 @@
 			"!apps/local/web/src/components/onboarding-website.tsx",
 			"!apps/local/web/src/components/prompt-explorer.tsx",
 			"!apps/local/web/src/components/settings-general.tsx",
-			"!apps/local/web/src/components/settings-profile.tsx"
+			"!apps/local/web/src/components/settings-profile.tsx",
+			"!apps/local/web/src/components/engine-logos.tsx"
 		]
 	},
 	"formatter": {

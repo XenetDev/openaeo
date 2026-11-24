@@ -7,6 +7,7 @@ import {
 	toDomain,
 	visibility,
 } from "@openaeo/engine";
+import type { PromptStatView } from "./api-types";
 import type { Project, Run, Store, StoredAnswer } from "./store/store";
 
 export type EngineReport = { engine: EngineId; metrics: Metrics; visibility: number; errors: number };
@@ -118,15 +119,7 @@ export function buildReport(
 	};
 }
 
-export type PromptStat = {
-	promptId: string;
-	text: string;
-	active: boolean;
-	history: { runId: string; startedAt: number; rate: number }[];
-	latest: number | null;
-	previous: number | null;
-	bestRank: number | null;
-};
+export type PromptStat = PromptStatView;
 
 export function promptStats(store: Store, projectId: string, maxRuns = 12): PromptStat[] {
 	const runs = store.runs

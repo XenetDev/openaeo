@@ -7,6 +7,7 @@ import {
 	createXai,
 	type EngineId,
 	GEMINI_DEFAULT_MODEL,
+	OPENAI_DEFAULT_MODEL,
 	PERPLEXITY_DEFAULT_MODEL,
 	type Provider,
 	XAI_DEFAULT_MODEL,
@@ -14,7 +15,14 @@ import {
 import { createClaudeCli, createCodexCli } from "@openaeo/engine/cli";
 import type { Store } from "./store/store";
 
-export type EngineStatus = { id: EngineId; label: string; available: boolean; reason: string | null; enabled: boolean };
+export type EngineStatus = {
+	id: EngineId;
+	label: string;
+	available: boolean;
+	reason: string | null;
+	enabled: boolean;
+	api: { name: string; defaultModel: string } | null;
+};
 
 export type EngineDeps = { store: Store; which: (bin: string) => string | null };
 
@@ -28,14 +36,15 @@ export const ENGINE_LABELS: Partial<Record<EngineId, string>> = {
 	perplexity: "Perplexity API",
 };
 
-export const OPENAI_DEFAULT_MODEL = "gpt-6.1-terra";
-export const API_ENGINES: { id: EngineId; name: string; model: string }[] = [
+export const API_ENGINES = [
 	{ id: "openai", name: "OpenAI", model: OPENAI_DEFAULT_MODEL },
 	{ id: "anthropic", name: "Anthropic", model: ANTHROPIC_DEFAULT_MODEL },
-	{ id: "xai", name: "xAI", model: XAI_DEFAULT_MODEL },
-	{ id: "gemini", name: "Gemini", model: GEMINI_DEFAULT_MODEL },
+	{ id: "xai", name: "xAI (Grok)", model: XAI_DEFAULT_MODEL },
+	{ id: "gemini", name: "Google Gemini", model: GEMINI_DEFAULT_MODEL },
 	{ id: "perplexity", name: "Perplexity", model: PERPLEXITY_DEFAULT_MODEL },
-];
+] as const satisfies readonly { id: EngineId; name: string; model: string }[];
+
+export const ENGINE_IDS = ["claude-cli", "codex-cli", ...API_ENGINES.map((api) => api.id)] as const;
 
 type Definition = { id: EngineId; reason: (deps: EngineDeps) => string | null; build: (deps: EngineDeps) => Provider };
 
@@ -57,10 +66,7 @@ const DEFINITIONS: Definition[] = [
 	...API_ENGINES.map(
 		(api): Definition => ({
 			id: api.id,
-			reason: (deps) =>
-				setting(deps, `${api.id}.apiKey`)
-					? null
-					: `Add ${/^[AEIOU]/.test(api.name) ? "an" : "a"} ${api.name} API key to use this engine.`,
+			reason: (deps) => (setting(deps, `${api.id}.apiKey`) ? null : `Add your ${api.name} API key to use this engine.`),
 			build: (deps) => {
 				const options = {
 					apiKey: setting(deps, `${api.id}.apiKey`) ?? "",
@@ -76,6 +82,11 @@ const DEFINITIONS: Definition[] = [
 	),
 ];
 
+function apiOf(id: EngineId): EngineStatus["api"] {
+	const found = API_ENGINES.find((api) => api.id === id);
+	return found ? { name: found.name, defaultModel: found.model } : null;
+}
+
 const enabled = (deps: EngineDeps, id: EngineId) => deps.store.settings.get(`engine.${id}.enabled`) !== "false";
 
 export function detectEngines(deps: EngineDeps): EngineStatus[] {
@@ -87,6 +98,7 @@ export function detectEngines(deps: EngineDeps): EngineStatus[] {
 			available: reason === null,
 			reason,
 			enabled: enabled(deps, definition.id),
+			api: apiOf(definition.id),
 		};
 	});
 }

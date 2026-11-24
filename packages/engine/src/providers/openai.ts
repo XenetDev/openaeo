@@ -3,6 +3,8 @@ import { type Answer, type AskOptions, type Provider, ProviderError, type Provid
 import { extractUrls } from "../url";
 import { collectSources } from "./jsonl";
 
+export const OPENAI_DEFAULT_MODEL = "gpt-6.1-terra";
+
 export type OpenAIOptions = { apiKey: string; model: string; fetch?: typeof fetch; baseUrl?: string };
 
 const DEFAULT_TIMEOUT_MS = 180_000;

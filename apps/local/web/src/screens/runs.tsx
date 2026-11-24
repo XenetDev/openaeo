@@ -1,3 +1,4 @@
+import type { AnswerView, EngineView, ProjectView, ReportView, RunView } from "@api";
 import { ArrowRight02Icon, Clock01Icon, PlayIcon, StopIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
@@ -6,14 +7,13 @@ import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { Select } from "@/components/ui/select-clean";
 import { type TraceSpan, TraceWaterfall } from "@/components/ui/trace-waterfall-clean";
-import type { AnswerView, EngineInfo, ProjectView, ReportView, RunView } from "@/types";
 import { api } from "../api";
 import { runTree } from "./run-tree";
 import { EngineLogo, engineLabel, Facts, Page, percent, span, when } from "./shared";
 
 type Props = {
 	project: ProjectView;
-	engines: EngineInfo[];
+	engines: EngineView[];
 	report: ReportView;
 	schedule: string;
 	onSchedule: (value: string, label: string) => void;

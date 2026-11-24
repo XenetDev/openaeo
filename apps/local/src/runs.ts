@@ -15,8 +15,6 @@ export class RunError extends Error {
 	}
 }
 
-export type RunEvent = { runId: string; run: Run };
-
 export type RunServiceDeps = {
 	store: Store;
 	providers: () => Provider[];
@@ -29,20 +27,7 @@ export type RunServiceDeps = {
 export function createRunService(deps: RunServiceDeps) {
 	const { store } = deps;
 	const log = deps.log ?? logError;
-	const listeners = new Set<(event: RunEvent) => void>();
 	const active = new Map<string, { controller: AbortController; done: Promise<Run> }>();
-
-	function notify(runId: string) {
-		const current = store.runs.get(runId);
-		if (!current) return;
-		for (const listener of listeners) {
-			try {
-				listener({ runId, run: current });
-			} catch (error) {
-				log("run listener", error);
-			}
-		}
-	}
 
 	async function execute(created: Run, providers: Provider[], controller: AbortController): Promise<Run> {
 		const runId = created.id;
@@ -65,7 +50,6 @@ export function createRunService(deps: RunServiceDeps) {
 				const matched = item.ok ? match(item.answer, project, competitors) : null;
 				store.answers.save(runId, idByText.get(item.prompt) ?? "", item, matched);
 				store.runs.increment(runId);
-				notify(runId);
 			}
 			const judge = providers[0];
 			if (deps.sentiment && judge && !controller.signal.aborted) {
@@ -85,7 +69,6 @@ export function createRunService(deps: RunServiceDeps) {
 			log(`finishing run ${runId}`, error);
 		}
 		active.delete(runId);
-		notify(runId);
 		return finished ?? { ...created, status: "interrupted", finishedAt: Date.now() };
 	}
 
@@ -120,12 +103,6 @@ export function createRunService(deps: RunServiceDeps) {
 			const stored = store.runs.get(runId);
 			if (!stored) throw new RunError("not_found", "That run does not exist.");
 			return stored;
-		},
-		subscribe(listener: (event: RunEvent) => void): () => void {
-			listeners.add(listener);
-			return () => {
-				listeners.delete(listener);
-			};
 		},
 	};
 }

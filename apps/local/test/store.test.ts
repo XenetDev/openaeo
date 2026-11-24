@@ -151,8 +151,6 @@ test("an answer is saved with its mentions, citations and sources", () => {
 	expect(saved.sources.length).toBe(2);
 	expect(saved.sources[1]).toEqual({ url: "https://hubspot.com/", domain: "hubspot.com" });
 	expect(store.answers.listByRun(run.id)).toEqual([saved]);
-	expect(store.answers.listByProject(p.id, 0)).toEqual([saved]);
-	expect(store.answers.listByProject(p.id, Date.now() + 60_000)).toEqual([]);
 });
 
 test("a failed answer stores its error and no mentions", () => {

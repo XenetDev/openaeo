@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { API_ENGINES, ENGINE_IDS } from "../engines";
 
 const names = z.array(z.string().max(200)).max(50).default([]);
 
@@ -33,8 +34,7 @@ export const PatchPromptSchema = z.object({ active: z.boolean() });
 const toggle = z.enum(["true", "false"]);
 const model = z.string().trim().max(100);
 
-const API_IDS = ["openai", "anthropic", "xai", "gemini", "perplexity"] as const;
-const ENGINE_IDS = ["claude-cli", "codex-cli", ...API_IDS] as const;
+const API_IDS = API_ENGINES.map((api) => api.id);
 
 export const SettingsSchema = z
 	.object({

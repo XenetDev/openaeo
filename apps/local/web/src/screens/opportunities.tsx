@@ -1,3 +1,4 @@
+import type { EngineView, OpportunitiesView, PageId, ProjectView } from "@api";
 import { ArrowRight02Icon, Target02Icon } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
@@ -7,13 +8,12 @@ import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { DataTable } from "@/components/ui/data-table-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
-import type { EngineInfo, OpportunitiesView, PageId, ProjectView } from "@/types";
 import { HighMark, LowMark, MediumMark } from "./command-icons";
 import { EngineLogo, engineLabel, Page } from "./shared";
 
 type Props = {
 	project: ProjectView;
-	engines: EngineInfo[];
+	engines: EngineView[];
 	found: OpportunitiesView;
 	onOpenQuestion: (text: string) => void;
 	onNavigate: (page: PageId) => void;

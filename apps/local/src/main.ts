@@ -1,37 +1,24 @@
 #!/usr/bin/env bun
 import { randomBytes } from "node:crypto";
-import { writeSync } from "node:fs";
-import { createSafeFetch, parsePage } from "@openaeo/engine";
+import { createSafeFetch } from "@openaeo/engine";
 import pkg from "../package.json" with { type: "json" };
 import { diskAssets, embeddedAssets } from "./assets";
 import { createAuditService } from "./audits";
 import { auditOnce, HELP, parseArgs, runOnce } from "./cli";
 import { suggestCompetitors } from "./competitor-ideas";
+import { createSiteDescriber } from "./describe-site";
 import { embedded } from "./embedded";
 import { buildProviders, detectEngines } from "./engines";
 import { dataDir, dbPath } from "./paths";
 import { createRunService } from "./runs";
 import { createScheduler } from "./scheduler";
 import { createHandler } from "./server/handler";
+import { listen } from "./server/listen";
+import { writeLine as out } from "./stdout";
 import { openDb } from "./store/db";
 import { createStore } from "./store/store";
 import { suggestPrompts } from "./suggest";
 
-function out(line: string) {
-	const data = Buffer.from(`${line}\n`);
-	let offset = 0;
-	let stalls = 0;
-	while (offset < data.length) {
-		try {
-			offset += writeSync(1, data, offset);
-			stalls = 0;
-		} catch (error) {
-			if (!(error instanceof Error) || !("code" in error) || error.code !== "EAGAIN" || stalls > 2000) return;
-			stalls += 1;
-			Bun.sleepSync(2);
-		}
-	}
-}
 const exit = async (code: number): Promise<never> => process.exit(code);
 const args = parseArgs(process.argv.slice(2));
 
@@ -59,11 +46,14 @@ const audits = createAuditService({ store, get });
 const engineDeps = { store, which: (bin: string) => Bun.which(bin) };
 const runs = createRunService({ store, providers: () => buildProviders(engineDeps), sentiment: true });
 
-const stop = () => {
+const release = () => {
 	runs.cancelAll();
 	audits.cancelAll();
 	store.runs.interruptOwn();
 	store.audits.interruptOwn();
+};
+const stop = () => {
+	release();
 	process.exit(130);
 };
 process.on("SIGINT", stop);
@@ -90,10 +80,7 @@ if (args.command === "mcp") {
 	const { createMcpServer } = await import("./mcp");
 	await createMcpServer({ store, runs, audits, version: pkg.version }).connect(new StdioServerTransport());
 	await new Promise<void>((resolve) => process.stdin.on("close", resolve));
-	runs.cancelAll();
-	audits.cancelAll();
-	store.runs.interruptOwn();
-	store.audits.interruptOwn();
+	release();
 	process.exit(0);
 }
 
@@ -107,11 +94,13 @@ if (args.command === "run") {
 
 const token = randomBytes(24).toString("hex");
 const assets = Object.keys(embedded).length > 0 ? embeddedAssets(embedded) : diskAssets();
+const firstProvider = () => buildProviders(engineDeps)[0] ?? null;
 const first = args.port ?? 4747;
-let server: ReturnType<typeof Bun.serve> | null = null;
-for (let port = first; port < first + (args.port ? 1 : 20) && !server; port += 1) {
-	try {
-		const handler = createHandler({
+const server = listen({
+	first,
+	attempts: args.port ? 1 : 20,
+	handlerFor: (port) =>
+		createHandler({
 			store,
 			runs,
 			audits,
@@ -119,31 +108,12 @@ for (let port = first; port < first + (args.port ? 1 : 20) && !server; port += 1
 			token,
 			port,
 			assets,
-			suggest: (context) => suggestPrompts(buildProviders(engineDeps)[0] ?? null, context),
-			describeSite: async (domain) => {
-				const page = await get(/^https?:\/\//i.test(domain) ? domain : `https://${domain}`);
-				if (page.status < 200 || page.status > 299 || !/html/i.test(page.contentType)) return null;
-				const model = parsePage(page.url, page.text);
-				const lines = [model.title, model.description, model.h1 ?? "", ...model.headings.slice(0, 8).map((h) => h.text)]
-					.map((line) => line.replace(/\s+/g, " ").trim())
-					.filter(Boolean);
-				return [...new Set(lines)].join("\n") || null;
-			},
-			competitorIdeas: (context) => suggestCompetitors(buildProviders(engineDeps)[0] ?? null, context),
-			askProvider: (engine) => {
-				const ready = buildProviders(engineDeps);
-				return ready.find((p) => p.id === engine) ?? ready[0] ?? null;
-			},
-		});
-		server = Bun.serve({ hostname: "127.0.0.1", port, fetch: handler, idleTimeout: 255 });
-	} catch (error) {
-		if (
-			!(error instanceof Error) ||
-			!/EADDRINUSE|in use/i.test(`${error.message} ${"code" in error ? String(error.code) : ""}`)
-		)
-			throw error;
-	}
-}
+			suggest: (context) => suggestPrompts(firstProvider(), context),
+			describeSite: createSiteDescriber(get),
+			competitorIdeas: (context) => suggestCompetitors(firstProvider(), context),
+			askProvider: (engine) => buildProviders(engineDeps).find((p) => p.id === engine) ?? firstProvider(),
+		}),
+});
 if (!server) {
 	process.stderr.write(`Could not find a free port starting at ${first}. Try \`openaeo --port <number>\`.\n`);
 	process.exit(1);

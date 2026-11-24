@@ -1,3 +1,4 @@
+import type { EngineView, PageId, ProjectView, ReportView } from "@api";
 import {
 	Analytics01Icon,
 	ArrowRight02Icon,
@@ -14,13 +15,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { ChangeSummary, type MetricChange } from "@/components/ui/change-summary-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
 import { TrendChart } from "@/components/ui/trend-chart-clean";
-import type { EngineInfo, PageId, ProjectView, ReportView } from "@/types";
 import { day, engineLabel, Page, percent, ShareList, when } from "./shared";
 
 type Props = {
 	project: ProjectView;
 	report: ReportView;
-	engines: EngineInfo[];
+	engines: EngineView[];
 	loading: boolean;
 	onRun: () => void;
 	onCancel: () => void;

@@ -1,3 +1,4 @@
+import type { PromptStatView, PromptView, Suggestions } from "@api";
 import {
 	Add01Icon,
 	BubbleChatIcon,
@@ -16,24 +17,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { DropdownMenu } from "@/components/ui/dropdown-menu-clean";
 import { IconButton } from "@/components/ui/icon-button-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
-import type { PromptView, Suggestions } from "@/types";
 import { SuggestMark } from "./command-icons";
 import { Page } from "./shared";
-
-export type PromptStat = {
-	promptId: string;
-	text: string;
-	active: boolean;
-	history: { runId: string; startedAt: number; rate: number }[];
-	latest: number | null;
-	previous: number | null;
-	bestRank: number | null;
-};
 
 type Props = {
 	brand: string;
 	prompts: PromptView[];
-	stats: PromptStat[];
+	stats: PromptStatView[];
 	suggestions: Suggestions | null;
 	suggesting: boolean;
 	onAdd: (texts: string[]) => Promise<void>;
@@ -44,7 +34,7 @@ type Props = {
 	onOpen: (text: string) => void;
 };
 
-const toKeyword = (s: PromptStat): PexKeyword => ({
+const toKeyword = (s: PromptStatView): PexKeyword => ({
 	id: s.promptId,
 	text: s.text,
 	volume: (s.latest ?? 0) * 100,

@@ -123,7 +123,6 @@ export function Shell({ projects, project, page, children, onPage, onBrand, onNe
 			workspaceItems={[
 				...projects.map((p) => ({
 					label: p.name,
-					description: p.domains[0],
 					checked: p.id === project?.id,
 					onSelect: () => onBrand(p.id),
 				})),

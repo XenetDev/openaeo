@@ -25,6 +25,8 @@ const PURPOSE: Record<string, string> = {
 };
 
 const STALE_MS = 18 * 30 * 24 * 60 * 60 * 1000;
+const ARTICLE_TYPES = new Set(["Article", "BlogPosting", "NewsArticle", "TechArticle", "HowTo"]);
+const ARTICLE_PATH = /\/(blog|articles?|guides?|news|posts?|learn|resources|wiki|docs|insights)(\/|$)/i;
 const QUESTION = /\?\s*$|^(what|how|why|which|who|when|where|can|does|do|is|are|should|will)\b/i;
 
 export const quote = (text: string, max = 200) => {
@@ -113,12 +115,18 @@ export function checkPage(page: PageModel, now: number = Date.now()): Finding[] 
 		add("no-organization-schema", "medium", "The home page does not describe the organisation", "No Organization structured data was found.", "Add Organization JSON-LD to the home page with name, url, logo and sameAs links to official profiles.");
 	}
 
+	let path = "";
+	try {
+		path = new URL(page.url).pathname;
+	} catch {}
+	const article = page.schemaTypes.some((t) => ARTICLE_TYPES.has(t)) || ARTICLE_PATH.test(path);
+
 	if (!page.h1) {
 		add("no-h1", "medium", "The page has no main heading", "No <h1> element was found.", "Add one <h1> that states the question or topic the page answers.");
 	} else {
 		const first = page.headings.find((h) => h.level === 1)?.following ?? "";
 		const size = wordCount(first);
-		if (size < 20 || size > 80) {
+		if (!page.isHome && (size < 20 || size > 80)) {
 			add(
 				"no-direct-answer",
 				"medium",
@@ -132,19 +140,19 @@ export function checkPage(page: PageModel, now: number = Date.now()): Finding[] 
 	const sub = page.headings.filter((h) => h.level === 2 || h.level === 3);
 	const questions = sub.filter((h) => QUESTION.test(h.text));
 	const long = page.words > 300;
-	if (long && sub.length > 0 && questions.length === 0) {
+	if (long && !page.isHome && sub.length > 0 && questions.length === 0) {
 		add("no-question-headings", "low", "No headings are phrased as questions", `Headings include: ${sub.slice(0, 3).map((h) => `"${h.text}"`).join(", ")}`, "Rephrase some H2/H3 headings as the questions people ask, each followed by a direct answer.");
 	}
 	if (questions.length >= 2 && !page.schemaTypes.includes("FAQPage") && page.schemaErrors === 0) {
 		add("faq-without-schema", "medium", "Question-and-answer content has no FAQPage markup", `${questions.length} question headings, for example "${questions[0]?.text ?? ""}"`, "Add FAQPage JSON-LD whose questions and answers match the visible text.");
 	}
 
-	if (long && !page.author) {
+	if (long && article && !page.author) {
 		add("no-author", "low", "No author is named", "No author was found in the structured data, meta tags or byline.", "Name the author with a visible byline and in the Article JSON-LD, with credentials where relevant.");
 	}
 
 	const dated = page.dateModified ?? page.datePublished;
-	if (long && !dated) {
+	if (long && article && !dated) {
 		add("no-date", "low", "No published or updated date", "No date was found in the structured data, meta tags or a <time> element.", "Show a visible \"last updated\" date and set dateModified in the Article JSON-LD.");
 	} else if (dated) {
 		const time = Date.parse(dated);
@@ -153,7 +161,7 @@ export function checkPage(page: PageModel, now: number = Date.now()): Finding[] 
 		}
 	}
 
-	if (long && page.externalLinks === 0) {
+	if (long && article && page.externalLinks === 0) {
 		add("no-outbound-citations", "low", "The page cites no outside sources", "No links to other websites were found in the content.", "Link to the credible sources behind your claims: studies, documentation, original data.");
 	}
 

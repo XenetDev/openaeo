@@ -159,3 +159,22 @@ test("missing robots.txt and llms.txt are low findings; an html page served for 
 	expect(ids(checkSite({ origin: "https://acme.com", robots: fetched("", 404), llms: fetched("", 404) }))).toEqual(["llms-txt-missing", "robots-missing"]);
 	expect(checkSite({ origin: "https://acme.com", robots: fetched("User-agent: *\nAllow: /"), llms: fetched("# Acme") })).toEqual([]);
 });
+
+test("author, date and citation checks apply to articles, not to ordinary pages", () => {
+	const head = '<title>About Acme</title><meta name="description" content="About us.">';
+	const body = `<h1>About Acme</h1><p>${words(40)}</p><h2>Our story</h2><p>${words(400)}</p>`;
+	const about = ids(checkPage(page(body, head, "https://acme.com/about"), NOW));
+	expect(about).not.toContain("no-author");
+	expect(about).not.toContain("no-date");
+	expect(about).not.toContain("no-outbound-citations");
+	const post = ids(checkPage(page(body, head, "https://acme.com/blog/our-story"), NOW));
+	expect(post).toEqual(expect.arrayContaining(["no-author", "no-date", "no-outbound-citations"]));
+	const typed = ids(checkPage(page(body, `${head}<script type="application/ld+json">{"@type":"BlogPosting","headline":"x"}</script>`, "https://acme.com/our-story"), NOW));
+	expect(typed).toEqual(expect.arrayContaining(["no-author", "no-date"]));
+});
+
+test("the home page is not asked for an answer paragraph or question headings", () => {
+	const head = '<title>Acme</title><meta name="description" content="CRM."><script type="application/ld+json">{"@type":"Organization","name":"Acme"}</script>';
+	const body = `<h1>The CRM for agencies</h1><p>Short tagline.</p><h2>Features</h2><p>${words(400)}</p>`;
+	expect(checkPage(page(body, head, "https://acme.com/"), NOW)).toEqual([]);
+});

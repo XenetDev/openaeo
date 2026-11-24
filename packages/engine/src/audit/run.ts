@@ -24,7 +24,7 @@ export type RunAuditOptions = {
 
 const WEIGHT: Record<Severity, number> = { high: 12, medium: 5, low: 2 };
 const SITE_CHECKS = new Set(["crawler-blocked", "robots-missing", "llms-txt-missing", "site-unreachable"]);
-const ASSET = /\.(png|jpe?g|gif|svg|webp|ico|css|js|mjs|pdf|zip|gz|mp4|mp3|woff2?|ttf|xml|txt|json|rss|atom)$/i;
+const ASSET = /\.(png|jpe?g|gif|svg|webp|ico|css|js|mjs|pdf|zip|gz|mp4|mp3|woff2?|ttf|xml|txt|md|json|rss|atom)$/i;
 
 const messageOf = (error: unknown) => (error instanceof AuditFetchError || error instanceof Error ? error.message : "The page could not be fetched.");
 const ok = (f: Fetched) => f.status >= 200 && f.status < 300;

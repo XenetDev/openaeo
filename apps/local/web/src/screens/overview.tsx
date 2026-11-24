@@ -29,6 +29,8 @@ type Props = {
 	filter?: ReactNode;
 };
 
+const MIN_BARS = 5;
+
 const moved = (
 	label: string,
 	now: number,
@@ -59,7 +61,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 	const previous = trend.length > 1 ? trend[trend.length - 2] : undefined;
 	const labels = trend.map((t) => day(t.startedAt));
 	const bars = (values: number[], label: string) =>
-		values.length < 2 ? (
+		values.length < MIN_BARS ? (
 			<span />
 		) : (
 			<TrendChart

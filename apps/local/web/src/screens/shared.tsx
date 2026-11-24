@@ -120,12 +120,14 @@ export function EngineLogo({ engine, label, size = 16 }: { engine: string; label
 export function TagFilter({ tags, tag, onTag }: { tags: string[]; tag: string; onTag: (tag: string) => void }) {
 	if (tags.length === 0) return null;
 	return (
-		<Select
-			size="sm"
-			aria-label="Filter by tag"
-			value={tag}
-			onChange={onTag}
-			options={[{ value: "", label: "All tags" }, ...tags.map((value) => ({ value, label: value }))]}
-		/>
+		<span className="oa-tag-filter">
+			<Select
+				size="sm"
+				aria-label="Filter by tag"
+				value={tag}
+				onChange={onTag}
+				options={[{ value: "", label: "All tags" }, ...tags.map((value) => ({ value, label: value }))]}
+			/>
+		</span>
 	);
 }

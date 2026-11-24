@@ -56,7 +56,7 @@ export function ShareList({
 	items,
 	empty,
 }: {
-	items: { label: string; value: string; share: number; badge?: ReactNode }[];
+	items: { label: string; value: string; share: number; badge?: ReactNode; quiet?: boolean }[];
 	empty?: ReactNode;
 }) {
 	if (items.length === 0) return <>{empty}</>;
@@ -70,7 +70,7 @@ export function ShareList({
 						</span>
 						<b>{item.value}</b>
 					</span>
-					<i style={{ width: `${Math.min(100, Math.max(0, item.share))}%` }} />
+					<i data-quiet={item.quiet || undefined} style={{ width: `${Math.min(100, Math.max(0, item.share))}%` }} />
 				</div>
 			))}
 		</div>

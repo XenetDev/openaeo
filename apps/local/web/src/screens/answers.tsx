@@ -307,14 +307,16 @@ export function AnswersScreen({
 										}
 										items={[...answer.mentions]
 											.sort((a, b) => a.rank - b.rank)
-											.map((m) => ({
-												label: `${m.rank}. ${m.entity}`,
-												value: `${m.count}×`,
-												share: (m.count / top) * 100,
-												badge: brand.some((n) => n.toLowerCase() === m.entity.toLowerCase()) ? (
-													<Badge tone="success">You</Badge>
-												) : undefined,
-											}))}
+											.map((m) => {
+												const mine = brand.some((n) => n.toLowerCase() === m.entity.toLowerCase());
+												return {
+													label: `${m.rank}. ${m.entity}`,
+													value: `${m.count}×`,
+													share: (m.count / top) * 100,
+													badge: mine ? <Badge tone="success">You</Badge> : undefined,
+													quiet: !mine,
+												};
+											})}
 									/>
 								</CardContent>
 							</Card>

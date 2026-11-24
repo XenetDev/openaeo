@@ -28,13 +28,13 @@ import {
   Search01Icon,
   Target02Icon,
 } from "@hugeicons/core-free-icons";
-import { Button } from "@/components/ui/button-clean";
+import { PillButton, PillField } from "@/components/pill-field";
 import { EmptyState, Icon, Loading, Skeleton, rove, useToast, type AppShellProps, type ShellNavItem } from "@/components/app-shell";
 
 /* ---------- Types ---------- */
 
 /** A prompt or keyword with how many times a month people ask it, and how much that changed since last month */
-export type PexKeyword = { id: string; text: string; volume: number; change: number; /** Not measured yet – shown in words, not as 0 */ pending?: boolean; /** Twelve months, oldest first – the sparkline */ trend?: number[] };
+export type PexKeyword = { id: string; text: string; volume: number; change: number; /** Not measured yet – shown in words, not as 0 */ pending?: boolean; paused?: boolean; /** Twelve months, oldest first – the sparkline */ trend?: number[] };
 /** What Analyse found for one prompt */
 export type PexResult = { text: string; volume: number; change: number; pending?: boolean; trend: number[]; /** Share of answers that mention you, 0–1 */ share: number };
 export type PexMode = "keyword" | "url";
@@ -176,6 +176,8 @@ export type PromptExplorerScreenProps = Pick<AppShellProps, "className"> & {
   onOpen?: (text: string) => void;
   /** A line under the field, e.g. what was just added */
   note?: ReactNode;
+  /** A menu at the end of each row of Your questions */
+  rowMenu?: (k: PexKeyword) => ReactNode;
   /** More cards under the lists, in the same scroll area */
   after?: ReactNode;
   /** The workspace in the sidebar */
@@ -199,13 +201,7 @@ export type PromptExplorerScreenProps = Pick<AppShellProps, "className"> & {
 
 export function PromptExplorerScreen({
   workspace = "Northwind",
-  title = (
-    <>
-      What do your buyers{" "}
-      <br />
-      ask AI?
-    </>
-  ),
+  title = "What do your buyers ask AI?",
   prompts = samplePrompts,
   popular = samplePopular,
   rising = sampleRising,
@@ -217,6 +213,7 @@ export function PromptExplorerScreen({
   note,
   after,
   onOpen,
+  rowMenu,
 }: PromptExplorerScreenProps) {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<PexMode>("keyword");
@@ -288,13 +285,6 @@ export function PromptExplorerScreen({
     }
   };
 
-  // The field grows with its lines in bulk, up to six
-  useEffect(() => {
-    const el = field.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, bulk ? 156 : 24)}px`;
-  }, [query, bulk]);
 
   const trending = trend === "rising" ? rising : falling;
   const open1 = (text: string) => (onOpen ? onOpen(text) : pick(text));
@@ -311,42 +301,33 @@ export function PromptExplorerScreen({
         {/* The hero: a soft gradient with the heading and the field */}
         <section className="oa-audit-hero oa-prompt-hero" aria-labelledby={`${id}-title`}>
           <h2 id={`${id}-title`}>{title}</h2>
-          <p>Track the questions people ask AI assistants before they pick a business like yours. Every run asks each engine all of them.</p>
+          <p>Track the questions people ask AI before they choose a business like yours.</p>
 
-          <div className="ui-pex-box oa-pill" data-open={showList || undefined} data-bulk={bulk || undefined}>
-            <label htmlFor={`${id}-field`} className="ui-pex-sr">
-              {mode === "url" ? "A page's address" : bulk ? "Prompts, one per line" : "A prompt or keyword"}
-            </label>
-            <div className="oa-pill-row">
-              <Icon icon={Search01Icon} size={18} />
-            <textarea
-                ref={field}
-                id={`${id}-field`}
-                className="ui-pex-field"
-                rows={bulk ? 3 : 1}
-                value={query}
-                placeholder={bulk ? "One question per line…" : "Type a question a buyer would ask an AI assistant…"}
-                role="combobox"
-                aria-expanded={showList}
-                aria-controls={`${id}-list`}
-                aria-autocomplete="list"
-                aria-activedescendant={showList ? `${id}-opt-${at}` : undefined}
-                aria-keyshortcuts="Enter ArrowDown ArrowUp Escape"
-                spellCheck={false}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setOpen(true);
-                  setActive(0);
-                }}
-                onFocus={() => setOpen(true)}
-                onBlur={() => window.setTimeout(() => setOpen(false), 120)}
-                onKeyDown={onFieldKey}
-              />
-              <Button type="button" loading={busy} onClick={analyseNow}>
-                Track
-              </Button>
-            </div>
-
+          <PillField
+            data-open={showList || undefined}
+            icon={Search01Icon}
+            label={bulk ? "Questions, one per line" : "A question to track"}
+            value={query}
+            onChange={(next) => {
+              setQuery(next);
+              setOpen(true);
+              setActive(0);
+            }}
+            placeholder={bulk ? "One question per line…" : "Type a question a buyer would ask an AI assistant…"}
+            fieldRef={field}
+            textareaProps={{
+              id: `${id}-field`,
+              role: "combobox",
+              "aria-expanded": showList,
+              "aria-controls": `${id}-list`,
+              "aria-autocomplete": "list",
+              "aria-activedescendant": showList ? `${id}-opt-${at}` : undefined,
+              onFocus: () => setOpen(true),
+              onBlur: () => window.setTimeout(() => setOpen(false), 120),
+              onKeyDown: onFieldKey,
+            }}
+            action={<PillButton label="Track this question" loading={busy} disabled={!query.trim()} onClick={analyseNow} />}
+          >
             {/* Relevant searches: each completes what you typed, with its prompts a month and the change */}
             <div className="ui-pex-list" id={`${id}-list`} role="listbox" aria-label="Relevant searches" hidden={!showList}>
               <p className="ui-pex-list__head" aria-hidden="true">
@@ -372,7 +353,7 @@ export function PromptExplorerScreen({
                 </div>
               ))}
             </div>
-          </div>
+          </PillField>
           <div className="oa-crawlers">
             {actions}
             <button
@@ -461,7 +442,7 @@ export function PromptExplorerScreen({
             <header className="ui-pex-col__head">
               <h3>Your questions</h3>
             </header>
-            <KeywordList items={popular} loading={loading} empty={empty} label="Your questions" onPick={open1} />
+            <KeywordList items={popular} loading={loading} empty={empty} label="Your questions" onPick={open1} rowMenu={rowMenu} />
           </div>
           <div className="ui-pex-col">
             <header className="ui-pex-col__head">
@@ -490,7 +471,7 @@ export function PromptExplorerScreen({
 }
 
 /** Keywords as rows: the keyword, maybe its year as a sparkline, the change and the volume – a click analyses it */
-function KeywordList({ items, loading, empty, label, spark, none, onPick }: { items: PexKeyword[]; loading?: boolean; empty?: boolean; label: string; spark?: boolean; /** What an empty list says while there is data elsewhere */ none?: string; onPick: (text: string) => void }) {
+function KeywordList({ items, loading, empty, label, spark, none, onPick, rowMenu }: { rowMenu?: (k: PexKeyword) => ReactNode; items: PexKeyword[]; loading?: boolean; empty?: boolean; label: string; spark?: boolean; /** What an empty list says while there is data elsewhere */ none?: string; onPick: (text: string) => void }) {
   if (loading)
     return (
       <Loading label={`Loading ${label.toLowerCase()}`} className="ui-pex-kws">
@@ -509,15 +490,16 @@ function KeywordList({ items, loading, empty, label, spark, none, onPick }: { it
   return (
     <ul className="ui-pex-kws" aria-label={label}>
       {items.map((k) => (
-        <li key={k.id}>
+        <li key={k.id} className={rowMenu ? "oa-kwrow" : undefined} data-paused={k.paused || undefined}>
           <button type="button" className="ui-pex-kw" data-spark={spark || undefined} aria-label={`${k.text}, ${short(k.volume)} of answers mention you${k.pending ? " (not run yet)" : ""}, ${k.change >= 0 ? "up" : "down"} ${short(k.change)} – analyse`} onClick={() => onPick(k.text)}>
             <span className="ui-pex-kw__text" dir="auto" title={k.text}>
               {k.text}
             </span>
             {spark && <Sparkline values={k.trend ?? []} />}
             {k.change !== 0 ? <Change value={k.change} /> : <span />}
-            <span className="ui-pex-kw__vol ui-pex-num">{k.pending ? "Not run yet" : short(k.volume)}</span>
+            <span className="ui-pex-kw__vol ui-pex-num">{k.paused ? "Paused" : k.pending ? "Not run yet" : short(k.volume)}</span>
           </button>
+          {rowMenu?.(k)}
         </li>
       ))}
     </ul>

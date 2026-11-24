@@ -2,7 +2,7 @@ import { artefacts, type AuditResult, buildFixBrief, type Finding } from "@opena
 import type { z } from "zod";
 import { AuditError, type AuditService } from "../audits";
 import type { EngineStatus } from "../engines";
-import { buildReport } from "../report";
+import { buildReport, promptStats } from "../report";
 import { RunError, type RunService } from "../runs";
 import type { Store, StoredAudit } from "../store/store";
 import { fallbackPrompts, type SuggestContext } from "../suggest";
@@ -119,6 +119,10 @@ export function createHandler(deps: HandlerDeps) {
 			if (c === "prompts" && method === "GET") {
 				project(b);
 				return json({ prompts: store.prompts.list(b) });
+			}
+			if (c === "prompt-stats" && method === "GET") {
+				project(b);
+				return json({ stats: promptStats(store, b) });
 			}
 			if (c === "prompts" && method === "POST") {
 				project(b);

@@ -32,6 +32,7 @@ export const api = {
 	addPrompts: (id: string, texts: string[]) => call<{ prompts: PromptView[] }>("POST", `/api/projects/${id}/prompts`, { texts }),
 	setPromptActive: (id: string, active: boolean) => call<{ prompt: PromptView }>("PATCH", `/api/prompts/${id}`, { active }),
 	suggest: (id: string) => call<Suggestions>("POST", `/api/projects/${id}/suggestions`),
+	promptStats: (id: string) => call<{ stats: import("./screens/prompts").PromptStat[] }>("GET", `/api/projects/${id}/prompt-stats`),
 	removePrompt: (id: string) => call<{ ok: true }>("DELETE", `/api/prompts/${id}`),
 	startRun: (id: string) => call<{ run: RunView }>("POST", `/api/projects/${id}/runs`),
 	cancelRun: (id: string) => call<{ ok: true }>("POST", `/api/runs/${id}/cancel`),

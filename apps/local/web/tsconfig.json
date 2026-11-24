@@ -15,7 +15,8 @@
 			"@/*": [
 				"./src/*"
 			]
-		}
+		},
+		"noUncheckedIndexedAccess": false
 	},
 	"include": [
 		"src"

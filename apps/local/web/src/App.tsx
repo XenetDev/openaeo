@@ -1,34 +1,30 @@
-import {
-	AnswersPage,
-	type AnswerView,
-	AppShell,
-	type ArtefactsView,
-	AuditPage,
-	type AuditView,
-	type FindingView,
-	CompetitorsPage,
-	type EngineInfo,
-	type EntityView,
-	Onboarding,
-	Overview,
-	type PageId,
-	type ProjectView,
-	PromptsPage,
-	type PromptView,
-	type ReportView,
-	type Suggestions,
-	SettingsPage,
-	SourcesPage,
-} from "@openaeo/ui";
+import type { AnswerView, ArtefactsView, AuditView, EngineInfo, EntityView, FindingView, PageId, ProjectView, PromptView, ReportView, Suggestions } from "@openaeo/ui";
+import { BubbleChatIcon, CheckListIcon, DashboardSquare01Icon, Globe02Icon, News01Icon, PlusSignIcon, Search01Icon, Settings01Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AppShell, type ShellNavItem } from "@/components/app-shell";
 import { ApiError, api } from "./api";
+import { AnswersScreen } from "./screens/answers";
+import { AuditScreen } from "./screens/audit";
+import { CompetitorsScreen, SourcesScreen } from "./screens/lists";
+import { OverviewScreen } from "./screens/overview";
+import { type PromptStat, PromptsScreen } from "./screens/prompts";
+import { OnboardingScreen, SettingsScreen } from "./screens/settings";
 
-const PAGES: PageId[] = ["overview", "prompts", "answers", "sources", "competitors", "audit", "settings"];
-const pageFromHash = (): PageId => PAGES.find((p) => p === window.location.hash.slice(1)) ?? "overview";
+const PAGES: { id: PageId; label: string; icon: ShellNavItem["icon"] }[] = [
+	{ id: "overview", label: "Overview", icon: DashboardSquare01Icon },
+	{ id: "prompts", label: "Prompts", icon: Search01Icon },
+	{ id: "answers", label: "Answers", icon: BubbleChatIcon },
+	{ id: "sources", label: "Sources", icon: News01Icon },
+	{ id: "competitors", label: "Competitors", icon: UserMultipleIcon },
+	{ id: "audit", label: "Audit", icon: CheckListIcon },
+	{ id: "settings", label: "Settings", icon: Settings01Icon },
+];
+const NEW_BRAND = "Track another brand";
+const pageFromHash = (): PageId => PAGES.find((p) => p.id === window.location.hash.slice(1))?.id ?? "overview";
 const messageOf = (error: unknown) => (error instanceof ApiError ? error.message : "Something went wrong. Try again.");
 
 type AuditData = { audit: AuditView | null; findings: FindingView[]; artefacts: ArtefactsView };
-type Data = { competitors: EntityView[]; prompts: PromptView[]; report: ReportView; answers: AnswerView[]; audit: AuditData };
+type Data = { competitors: EntityView[]; prompts: PromptView[]; stats: PromptStat[]; report: ReportView; answers: AnswerView[]; audit: AuditData };
 
 export function App() {
 	const [projects, setProjects] = useState<ProjectView[] | null>(null);
@@ -41,8 +37,10 @@ export function App() {
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
+	const [copied, setCopied] = useState(false);
 	const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
 	const [suggesting, setSuggesting] = useState(false);
+	const [answerFilter, setAnswerFilter] = useState("");
 	const loading = useRef(0);
 
 	const project = projects?.find((p) => p.id === projectId) ?? projects?.[0] ?? null;
@@ -57,10 +55,10 @@ export function App() {
 
 	const loadProject = useCallback(async (id: string) => {
 		const ticket = ++loading.current;
-		const [detail, report, audit] = await Promise.all([api.project(id), api.report(id), api.latestAudit(id)]);
+		const [detail, report, audit, stats] = await Promise.all([api.project(id), api.report(id), api.latestAudit(id), api.promptStats(id)]);
 		const answers = report.run ? (await api.run(report.run.id)).answers : [];
 		if (ticket !== loading.current) return;
-		setData({ competitors: detail.competitors, prompts: detail.prompts, report, answers, audit });
+		setData({ competitors: detail.competitors, prompts: detail.prompts, stats: stats.stats, report, answers, audit });
 	}, []);
 
 	const guard = useCallback(async (work: () => Promise<void>) => {
@@ -85,10 +83,10 @@ export function App() {
 	useEffect(() => {
 		setData(null);
 		setSuggestions(null);
+		setAnswerFilter("");
 		if (currentId) void guard(() => loadProject(currentId));
 	}, [currentId, guard, loadProject]);
 
-	const [copied, setCopied] = useState(false);
 	const running = data?.report.run?.status === "running" || data?.audit.audit?.status === "running";
 	useEffect(() => {
 		if (!running || !currentId) return;
@@ -113,19 +111,47 @@ export function App() {
 		setError(null);
 		setSaved(false);
 	};
-
 	const select = (id: string) => {
 		window.localStorage.setItem("openaeo.project", id);
 		setProjectId(id);
 	};
 
-	if (projects === null) {
-		return <div className="oa-onboard">{error ? <p className="oa-alert">{error}</p> : <p className="oa-muted">Loading…</p>}</div>;
-	}
+	const shell = (children: React.ReactNode, active: string) => (
+		<AppShell
+			active={active}
+			workspace={project?.name ?? "OpenAEO"}
+			workspaceMeta="Local"
+			user={{ name: "This computer" }}
+			nav={project && !creating ? PAGES.map((p) => ({ label: p.label, icon: p.icon })) : []}
+			groups={
+				projects && projects.length > 0
+					? [{ label: "Brands", items: [...projects.map((p) => ({ label: p.name, icon: Globe02Icon })), { label: NEW_BRAND, icon: PlusSignIcon }] }]
+					: []
+			}
+			sideCards={false}
+			onNavigate={(label) => {
+				const target = PAGES.find((p) => p.label === label);
+				if (target) {
+					setCreating(false);
+					return navigate(target.id);
+				}
+				if (label === NEW_BRAND) return setCreating(true);
+				const brand = projects?.find((p) => p.name === label);
+				if (brand) {
+					setCreating(false);
+					select(brand.id);
+				}
+			}}
+		>
+			{children}
+		</AppShell>
+	);
+
+	if (projects === null) return shell(<div className="oa-view">{error ? <p className="oa-alert">{error}</p> : <p className="oa-dim">Loading…</p>}</div>, "");
 
 	if (!project || creating) {
-		return (
-			<Onboarding
+		return shell(
+			<OnboardingScreen
 				engines={engines}
 				busy={busy}
 				error={error}
@@ -140,50 +166,54 @@ export function App() {
 						navigate(created.prompts.length ? "overview" : "prompts");
 					}).finally(() => setBusy(false));
 				}}
-			/>
+			/>,
+			NEW_BRAND,
 		);
 	}
 
 	const id = project.id;
 	const refresh = () => loadProject(id);
-	const act = (work: () => Promise<unknown>) => void guard(async () => {
-		await work();
-		await refresh();
-	});
+	const act = (work: () => Promise<unknown>) =>
+		void guard(async () => {
+			await work();
+			await refresh();
+		});
 
 	const body = !data ? (
-		<div className="oa-page">{error ? <p className="oa-alert">{error}</p> : <p className="oa-muted">Loading…</p>}</div>
+		<div className="oa-view">{error ? null : <p className="oa-dim">Loading…</p>}</div>
 	) : page === "overview" ? (
-		<Overview
-			project={project}
-			report={data.report}
-			engines={engines}
-			error={error}
-			onNavigate={navigate}
-			onRun={() => act(() => api.startRun(id))}
-			onCancel={() => act(async () => (data.report.run ? api.cancelRun(data.report.run.id) : undefined))}
-		/>
+		<OverviewScreen project={project} report={data.report} engines={engines} onNavigate={navigate} onRun={() => act(() => api.startRun(id))} onCancel={() => act(async () => (data.report.run ? api.cancelRun(data.report.run.id) : undefined))} />
 	) : page === "prompts" ? (
-		<>
-			<PromptsPage
-				prompts={data.prompts}
-				onAdd={(texts) => act(() => api.addPrompts(id, texts))}
-				onToggle={(promptId, active) => act(() => api.setPromptActive(promptId, active))}
-				onRemove={(promptId) => act(() => api.removePrompt(promptId))}
-				suggestions={suggestions}
-				suggesting={suggesting}
-				onSuggest={() => {
-					setSuggesting(true);
-					void guard(async () => setSuggestions(await api.suggest(id))).finally(() => setSuggesting(false));
-				}}
-			/>
-		</>
+		<PromptsScreen
+			brand={project.name}
+			prompts={data.prompts}
+			stats={data.stats}
+			suggestions={suggestions}
+			suggesting={suggesting}
+			onAdd={async (texts) => {
+				await api.addPrompts(id, texts);
+				await refresh();
+			}}
+			onToggle={(promptId, active) => act(() => api.setPromptActive(promptId, active))}
+			onRemove={(promptId) => act(() => api.removePrompt(promptId))}
+			onDismissSuggestions={() => setSuggestions(null)}
+			onSuggest={() => {
+				setSuggesting(true);
+				void guard(async () => setSuggestions(await api.suggest(id))).finally(() => setSuggesting(false));
+			}}
+			onOpen={(text) => {
+				setAnswerFilter(text);
+				navigate("answers");
+			}}
+		/>
 	) : page === "answers" ? (
-		<AnswersPage answers={data.answers} project={project} competitors={data.competitors.flatMap((c) => [c.name, ...c.aliases])} engines={engines} />
+		<AnswersScreen answers={data.answers} project={project} competitors={data.competitors.flatMap((c) => [c.name, ...c.aliases])} engines={engines} filter={answerFilter} onFilter={setAnswerFilter} />
 	) : page === "sources" ? (
-		<SourcesPage report={data.report} />
+		<SourcesScreen report={data.report} />
+	) : page === "competitors" ? (
+		<CompetitorsScreen key={data.competitors.map((c) => c.name).join("|")} report={data.report} competitors={data.competitors} onSave={(next) => act(() => api.saveCompetitors(id, next))} />
 	) : page === "audit" ? (
-		<AuditPage
+		<AuditScreen
 			key={`${id}:${data.audit.audit?.id ?? "none"}`}
 			audit={data.audit.audit}
 			findings={data.audit.findings}
@@ -201,52 +231,49 @@ export function App() {
 				})
 			}
 		/>
-	) : page === "competitors" ? (
-		<CompetitorsPage key={data.competitors.map((c) => c.name).join("|")} report={data.report} competitors={data.competitors} onSave={(next) => act(() => api.saveCompetitors(id, next))} />
 	) : (
-		<>
-			<SettingsPage
-				key={`${id}:${JSON.stringify(settings)}`}
-				engines={engines}
-				settings={settings}
-				project={project}
-				saved={saved}
-				onSave={(next) =>
-					void guard(async () => {
-						await api.saveSettings(next);
-						await loadState();
-						setSaved(true);
-					})
-				}
-				onSaveProject={(next) =>
-					void guard(async () => {
-						await api.updateProject(id, next);
-						await loadState();
-						await refresh();
-						setSaved(true);
-					})
-				}
-				onDeleteProject={() =>
-					void guard(async () => {
-						await api.deleteProject(id);
-						window.localStorage.removeItem("openaeo.project");
-						setProjectId(null);
-						await loadState();
-						navigate("overview");
-					})
-				}
-			/>
-		</>
+		<SettingsScreen
+			key={`${id}:${JSON.stringify(settings)}`}
+			engines={engines}
+			settings={settings}
+			project={project}
+			saved={saved}
+			onSave={(next) =>
+				void guard(async () => {
+					await api.saveSettings(next);
+					await loadState();
+					setSaved(true);
+				})
+			}
+			onSaveProject={(next) =>
+				void guard(async () => {
+					await api.updateProject(id, next);
+					await loadState();
+					await refresh();
+					setSaved(true);
+				})
+			}
+			onDeleteProject={() =>
+				void guard(async () => {
+					await api.deleteProject(id);
+					window.localStorage.removeItem("openaeo.project");
+					setProjectId(null);
+					await loadState();
+					navigate("overview");
+				})
+			}
+		/>
 	);
 
-	return (
-		<AppShell projects={projects} project={project} page={page} onNavigate={navigate} onSelectProject={select} onNewProject={() => setCreating(true)}>
-			{error && data && page !== "overview" ? (
-				<p className="oa-alert oa-floating" role="alert">
+	return shell(
+		<>
+			{error ? (
+				<p className="oa-alert" role="alert" style={{ margin: "12px 32px 0" }}>
 					{error}
 				</p>
 			) : null}
 			{body}
-		</AppShell>
+		</>,
+		PAGES.find((p) => p.id === page)?.label ?? "Overview",
 	);
 }

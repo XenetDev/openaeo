@@ -1102,3 +1102,42 @@ body,
 .ui-as-rev__product i[data-quiet] {
 	background: var(--faint);
 }
+
+.oa-missed > div {
+	padding: 14px 0;
+}
+
+.oa-missed-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 20px;
+	margin-top: 8px;
+}
+
+.oa-missed-group {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	line-height: 18px;
+	color: var(--text);
+}
+
+.oa-missed-group small {
+	margin-right: 2px;
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.oa-missed-engine {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	margin-right: 6px;
+}
+
+.oa-missed .oa-grow > b:has(+ .oa-missed-meta) {
+	margin-bottom: 0;
+}

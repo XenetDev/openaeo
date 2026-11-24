@@ -77,18 +77,24 @@ export function OpportunitiesScreen({ project, engines, found, onOpenQuestion, o
 										<div key={miss.question}>
 											<span className="oa-grow">
 												<b>{miss.question}</b>
-												<span className="oa-inline">
-													{miss.engines.map((id) => (
-														<span key={id} className="oa-inline" style={{ gap: 5 }}>
-															<EngineLogo engine={id} label={engineLabel(engines, id)} size={14} />
-															{engineLabel(engines, id)}
-														</span>
-													))}
-													{miss.named.slice(0, 6).map((name) => (
-														<Badge key={name}>{name}</Badge>
-													))}
-													{miss.named.length > 6 ? <Badge>+{miss.named.length - 6}</Badge> : null}
-												</span>
+												<div className="oa-missed-meta">
+													<span className="oa-missed-group">
+														<small>Not named by</small>
+														{miss.engines.map((id) => (
+															<span key={id} className="oa-missed-engine">
+																<EngineLogo engine={id} label={engineLabel(engines, id)} size={14} />
+																{engineLabel(engines, id)}
+															</span>
+														))}
+													</span>
+													<span className="oa-missed-group">
+														<small>Named instead</small>
+														{miss.named.slice(0, 6).map((name) => (
+															<Badge key={name}>{name}</Badge>
+														))}
+														{miss.named.length > 6 ? <Badge>+{miss.named.length - 6}</Badge> : null}
+													</span>
+												</div>
 											</span>
 											<Button
 												variant="secondary"

@@ -1,3 +1,4 @@
+"use client";
 import { engineLabel, percent, position, when } from "./format";
 import { TrendChart } from "./TrendChart";
 import type { EngineInfo, PageId, ProjectView, ReportView } from "./types";

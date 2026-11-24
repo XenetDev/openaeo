@@ -314,8 +314,6 @@ export function AnswersScreen({
 													value: `${m.count}×`,
 													share: (m.count / top) * 100,
 													badge: mine ? <Badge tone="success">You</Badge> : undefined,
-													own: mine,
-													name: m.entity,
 												};
 											})}
 									/>

@@ -56,6 +56,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 	const blocked = engines.filter((e) => !e.available && e.id !== "openai");
 	const problems = report.problems ?? [];
 	const hasData = m.answers > 0;
+	const leader = report.competitors.find((c) => !c.isBrand && c.mentionRate > 0);
 	const previous = trend.length > 1 ? trend[trend.length - 2] : undefined;
 	const labels = trend.map((t) => day(t.startedAt));
 	const spark = (label: string, values: number[]) => {
@@ -198,6 +199,29 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 					</CardContent>
 				</Card>
 			) : null}
+			{hasData && m.mentionRate === 0 && !running ? (
+				<Card>
+					<CardHeader
+						title={`No AI engine named ${project.name} in this run`}
+						description={`${m.answers} answers from ${report.engines.length} ${report.engines.length === 1 ? "engine" : "engines"}${leader ? `. ${leader.name} was named most, in ${percent(leader.mentionRate)} of them` : ""}. Most new brands start here; the figures below are real, not missing.`}
+						action={<Badge tone="warning">Not named yet</Badge>}
+					/>
+					<CardContent>
+						<span className="oa-inline">
+							<Button
+								size="sm"
+								onClick={() => onNavigate("opportunities")}
+								iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
+							>
+								See who was named instead
+							</Button>
+							<Button variant="secondary" size="sm" onClick={() => onNavigate("audit")}>
+								Check what AI can read on your site
+							</Button>
+						</span>
+					</CardContent>
+				</Card>
+			) : null}
 		</>
 	);
 
@@ -261,6 +285,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 				<ChartCard
 					tall
 					title="Visibility over time"
+					ceiling={100}
 					value={overall.visibility}
 					delta={previous ? overall.visibility - previous.visibility : undefined}
 					format={(n) => n.toFixed(1)}

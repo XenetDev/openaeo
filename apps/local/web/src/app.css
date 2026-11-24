@@ -797,3 +797,13 @@ body,
 .oa-ask-dock > .oa-pill {
 	width: 100%;
 }
+
+.ui-as-rev__content > .ui-pex {
+	height: auto;
+	padding: 0;
+	overflow: visible;
+}
+
+.ui-as-rev__content > .ui-pex > .oa-prompt-hero {
+	padding-top: 28px;
+}

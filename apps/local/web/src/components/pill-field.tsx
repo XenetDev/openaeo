@@ -71,7 +71,7 @@ export function PillField({ icon, label, value, onChange, onSubmit, placeholder,
 export function PillButton({ label, onClick, disabled, loading, kind = "go" }: { label: string; onClick: () => void; disabled?: boolean; loading?: boolean; kind?: "go" | "stop" }) {
 	return (
 		<button type="button" className="oa-pill-go" data-kind={kind} aria-label={label} title={label} disabled={disabled || loading} aria-busy={loading || undefined} onClick={onClick}>
-			{loading ? <Spinner /> : <Icon icon={kind === "stop" ? StopIcon : ArrowUp02Icon} size={18} stroke={2.2} />}
+			{loading ? <Spinner /> : <Icon icon={kind === "stop" ? StopIcon : ArrowUp02Icon} size={16} stroke={2.2} />}
 		</button>
 	);
 }

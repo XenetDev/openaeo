@@ -634,7 +634,7 @@ body,
 	position: relative;
 	z-index: 4;
 	width: min(640px, 100%);
-	border-radius: 26px;
+	border-radius: 22px;
 	background: var(--card);
 	box-shadow: var(--card-shadow);
 	text-align: left;
@@ -642,7 +642,7 @@ body,
 }
 
 .oa-pill[data-multi] {
-	border-radius: 20px;
+	border-radius: 16px;
 }
 
 .oa-pill:focus-within {
@@ -653,8 +653,8 @@ body,
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	min-height: 52px;
-	padding: 8px 8px 8px 18px;
+	min-height: 44px;
+	padding: 6px 6px 6px 16px;
 	color: var(--muted);
 }
 
@@ -664,13 +664,13 @@ body,
 
 .oa-pill[data-multi] .oa-pill-row > svg {
 	align-self: flex-start;
-	margin-top: 9px;
+	margin-top: 7px;
 }
 
 .oa-pill[data-multi] .oa-pill-row > textarea {
 	align-self: flex-start;
-	margin-top: 6px;
-	margin-bottom: 6px;
+	margin-top: 4px;
+	margin-bottom: 4px;
 }
 
 .oa-pill-row > textarea {
@@ -698,8 +698,8 @@ body,
 	display: grid;
 	flex: none;
 	place-items: center;
-	width: 36px;
-	height: 36px;
+	width: 32px;
+	height: 32px;
 	margin: 0;
 	padding: 0;
 	border: 0;
@@ -748,11 +748,11 @@ body,
 	flex: none;
 	align-items: center;
 	gap: 6px;
-	height: 36px;
+	height: 32px;
 	margin: 0;
 	padding: 0 12px;
 	border: 0;
-	border-radius: 18px;
+	border-radius: 16px;
 	background: none;
 	font: inherit;
 	font-size: 13px;

@@ -209,7 +209,7 @@ test("a file database keeps its data when reopened", () => {
 		const second = openDb(path);
 		expect(createStore(second).projects.get(p.id)?.name).toBe("Kept");
 		expect(statSync(path).mode & 0o777).toBe(0o600);
-		expect(second.query("PRAGMA user_version").get()).toEqual({ user_version: 6 });
+		expect(second.query("PRAGMA user_version").get()).toEqual({ user_version: 7 });
 		second.close();
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
@@ -239,7 +239,7 @@ test("an older database gains tags on its questions without losing them", async 
 		const before = createStore(openDb(path));
 		const project = seed(before, ["kept question"]);
 		const raw = new Database(path);
-		raw.exec("ALTER TABLE prompt DROP COLUMN tags; PRAGMA user_version = 5");
+		raw.exec("DROP TABLE brand_check; ALTER TABLE prompt DROP COLUMN tags; PRAGMA user_version = 5");
 		raw.close();
 		const after = createStore(openDb(path));
 		expect(after.prompts.list(project.id).map((p) => [p.text, p.tags])).toEqual([["kept question", []]]);

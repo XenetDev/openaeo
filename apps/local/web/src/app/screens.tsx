@@ -31,6 +31,7 @@ const EMPTY_REPORT: ReportView = {
 	topDomains: [],
 	trend: [],
 	problems: [],
+	brand: [],
 };
 
 export type ScreenContext = {

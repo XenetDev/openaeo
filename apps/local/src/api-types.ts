@@ -39,6 +39,25 @@ export type MetricsView = {
 };
 export type SourceView = { url: string; domain: string; title?: string };
 
+export type BrandCheckView = {
+	engine: string;
+	knows: "yes" | "partly" | "no" | null;
+	summary: string | null;
+	confusedWith: string[];
+	concerns: string[];
+	sources: string[];
+	ownSiteUsed: boolean;
+};
+
+export type ReasonView = {
+	id: string;
+	severity: "high" | "medium" | "low";
+	title: string;
+	detail: string;
+	action: string;
+	evidence: string[];
+};
+
 export type SentimentView = { score: number | null; positive: number; neutral: number; negative: number };
 
 export type ReportView = {
@@ -58,6 +77,7 @@ export type ReportView = {
 		sentiment: number | null;
 	}[];
 	problems: { engine: string; message: string; count: number }[];
+	brand: BrandCheckView[];
 };
 
 export type AnswerView = {
@@ -112,6 +132,7 @@ export type OpportunitiesView = {
 	missed: { question: string; engines: string[]; named: string[] }[];
 	sites: { domain: string; citations: number; questions: number }[];
 	fixes: { title: string; severity: string; pages: number }[];
+	reasons: ReasonView[];
 };
 
 export type PromptStatView = {

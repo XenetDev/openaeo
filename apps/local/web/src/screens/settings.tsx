@@ -1,4 +1,4 @@
-import type { EngineView, EntityView, ProjectView } from "@api";
+import type { EngineView, ProjectInput, ProjectView } from "@api";
 import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { Icon } from "@/components/app-shell";
@@ -15,7 +15,7 @@ type Props = {
 	settings: Record<string, string>;
 	project: ProjectView;
 	onSave: (settings: Record<string, string>, message: string) => void;
-	onSaveProject: (project: EntityView, message: string) => void;
+	onSaveProject: (project: ProjectInput, message: string) => void;
 	onDeleteProject: () => void;
 };
 
@@ -73,10 +73,11 @@ function ApiRow({
 
 export function SettingsScreen({ engines, settings, project, onSave, onSaveProject, onDeleteProject }: Props) {
 	const [name, setName] = useState(project.name);
+	const [location, setLocation] = useState(project.location);
 	const [deleting, setDeleting] = useState(false);
 	const [confirm, setConfirm] = useState("");
 	const canDelete = confirm.trim() === project.name.trim();
-	const entity = (patch: Partial<EntityView>): EntityView => ({
+	const entity = (patch: Partial<ProjectInput>): ProjectInput => ({
 		name: project.name,
 		aliases: project.aliases,
 		domains: project.domains,
@@ -176,6 +177,25 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 							name.trim() && name.trim() !== project.name
 								? onSaveProject(entity({ name: name.trim() }), "Brand name saved")
 								: setName(project.name)
+						}
+					/>
+				</label>
+				<label className="ui-sg-row">
+					<span className="ui-sg-label">
+						<b>Location</b>
+						<small>Where your buyers are. Every question is asked as if from there</small>
+					</span>
+					<TextField
+						className="ui-sg-field"
+						aria-label="Location"
+						placeholder="London, United Kingdom"
+						value={location}
+						maxLength={80}
+						onChange={(e) => setLocation(e.target.value)}
+						onBlur={() =>
+							location.trim() !== project.location
+								? onSaveProject(entity({ location: location.trim() }), "Location saved")
+								: setLocation(project.location)
 						}
 					/>
 				</label>

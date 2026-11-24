@@ -55,8 +55,8 @@ export function FirstRun({ setup, project, data, engines, onOpen }: Props) {
 
 	return (
 		<FirstRunStep
-			frame={{ product: "OpenAEO", email: "Runs on this computer", steps: 5, logo: <Mark size={20} /> }}
-			step={5}
+			frame={{ product: "OpenAEO", email: "Runs on this computer", steps: 6, logo: <Mark size={20} /> }}
+			step={6}
 			brand={project.name}
 			finished={finished}
 			preview={

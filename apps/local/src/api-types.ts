@@ -20,7 +20,8 @@ export type EngineView = {
 	api: { name: string; defaultModel: string } | null;
 };
 export type EntityView = { name: string; aliases: string[]; domains: string[] };
-export type ProjectView = EntityView & { id: string };
+export type ProjectInput = EntityView & { location?: string };
+export type ProjectView = EntityView & { id: string; location: string };
 export type PromptView = { id: string; text: string; active: boolean; tags: string[] };
 export type RunView = {
 	id: string;
@@ -108,7 +109,7 @@ export type AnswerView = {
 	outputTokens: number | null;
 };
 
-export type NewProject = EntityView & { competitors: EntityView[]; prompts: string[] };
+export type NewProject = ProjectInput & { competitors: EntityView[]; prompts: string[] };
 
 export type Suggestions = { prompts: string[]; fallback: boolean };
 

@@ -9,6 +9,7 @@ First public release.
 - Brand check on every run: what each engine knows about you, its sources and its doubts
 - A plan of concrete steps to get recommended, built from your results, with progress
 - Sentiment score, overall and per engine, with a trend
+- A location per brand, so every question is asked as a buyer there would ask it
 - Tags on questions, with filtering, and a CSV export of answers
 - Answers, Sources, Competitors and Opportunities pages
 - Website audit with fixes and a brief for your AI agent

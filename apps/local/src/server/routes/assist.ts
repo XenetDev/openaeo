@@ -22,6 +22,7 @@ export function assistRoutes(deps: HandlerDeps): Route[] {
 				questions: [],
 				answers: [],
 				existing: [],
+				location: input.location,
 			});
 			return json<{ competitors: CompetitorIdea[] }>({ competitors });
 		}),
@@ -43,6 +44,7 @@ export function assistRoutes(deps: HandlerDeps): Route[] {
 				questions: store.prompts.list(project.id).map((p) => p.text),
 				answers,
 				existing: [...project.aliases, ...known],
+				location: project.location,
 			});
 			return json<{ competitors: CompetitorIdea[] }>({ competitors });
 		}),
@@ -54,6 +56,7 @@ export function assistRoutes(deps: HandlerDeps): Route[] {
 				competitors: store.competitors.list(project.id).map((c) => c.name),
 				existing: store.prompts.list(project.id).map((p) => p.text),
 				about: deps.suggest ? await describe(project.domains[0]) : null,
+				location: project.location,
 			};
 			return json<Suggestions>(
 				deps.suggest ? await deps.suggest(context) : { prompts: fallbackPrompts(context), fallback: true },

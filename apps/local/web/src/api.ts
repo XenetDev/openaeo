@@ -11,6 +11,7 @@ import type {
 	PlanView,
 	Progress,
 	ProjectDetail,
+	ProjectInput,
 	ProjectView,
 	PromptStatView,
 	PromptView,
@@ -53,7 +54,7 @@ export const api = {
 	state: () => call<StateResponse>("GET", "/api/state"),
 	project: (id: string) => call<ProjectDetail>("GET", `/api/projects/${id}`),
 	createProject: (input: NewProject) => call<ProjectDetail>("POST", "/api/projects", input),
-	updateProject: (id: string, input: EntityView) =>
+	updateProject: (id: string, input: ProjectInput) =>
 		call<{ project: ProjectView }>("PATCH", `/api/projects/${id}`, input),
 	deleteProject: (id: string) => call<Ok>("DELETE", `/api/projects/${id}`),
 	saveCompetitors: (id: string, competitors: EntityView[]) =>
@@ -78,8 +79,8 @@ export const api = {
 		call<AskReply>("POST", `/api/projects/${id}/ask`, body),
 	competitorIdeas: (id: string) =>
 		call<{ competitors: CompetitorIdea[] }>("POST", `/api/projects/${id}/competitor-ideas`),
-	competitorIdeasFor: (name: string, domain?: string) =>
-		call<{ competitors: CompetitorIdea[] }>("POST", "/api/competitor-ideas", { name, domain }),
+	competitorIdeasFor: (name: string, domain?: string, location?: string) =>
+		call<{ competitors: CompetitorIdea[] }>("POST", "/api/competitor-ideas", { name, domain, location }),
 	plan: (id: string) => call<PlanView>("GET", `/api/projects/${id}/plan`),
 	setPlanStep: (id: string, step: string, done: boolean) =>
 		call<PlanView>("PUT", `/api/projects/${id}/plan/${encodeURIComponent(step)}`, { done }),

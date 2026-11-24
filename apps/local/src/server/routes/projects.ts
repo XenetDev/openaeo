@@ -3,7 +3,7 @@ import { forgetPlan } from "../../plan";
 import type { HandlerDeps } from "../handler";
 import { json, notFound, read, requireProject } from "../http";
 import { type Route, route } from "../router";
-import { CompetitorsSchema, CreateProjectSchema, EntitySchema } from "../schemas";
+import { CompetitorsSchema, CreateProjectSchema, ProjectSchema } from "../schemas";
 
 export function projectRoutes({ store, runs, audits, engines }: HandlerDeps): Route[] {
 	const detail = (id: string): ProjectDetail => ({
@@ -24,7 +24,7 @@ export function projectRoutes({ store, runs, audits, engines }: HandlerDeps): Ro
 		route("GET", "/api/projects/:id", ({ params }) => json(detail(params.id as string))),
 		route("PATCH", "/api/projects/:id", async ({ request, params }) => {
 			const id = params.id as string;
-			const updated = store.projects.update(id, await read(request, EntitySchema));
+			const updated = store.projects.update(id, await read(request, ProjectSchema));
 			if (!updated) throw notFound("That project");
 			return json<{ project: ProjectView }>({ project: updated });
 		}),

@@ -11,9 +11,11 @@ import type {
 	Source,
 } from "@openaeo/engine";
 import type { BrandCheck } from "../brand-check";
+import { cleanLocation } from "../location";
 
 export type EntityInput = { name: string; aliases: string[]; domains: string[] };
-export type Project = EntityInput & { id: string; createdAt: number };
+export type ProjectInput = EntityInput & { location?: string };
+export type Project = EntityInput & { id: string; location: string; createdAt: number };
 export type Competitor = EntityInput & { id: string; projectId: string };
 export type Prompt = {
 	id: string;
@@ -93,7 +95,7 @@ type FindingRow = {
 };
 
 type EntityRow = { id: string; name: string; aliases: string; domains: string };
-type ProjectRow = EntityRow & { created_at: number };
+type ProjectRow = EntityRow & { location: string; created_at: number };
 type CompetitorRow = EntityRow & { project_id: string };
 type BrandCheckRow = {
 	engine: string;
@@ -156,6 +158,7 @@ const toProject = (r: ProjectRow): Project => ({
 	name: r.name,
 	aliases: list(r.aliases),
 	domains: list(r.domains),
+	location: r.location,
 	createdAt: r.created_at,
 });
 const toCompetitor = (r: CompetitorRow): Competitor => ({
@@ -239,7 +242,7 @@ export function createStore(db: Database) {
 			const row = db.query<ProjectRow, [string]>("SELECT * FROM project WHERE id = ?").get(id);
 			return row ? toProject(row) : null;
 		},
-		create(input: EntityInput): Project {
+		create(input: ProjectInput): Project {
 			const name = input.name.trim();
 			if (!name) throw new Error("A project needs a name.");
 			const project: Project = {
@@ -247,24 +250,29 @@ export function createStore(db: Database) {
 				name,
 				aliases: clean(input.aliases),
 				domains: clean(input.domains),
+				location: cleanLocation(input.location ?? ""),
 				createdAt: Date.now(),
 			};
-			db.query("INSERT INTO project (id, name, aliases, domains, created_at) VALUES (?, ?, ?, ?, ?)").run(
+			db.query("INSERT INTO project (id, name, aliases, domains, location, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
 				project.id,
 				project.name,
 				JSON.stringify(project.aliases),
 				JSON.stringify(project.domains),
+				project.location,
 				project.createdAt,
 			);
 			return project;
 		},
-		update(id: string, input: EntityInput): Project | null {
+		update(id: string, input: ProjectInput): Project | null {
 			const name = input.name.trim();
 			if (!name) throw new Error("A project needs a name.");
-			db.query("UPDATE project SET name = ?, aliases = ?, domains = ? WHERE id = ?").run(
+			db.query(
+				"UPDATE project SET name = ?, aliases = ?, domains = ?, location = COALESCE(?, location) WHERE id = ?",
+			).run(
 				name,
 				JSON.stringify(clean(input.aliases)),
 				JSON.stringify(clean(input.domains)),
+				input.location === undefined ? null : cleanLocation(input.location),
 				id,
 			);
 			return projects.get(id);

@@ -126,7 +126,7 @@ export function checkPage(page: PageModel, now: number = Date.now()): Finding[] 
 	} else {
 		const first = page.headings.find((h) => h.level === 1)?.following ?? "";
 		const size = wordCount(first);
-		if (!page.isHome && (size < 20 || size > 80)) {
+		if (!page.isHome && (article || QUESTION.test(page.h1)) && (size < 20 || size > 80)) {
 			add(
 				"no-direct-answer",
 				"medium",

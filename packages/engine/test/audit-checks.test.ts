@@ -178,3 +178,12 @@ test("the home page is not asked for an answer paragraph or question headings", 
 	const body = `<h1>The CRM for agencies</h1><p>Short tagline.</p><h2>Features</h2><p>${words(400)}</p>`;
 	expect(checkPage(page(body, head, "https://acme.com/"), NOW)).toEqual([]);
 });
+
+test("a direct answer is expected on articles and question pages, not on product pages", () => {
+	const head = '<title>Calendar</title><meta name="description" content="d"><script type="application/ld+json">{"@type":"WebPage"}</script>';
+	const product = `<h1>Notion Calendar</h1><p>Short tagline.</p><h2>Features</h2><p>${words(400)}</p>`;
+	expect(ids(checkPage(page(product, head, "https://acme.com/product/calendar"), NOW))).not.toContain("no-direct-answer");
+	const question = product.replace("Notion Calendar", "What is Notion Calendar?");
+	expect(ids(checkPage(page(question, head, "https://acme.com/product/calendar"), NOW))).toContain("no-direct-answer");
+	expect(ids(checkPage(page(product, head, "https://acme.com/blog/calendar"), NOW))).toContain("no-direct-answer");
+});

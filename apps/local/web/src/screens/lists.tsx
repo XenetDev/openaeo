@@ -1,6 +1,6 @@
 import type { CompetitorIdea, EntityView, ProjectView, ReportView } from "@api";
 import { Add01Icon, News01Icon, SparklesIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { Avatar } from "@/components/ui/avatar-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -13,9 +13,17 @@ import { TextField } from "@/components/ui/text-field-clean";
 import { SuggestMark } from "./command-icons";
 import { Page } from "./shared";
 
-export function SourcesScreen({ project, report }: { project: ProjectView; report: ReportView }) {
+export function SourcesScreen({
+	project,
+	report,
+	filter,
+}: {
+	project: ProjectView;
+	report: ReportView;
+	filter?: ReactNode;
+}) {
 	return (
-		<Page brand={project.name} title="Sources">
+		<Page brand={project.name} title="Sources" actions={filter}>
 			{report.topDomains.length === 0 ? (
 				<EmptyState
 					icon={News01Icon}
@@ -48,6 +56,7 @@ export function SourcesScreen({ project, report }: { project: ProjectView; repor
 }
 
 type CompetitorsProps = {
+	filter?: ReactNode;
 	project: ProjectView;
 	report: ReportView;
 	competitors: EntityView[];
@@ -69,6 +78,7 @@ export function CompetitorsScreen({
 	canFind,
 	onFind,
 	onDismissIdeas,
+	filter,
 }: CompetitorsProps) {
 	const tracked = new Set([project.name, ...competitors.map((c) => c.name)].map((n) => n.toLowerCase()));
 	const fresh = (ideas ?? []).filter((idea) => !tracked.has(idea.name.toLowerCase()));
@@ -124,6 +134,7 @@ export function CompetitorsScreen({
 			title="Competitors"
 			actions={
 				<>
+					{filter}
 					{canFind ? (
 						<Button
 							variant="ghost"

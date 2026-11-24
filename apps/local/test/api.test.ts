@@ -302,3 +302,16 @@ test("a question can be tagged, and the report and export follow the tag", async
 	expect(csv.text).toContain("Pricing; Top");
 	expect((await call("GET", "/api/projects/missing/export/answers.csv")).status).toBe(404);
 });
+
+test("progress reports the latest run and audit without building a report", async () => {
+	const { call, runs } = setup({ delayMs: 30 });
+	const id = await project(call);
+	expect((await call("GET", `/api/projects/${id}/progress`)).json).toEqual({ run: null, audit: null });
+	const started = await call("POST", `/api/projects/${id}/runs`);
+	const during = await call("GET", `/api/projects/${id}/progress`);
+	expect(during.json.run).toMatchObject({ id: started.json.run.id, status: "running" });
+	await runs.wait(started.json.run.id);
+	const after = await call("GET", `/api/projects/${id}/progress`);
+	expect(after.json.run).toMatchObject({ status: "done", completed: after.json.run.total });
+	expect((await call("GET", "/api/projects/missing/progress")).status).toBe(404);
+});

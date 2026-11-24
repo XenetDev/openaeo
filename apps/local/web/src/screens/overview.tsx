@@ -7,6 +7,7 @@ import {
 	PlayIcon,
 	StopIcon,
 } from "@hugeicons/core-free-icons";
+import type { ReactNode } from "react";
 import { ChartCard } from "@/components/analytics";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge-clean";
@@ -25,6 +26,7 @@ type Props = {
 	onRun: () => void;
 	onCancel: () => void;
 	onNavigate: (page: PageId) => void;
+	filter?: ReactNode;
 };
 
 const moved = (
@@ -44,7 +46,7 @@ const moved = (
 	};
 };
 
-export function OverviewScreen({ project, report, engines, loading, onRun, onCancel, onNavigate }: Props) {
+export function OverviewScreen({ project, report, engines, loading, onRun, onCancel, onNavigate, filter }: Props) {
 	const { run, overall, trend } = report;
 	const m = overall.metrics;
 	const tone = overall.sentiment;
@@ -82,9 +84,12 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 				</Button>
 			</>
 		) : (
-			<Button size="sm" onClick={onRun} disabled={usable.length === 0} icon={<Icon icon={PlayIcon} size={14} />}>
-				Run now
-			</Button>
+			<>
+				{filter}
+				<Button size="sm" onClick={onRun} disabled={usable.length === 0} icon={<Icon icon={PlayIcon} size={14} />}>
+					Run now
+				</Button>
+			</>
 		);
 
 	if (loading) {

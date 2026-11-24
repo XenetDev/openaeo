@@ -8,6 +8,7 @@ import type {
 	NewProject,
 	Ok,
 	OpportunitiesView,
+	Progress,
 	ProjectDetail,
 	ProjectView,
 	PromptStatView,
@@ -72,9 +73,11 @@ export const api = {
 	competitorIdeasFor: (name: string, domain?: string) =>
 		call<{ competitors: CompetitorIdea[] }>("POST", "/api/competitor-ideas", { name, domain }),
 	opportunities: (id: string) => call<OpportunitiesView>("GET", `/api/projects/${id}/opportunities`),
+	progress: (id: string) => call<Progress>("GET", `/api/projects/${id}/progress`),
 	runs: (id: string) => call<{ runs: RunView[] }>("GET", `/api/projects/${id}/runs`),
 	run: (id: string) => call<RunDetail>("GET", `/api/runs/${id}`),
-	report: (id: string) => call<ReportView>("GET", `/api/projects/${id}/report`),
+	report: (id: string, tag = "") =>
+		call<ReportView>("GET", `/api/projects/${id}/report${tag ? `?tag=${encodeURIComponent(tag)}` : ""}`),
 	latestAudit: (id: string) => call<LatestAudit>("GET", `/api/projects/${id}/audits/latest`),
 	startAudit: (id: string, url: string) =>
 		call<{ audit: AuditView }>("POST", `/api/projects/${id}/audits`, url ? { url } : {}),

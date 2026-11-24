@@ -4,6 +4,7 @@ import { css as pageCss } from "@/components/analytics";
 import { GeminiLogo, GrokLogo, PerplexityLogo } from "@/components/engine-logos";
 import { Avatar } from "@/components/ui/avatar-clean";
 import { ChatGPTLogo, ClaudeLogo } from "@/components/ui/chat-composer-clean";
+import { Select } from "@/components/ui/select-clean";
 
 export const percent = (value: number) => `${Math.round((Number.isFinite(value) ? value : 0) * 100)}%`;
 export const engineLabel = (engines: EngineView[], id: string) => engines.find((e) => e.id === id)?.label ?? id;
@@ -114,4 +115,17 @@ export function EngineLogo({ engine, label, size = 16 }: { engine: string; label
 		);
 	}
 	return <Avatar kind="agent" name={label} seed={engine} size={20} />;
+}
+
+export function TagFilter({ tags, tag, onTag }: { tags: string[]; tag: string; onTag: (tag: string) => void }) {
+	if (tags.length === 0) return null;
+	return (
+		<Select
+			size="sm"
+			aria-label="Filter by tag"
+			value={tag}
+			onChange={onTag}
+			options={[{ value: "", label: "All tags" }, ...tags.map((value) => ({ value, label: value }))]}
+		/>
+	);
 }

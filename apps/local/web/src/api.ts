@@ -8,6 +8,7 @@ import type {
 	NewProject,
 	Ok,
 	OpportunitiesView,
+	PlanView,
 	Progress,
 	ProjectDetail,
 	ProjectView,
@@ -72,6 +73,9 @@ export const api = {
 		call<{ competitors: CompetitorIdea[] }>("POST", `/api/projects/${id}/competitor-ideas`),
 	competitorIdeasFor: (name: string, domain?: string) =>
 		call<{ competitors: CompetitorIdea[] }>("POST", "/api/competitor-ideas", { name, domain }),
+	plan: (id: string) => call<PlanView>("GET", `/api/projects/${id}/plan`),
+	setPlanStep: (id: string, step: string, done: boolean) =>
+		call<PlanView>("PUT", `/api/projects/${id}/plan/${encodeURIComponent(step)}`, { done }),
 	opportunities: (id: string) => call<OpportunitiesView>("GET", `/api/projects/${id}/opportunities`),
 	progress: (id: string) => call<Progress>("GET", `/api/projects/${id}/progress`),
 	runs: (id: string) => call<{ runs: RunView[] }>("GET", `/api/projects/${id}/runs`),

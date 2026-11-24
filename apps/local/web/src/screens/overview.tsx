@@ -1,4 +1,4 @@
-import type { EngineView, PageId, ProjectView, ReportView } from "@api";
+import type { EngineView, PageId, PlanView, ProjectView, ReportView } from "@api";
 import {
 	Analytics01Icon,
 	ArrowRight02Icon,
@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { ChangeSummary, type MetricChange } from "@/components/ui/change-summary-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
 import { TrendChart } from "@/components/ui/trend-chart-clean";
+import { HighMark, LowMark, MediumMark } from "./command-icons";
 import { day, EngineLogo, engineLabel, Page, percent, ShareList, when } from "./shared";
 
 type Props = {
@@ -26,6 +27,7 @@ type Props = {
 	onRun: () => void;
 	onCancel: () => void;
 	onNavigate: (page: PageId) => void;
+	plan: PlanView | null;
 	filter?: ReactNode;
 };
 
@@ -53,7 +55,17 @@ const moved = (
 	};
 };
 
-export function OverviewScreen({ project, report, engines, loading, onRun, onCancel, onNavigate, filter }: Props) {
+export function OverviewScreen({
+	project,
+	report,
+	engines,
+	loading,
+	onRun,
+	onCancel,
+	onNavigate,
+	plan,
+	filter,
+}: Props) {
 	const { run, overall, trend } = report;
 	const m = overall.metrics;
 	const tone = overall.sentiment;
@@ -63,6 +75,8 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 	const blocked = engines.filter((e) => !e.available && e.id !== "openai");
 	const problems = report.problems ?? [];
 	const hasData = m.answers > 0;
+	const neverNamed = trend.length > 0 && trend.every((t) => t.visibility === 0);
+	const todo = plan?.steps.filter((step) => !step.done) ?? [];
 	const leader = report.competitors.find((c) => !c.isBrand && c.mentionRate > 0);
 	const previous = trend.length > 1 ? trend[trend.length - 2] : undefined;
 	const labels = trend.map((t) => day(t.startedAt));
@@ -217,13 +231,13 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 						<span className="oa-inline">
 							<Button
 								size="sm"
-								onClick={() => onNavigate("opportunities")}
+								onClick={() => onNavigate("plan")}
 								iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
 							>
-								See who was named instead
+								Open your plan
 							</Button>
-							<Button variant="secondary" size="sm" onClick={() => onNavigate("audit")}>
-								Check what AI can read on your site
+							<Button variant="secondary" size="sm" onClick={() => onNavigate("opportunities")}>
+								See who was named instead
 							</Button>
 						</span>
 					</CardContent>
@@ -289,22 +303,45 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 			</div>
 
 			<div className="ui-as-rev__row ui-as-rev__row--main">
-				<ChartCard
-					tall
-					title="Visibility over time"
-					ceiling={100}
-					value={overall.visibility}
-					delta={previous ? overall.visibility - previous.visibility : undefined}
-					format={(n) => n.toFixed(1)}
-					labels={labels}
-					tooltipLabels={trend.map((t) => when(t.startedAt))}
-					series={[{ label: "Visibility", values: trend.map((t) => t.visibility) }]}
-					footer={
-						trend.length === 1
-							? "One run so far. Each run adds a point."
-							: `${trend.length} runs · latest ${run ? when(run.startedAt) : ""}`
-					}
-				/>
+				{neverNamed ? (
+					<Card className="oa-card-fill">
+						<CardHeader title="Visibility over time" description="Your score after each run" />
+						<CardContent>
+							<EmptyState
+								bare
+								icon={ChartIncreaseIcon}
+								title={`AI is not naming ${project.name} yet`}
+								text={`Across ${trend.length} ${trend.length === 1 ? "run" : "runs"}, no engine named you for the questions you track, so there is no line to draw. Your plan lists what to change, in order.`}
+								action={
+									<Button
+										size="sm"
+										onClick={() => onNavigate("plan")}
+										iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
+									>
+										Open your plan
+									</Button>
+								}
+							/>
+						</CardContent>
+					</Card>
+				) : (
+					<ChartCard
+						tall
+						title="Visibility over time"
+						ceiling={100}
+						value={overall.visibility}
+						delta={previous ? overall.visibility - previous.visibility : undefined}
+						format={(n) => n.toFixed(1)}
+						labels={labels}
+						tooltipLabels={trend.map((t) => when(t.startedAt))}
+						series={[{ label: "Visibility", values: trend.map((t) => t.visibility) }]}
+						footer={
+							trend.length === 1
+								? "One run so far. Each run adds a point."
+								: `${trend.length} runs · latest ${run ? when(run.startedAt) : ""}`
+						}
+					/>
+				)}
 				<Card>
 					<CardHeader title="By engine" description="Visibility score from each engine's answers" />
 					<CardContent>
@@ -341,6 +378,37 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 					</CardContent>
 				</Card>
 			</div>
+
+			{plan && todo.length > 0 ? (
+				<Card>
+					<CardHeader
+						title="What to do next"
+						description={`${plan.done} of ${plan.steps.length} steps in your plan are done.`}
+						action={
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() => onNavigate("plan")}
+								iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
+							>
+								Open your plan
+							</Button>
+						}
+					/>
+					<CardContent>
+						<div className="oa-missed">
+							{todo.slice(0, 3).map((step) => (
+								<div key={step.id}>
+									{step.severity === "high" ? <HighMark /> : step.severity === "medium" ? <MediumMark /> : <LowMark />}
+									<span className="oa-grow">
+										<b>{step.title}</b>
+									</span>
+								</div>
+							))}
+						</div>
+					</CardContent>
+				</Card>
+			) : null}
 
 			{report.brand.length > 0 ? (
 				<Card>

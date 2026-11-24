@@ -1,5 +1,5 @@
 import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@api";
-import { CheckListIcon, Copy01Icon, Globe02Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight02Icon, CheckListIcon, Copy01Icon, Globe02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { PillButton, PillField } from "@/components/pill-field";
@@ -22,6 +22,8 @@ type Props = {
 	onRun: (url: string) => void;
 	onCancel: () => void;
 	onCopyBrief: () => void;
+	planSteps: number;
+	onPlan: () => void;
 };
 
 const AREAS: { id: string; name: string; checks: string[] }[] = [
@@ -166,7 +168,18 @@ function FixCard({ count, own, onCopyBrief }: { count: number; own: boolean; onC
 	);
 }
 
-export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, onRun, onCancel, onCopyBrief }: Props) {
+export function AuditScreen({
+	project,
+	audit,
+	findings,
+	artefacts,
+	defaultUrl,
+	onRun,
+	onCancel,
+	onCopyBrief,
+	planSteps,
+	onPlan,
+}: Props) {
 	const [url, setUrl] = useState(defaultUrl);
 	const running = audit?.status === "running";
 	const unread = audit?.pages.filter((p) => p.error) ?? [];
@@ -263,6 +276,24 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 								title="This is not your project's website"
 								description={`The audit of ${audit.origin} is shown for comparison and is not used for your fix brief.`}
 								action={<Badge>Comparison</Badge>}
+							/>
+						</Card>
+					) : null}
+					{planSteps > 0 ? (
+						<Card>
+							<CardHeader
+								title="A good audit score does not mean AI recommends you"
+								description={`The audit only checks whether AI can read your pages. Whether it names ${project.name}, and what to change if it does not, is in your plan: ${planSteps} ${planSteps === 1 ? "step" : "steps"} left.`}
+								action={
+									<Button
+										variant="secondary"
+										size="sm"
+										onClick={onPlan}
+										iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
+									>
+										Open your plan
+									</Button>
+								}
 							/>
 						</Card>
 					) : null}

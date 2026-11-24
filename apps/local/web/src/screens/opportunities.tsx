@@ -19,12 +19,10 @@ type Props = {
 	onNavigate: (page: PageId) => void;
 };
 
-const LONG_EVIDENCE = 40;
 const MARKS: Record<string, ReactNode> = { high: <HighMark />, medium: <MediumMark />, low: <LowMark /> };
 
 export function OpportunitiesScreen({ project, engines, found, onOpenQuestion, onNavigate }: Props) {
-	const nothing =
-		found.missed.length === 0 && found.sites.length === 0 && found.fixes.length === 0 && found.reasons.length === 0;
+	const nothing = found.missed.length === 0 && found.sites.length === 0 && found.fixes.length === 0;
 	return (
 		<Page brand={project.name} title="Opportunities">
 			{nothing ? (
@@ -66,45 +64,6 @@ export function OpportunitiesScreen({ project, engines, found, onOpenQuestion, o
 							footer={found.fixes.length ? "From your latest audit" : "Run an audit to find them"}
 						/>
 					</div>
-
-					{found.reasons.length > 0 ? (
-						<Card>
-							<CardHeader
-								title={`Why AI is not recommending ${project.name} yet`}
-								description="Worked out from what the engines said about you and from the answers to your questions. Most serious first."
-							/>
-							<CardContent>
-								<div className="oa-reasons">
-									{found.reasons.map((reason) => (
-										<article key={reason.id}>
-											{MARKS[reason.severity] ?? <LowMark />}
-											<div>
-												<b>{reason.title}</b>
-												<p>{reason.detail}</p>
-												{reason.evidence.some((item) => item.length > LONG_EVIDENCE) ? (
-													<ul>
-														{reason.evidence.map((item) => (
-															<li key={item}>{item}</li>
-														))}
-													</ul>
-												) : reason.evidence.length > 0 ? (
-													<span className="oa-inline">
-														{reason.evidence.map((item) => (
-															<Badge key={item}>{item}</Badge>
-														))}
-													</span>
-												) : null}
-												<p className="oa-reason-fix">
-													<small>What to do</small>
-													{reason.action}
-												</p>
-											</div>
-										</article>
-									))}
-								</div>
-							</CardContent>
-						</Card>
-					) : null}
 
 					{found.missed.length > 0 ? (
 						<Card>

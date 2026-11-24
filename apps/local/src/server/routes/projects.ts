@@ -1,4 +1,5 @@
 import type { Ok, ProjectDetail, ProjectView, StateResponse } from "../../api-types";
+import { forgetPlan } from "../../plan";
 import type { HandlerDeps } from "../handler";
 import { json, notFound, read, requireProject } from "../http";
 import { type Route, route } from "../router";
@@ -34,6 +35,7 @@ export function projectRoutes({ store, runs, audits, engines }: HandlerDeps): Ro
 			if (run) runs.cancel(run.id);
 			const audit = store.audits.active(id);
 			if (audit) audits?.cancel(audit.id);
+			forgetPlan(store, id);
 			store.projects.remove(id);
 			return json<Ok>({ ok: true });
 		}),

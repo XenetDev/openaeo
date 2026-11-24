@@ -315,3 +315,25 @@ test("progress reports the latest run and audit without building a report", asyn
 	expect(after.json.run).toMatchObject({ status: "done", completed: after.json.run.total });
 	expect((await call("GET", "/api/projects/missing/progress")).status).toBe(404);
 });
+
+test("the plan can be read and a step marked done; an unknown step is refused", async () => {
+	const { call, runs } = setup();
+	const created = await call("POST", "/api/projects", {
+		name: "Unnamed Brand",
+		aliases: [],
+		domains: ["unnamed.example"],
+		competitors: [{ name: "HubSpot", aliases: [], domains: [] }],
+		prompts: ["best crm?"],
+	});
+	const id = created.json.project.id as string;
+	expect((await call("GET", `/api/projects/${id}/plan`)).json).toEqual({ steps: [], done: 0 });
+	const started = await call("POST", `/api/projects/${id}/runs`);
+	await runs.wait(started.json.run.id);
+	const plan = await call("GET", `/api/projects/${id}/plan`);
+	const step = plan.json.steps[0].id as string;
+	const marked = await call("PUT", `/api/projects/${id}/plan/${step}`, { done: true });
+	expect(marked.json.done).toBe(1);
+	expect(marked.json.steps[0].done).toBe(true);
+	expect((await call("PUT", `/api/projects/${id}/plan/nope`, { done: true })).status).toBe(404);
+	expect((await call("PUT", `/api/projects/${id}/plan/${step}`, { done: "yes" })).status).toBe(400);
+});

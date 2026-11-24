@@ -1,5 +1,6 @@
 export type PageId =
 	| "overview"
+	| "plan"
 	| "prompts"
 	| "answers"
 	| "sources"
@@ -49,14 +50,19 @@ export type BrandCheckView = {
 	ownSiteUsed: boolean;
 };
 
-export type ReasonView = {
+export type PlanStepView = {
 	id: string;
 	severity: "high" | "medium" | "low";
 	title: string;
-	detail: string;
-	action: string;
+	why: string;
+	how: string[];
 	evidence: string[];
+	links: { label: string; url: string }[];
+	ask: string | null;
+	page: PageId | null;
+	done: boolean;
 };
+export type PlanView = { steps: PlanStepView[]; done: number };
 
 export type SentimentView = { score: number | null; positive: number; neutral: number; negative: number };
 
@@ -132,7 +138,6 @@ export type OpportunitiesView = {
 	missed: { question: string; engines: string[]; named: string[] }[];
 	sites: { domain: string; citations: number; questions: number }[];
 	fixes: { title: string; severity: string; pages: number }[];
-	reasons: ReasonView[];
 };
 
 export type PromptStatView = {

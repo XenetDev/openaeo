@@ -5,6 +5,7 @@ import {
 	CheckListIcon,
 	Clock01Icon,
 	DashboardSquare01Icon,
+	Flag02Icon,
 	News01Icon,
 	Search01Icon,
 	Settings01Icon,
@@ -15,6 +16,7 @@ import type { ShellNavItem } from "@/components/app-shell";
 
 export const PAGES: { id: PageId; label: string; icon: ShellNavItem["icon"] }[] = [
 	{ id: "overview", label: "Overview", icon: DashboardSquare01Icon },
+	{ id: "plan", label: "Plan", icon: Flag02Icon },
 	{ id: "prompts", label: "Prompts", icon: Search01Icon },
 	{ id: "answers", label: "Answers", icon: BubbleChatIcon },
 	{ id: "sources", label: "Sources", icon: News01Icon },

@@ -4,6 +4,7 @@ import type {
 	EntityView,
 	LatestAudit,
 	OpportunitiesView,
+	PlanView,
 	ProjectView,
 	PromptStatView,
 	PromptView,
@@ -21,6 +22,7 @@ export type ProjectData = {
 	answers: AnswerView[];
 	audit: LatestAudit;
 	found: OpportunitiesView;
+	plan: PlanView;
 };
 
 const STORED_PROJECT = "openaeo.project";
@@ -56,12 +58,13 @@ export function useWorkspace() {
 	const loadProject = useCallback(async (id: string) => {
 		ticket.current += 1;
 		const mine = ticket.current;
-		const [detail, report, audit, stats, found] = await Promise.all([
+		const [detail, report, audit, stats, found, plan] = await Promise.all([
 			api.project(id),
 			api.report(id, tagRef.current),
 			api.latestAudit(id),
 			api.promptStats(id),
 			api.opportunities(id),
+			api.plan(id),
 		]);
 		const answers = report.run ? (await api.run(report.run.id)).answers : [];
 		if (mine !== ticket.current) return;
@@ -73,6 +76,7 @@ export function useWorkspace() {
 			answers,
 			audit,
 			found,
+			plan,
 		});
 	}, []);
 

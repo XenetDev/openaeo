@@ -96,7 +96,7 @@ bun run dev             # run the app from source
 bun run build           # compile the single binary to dist/openaeo
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/architecture.md](docs/architecture.md).
 
 ## Licence
 

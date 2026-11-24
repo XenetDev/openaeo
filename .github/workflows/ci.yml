@@ -19,3 +19,8 @@ jobs:
       - run: bun run test
       - run: bun run build:web
         working-directory: apps/local
+      - name: Build a release and test the installer against it
+        run: |
+          bun run release bun-linux-x64
+          sh ../../deploy/installer/test.sh dist/release
+        working-directory: apps/local

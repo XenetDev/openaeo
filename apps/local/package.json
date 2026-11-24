@@ -1,6 +1,6 @@
 {
 	"name": "openaeo",
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"description": "The OpenAEO app: command line, local server and dashboard.",
 	"license": "MIT",
 	"repository": {
@@ -17,7 +17,8 @@
 		"typecheck": "tsc --noEmit && tsc --noEmit -p web",
 		"dev": "bun src/main.ts",
 		"build:web": "vite build --config web/vite.config.ts",
-		"build": "bun scripts/build.ts"
+		"build": "bun scripts/build.ts",
+		"release": "bun scripts/release.ts"
 	},
 	"dependencies": {
 		"@fontsource-variable/hanken-grotesk": "^5.3.0",

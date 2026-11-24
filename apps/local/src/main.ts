@@ -1,8 +1,9 @@
 #!/usr/bin/env bun
 import { randomBytes } from "node:crypto";
 import pkg from "../package.json" with { type: "json" };
-import { diskAssets } from "./assets";
+import { diskAssets, embeddedAssets } from "./assets";
 import { HELP, parseArgs, runOnce } from "./cli";
+import { embedded } from "./embedded";
 import { buildProviders, detectEngines } from "./engines";
 import { dataDir, dbPath } from "./paths";
 import { createRunService } from "./runs";
@@ -52,11 +53,12 @@ if (args.command === "run") {
 }
 
 const token = randomBytes(24).toString("hex");
+const assets = Object.keys(embedded).length > 0 ? embeddedAssets(embedded) : diskAssets();
 const first = args.port ?? 4747;
 let server: ReturnType<typeof Bun.serve> | null = null;
 for (let port = first; port < first + (args.port ? 1 : 20) && !server; port += 1) {
 	try {
-		const handler = createHandler({ store, runs, engines: () => detectEngines(engineDeps), token, port, assets: diskAssets() });
+		const handler = createHandler({ store, runs, engines: () => detectEngines(engineDeps), token, port, assets });
 		server = Bun.serve({ hostname: "127.0.0.1", port, fetch: handler, idleTimeout: 60 });
 	} catch (error) {
 		if (!(error instanceof Error) || !/EADDRINUSE|in use/i.test(`${error.message} ${"code" in error ? String(error.code) : ""}`)) throw error;

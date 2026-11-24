@@ -1,6 +1,16 @@
 :root {
 	--aui-font: "Hanken Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
 	--aui-font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+	--aui-focus: rgba(0, 96, 226, 0.7);
+}
+
+.dark {
+	--aui-focus: rgba(77, 141, 255, 0.8);
+}
+
+:where(:focus-visible:not(input, textarea, [contenteditable])) {
+	outline: 2px solid var(--aui-focus);
+	outline-offset: 2px;
 }
 
 html,

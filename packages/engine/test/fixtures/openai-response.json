@@ -1,0 +1,39 @@
+{
+	"id": "resp_x",
+	"object": "response",
+	"status": "completed",
+	"model": "example-model",
+	"output": [
+		{
+			"type": "web_search_call",
+			"id": "ws_x",
+			"status": "completed",
+			"action": {
+				"type": "search",
+				"query": "best crm for small marketing agencies",
+				"sources": [
+					{ "type": "url", "url": "https://www.hubspot.com/pricing/sales?utm_source=openai" },
+					{ "type": "url", "url": "https://www.pipedrive.com/en/pricing" },
+					{ "type": "url", "url": "https://attio.com/f/best-crm-for-agencies" }
+				]
+			}
+		},
+		{
+			"type": "message",
+			"id": "msg_x",
+			"status": "completed",
+			"role": "assistant",
+			"content": [
+				{
+					"type": "output_text",
+					"text": "HubSpot is the usual default, while Pipedrive is cheaper for sales-led agencies.",
+					"annotations": [
+						{ "type": "url_citation", "start_index": 0, "end_index": 29, "url": "https://www.hubspot.com/pricing/sales?utm_source=openai", "title": "HubSpot Sales Hub pricing" },
+						{ "type": "url_citation", "start_index": 37, "end_index": 80, "url": "https://www.pipedrive.com/en/pricing", "title": "Pipedrive pricing" }
+					]
+				}
+			]
+		}
+	],
+	"usage": { "input_tokens": 4200, "output_tokens": 310, "total_tokens": 4510 }
+}

@@ -4,3 +4,4 @@ export * from "./providers/claude-parse";
 export * from "./providers/codex-parse";
 export * from "./match";
 export * from "./score";
+export * from "./providers/openai";

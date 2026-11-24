@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { AnswerSchema, ProviderError } from "../src/index";
 
 const full = {
-	engine: "claude-cli",
+	engine: "claude-cli" as const,
 	model: "claude-opus-5-5",
 	text: "HubSpot is a good default.",
 	citations: [{ url: "https://hubspot.com/pricing", domain: "hubspot.com", title: "Pricing" }],

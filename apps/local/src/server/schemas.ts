@@ -15,6 +15,7 @@ export const CreateProjectSchema = EntitySchema.extend({
 
 export const CompetitorsSchema = z.object({ competitors: z.array(EntitySchema).max(50) });
 export const AddPromptsSchema = z.object({ texts: z.array(z.string().max(2000)).min(1).max(200) });
+export const StartAuditSchema = z.object({ url: z.string().trim().max(2000).optional() });
 export const PatchPromptSchema = z.object({ active: z.boolean() });
 
 const toggle = z.enum(["true", "false"]);

@@ -1,4 +1,4 @@
-import type { AnswerView, EngineInfo, EntityView, NewProject, ProjectView, PromptView, ReportView, RunView, Suggestions } from "@openaeo/ui";
+import type { ArtefactsView, AuditView, FindingView, AnswerView, EngineInfo, EntityView, NewProject, ProjectView, PromptView, ReportView, RunView, Suggestions } from "@openaeo/ui";
 
 const token = document.querySelector<HTMLMetaElement>('meta[name="openaeo-token"]')?.content ?? "";
 
@@ -37,6 +37,14 @@ export const api = {
 	cancelRun: (id: string) => call<{ ok: true }>("POST", `/api/runs/${id}/cancel`),
 	run: (id: string) => call<{ run: RunView; answers: AnswerView[] }>("GET", `/api/runs/${id}`),
 	report: (id: string) => call<ReportView>("GET", `/api/projects/${id}/report`),
+	latestAudit: (id: string) => call<{ audit: AuditView | null; findings: FindingView[]; artefacts: ArtefactsView }>("GET", `/api/projects/${id}/audits/latest`),
+	startAudit: (id: string, url: string) => call<{ audit: AuditView }>("POST", `/api/projects/${id}/audits`, url ? { url } : {}),
+	cancelAudit: (id: string) => call<{ ok: true }>("POST", `/api/audits/${id}/cancel`),
+	auditBrief: async (id: string) => {
+		const response = await fetch(`/api/audits/${id}/brief`, { headers: { "x-openaeo-token": token } });
+		if (!response.ok) throw new ApiError("The fix brief could not be loaded.");
+		return response.text();
+	},
 	settings: () => call<{ settings: Record<string, string> }>("GET", "/api/settings"),
 	saveSettings: (settings: Record<string, string>) => call<{ settings: Record<string, string> }>("PUT", "/api/settings", settings),
 };

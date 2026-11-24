@@ -69,6 +69,33 @@ const MIGRATIONS = [
 	`,
 	"ALTER TABLE answer ADD COLUMN sentiment TEXT;",
 	"ALTER TABLE run ADD COLUMN owner_pid INTEGER;",
+	`
+	CREATE TABLE audit (
+		id TEXT PRIMARY KEY,
+		project_id TEXT NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+		origin TEXT NOT NULL,
+		status TEXT NOT NULL,
+		started_at INTEGER NOT NULL,
+		finished_at INTEGER,
+		score INTEGER,
+		pages TEXT NOT NULL DEFAULT '[]',
+		skipped INTEGER NOT NULL DEFAULT 0,
+		owner_pid INTEGER
+	);
+	CREATE INDEX audit_project ON audit(project_id, started_at);
+	CREATE TABLE finding (
+		id TEXT PRIMARY KEY,
+		audit_id TEXT NOT NULL REFERENCES audit(id) ON DELETE CASCADE,
+		position INTEGER NOT NULL,
+		check_id TEXT NOT NULL,
+		severity TEXT NOT NULL,
+		url TEXT NOT NULL,
+		title TEXT NOT NULL,
+		evidence TEXT NOT NULL,
+		fix TEXT NOT NULL
+	);
+	CREATE INDEX finding_audit ON finding(audit_id, position);
+	`,
 ];
 
 export function openDb(path: string): Database {

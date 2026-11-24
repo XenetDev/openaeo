@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import type { EngineId, MatchResult, Mention, ProviderErrorCode, RunItem, Source } from "@openaeo/engine";
+import type { AuditPage, AuditResult, EngineId, Finding, MatchResult, Mention, ProviderErrorCode, RunItem, Source } from "@openaeo/engine";
 
 export type EntityInput = { name: string; aliases: string[]; domains: string[] };
 export type Project = EntityInput & { id: string; createdAt: number };
@@ -38,6 +38,22 @@ export type StoredAnswer = {
 	sources: Source[];
 	sentiment: "positive" | "neutral" | "negative" | null;
 };
+
+export type AuditStatus = "running" | "done" | "interrupted";
+export type StoredAudit = {
+	id: string;
+	projectId: string;
+	origin: string;
+	status: AuditStatus;
+	startedAt: number;
+	finishedAt: number | null;
+	score: number | null;
+	pages: AuditPage[];
+	skipped: number;
+};
+
+type AuditRow = { id: string; project_id: string; origin: string; status: AuditStatus; started_at: number; finished_at: number | null; score: number | null; pages: string; skipped: number };
+type FindingRow = { check_id: string; severity: Finding["severity"]; url: string; title: string; evidence: string; fix: string };
 
 type EntityRow = { id: string; name: string; aliases: string; domains: string };
 type ProjectRow = EntityRow & { created_at: number };
@@ -114,6 +130,18 @@ const toAnswer = (r: AnswerRow): StoredAnswer => ({
 	citations: JSON.parse(r.citations) as Source[],
 	sources: JSON.parse(r.sources) as Source[],
 	sentiment: r.sentiment,
+});
+
+const toAudit = (r: AuditRow): StoredAudit => ({
+	id: r.id,
+	projectId: r.project_id,
+	origin: r.origin,
+	status: r.status,
+	startedAt: r.started_at,
+	finishedAt: r.finished_at,
+	score: r.score,
+	pages: JSON.parse(r.pages) as AuditPage[],
+	skipped: r.skipped,
 });
 
 export function createStore(db: Database) {
@@ -305,7 +333,69 @@ export function createStore(db: Database) {
 			Object.fromEntries(db.query<{ key: string; value: string }, []>("SELECT key, value FROM setting").all().map((r) => [r.key, r.value])),
 	};
 
-	return { projects, competitors, prompts, runs, answers, settings };
+	const audits = {
+		get(id: string): StoredAudit | null {
+			const row = db.query<AuditRow, [string]>("SELECT * FROM audit WHERE id = ?").get(id);
+			return row ? toAudit(row) : null;
+		},
+		create(projectId: string, origin: string): StoredAudit {
+			const id = crypto.randomUUID();
+			db.query("INSERT INTO audit (id, project_id, origin, status, started_at, owner_pid) VALUES (?, ?, ?, 'running', ?, ?)").run(id, projectId, origin, Date.now(), process.pid);
+			return audits.get(id) as StoredAudit;
+		},
+		latest(projectId: string): StoredAudit | null {
+			const row = db.query<AuditRow, [string]>("SELECT * FROM audit WHERE project_id = ? ORDER BY started_at DESC, rowid DESC LIMIT 1").get(projectId);
+			return row ? toAudit(row) : null;
+		},
+		active(projectId: string): StoredAudit | null {
+			const row = db.query<AuditRow, [string]>("SELECT * FROM audit WHERE project_id = ? AND status = 'running' LIMIT 1").get(projectId);
+			return row ? toAudit(row) : null;
+		},
+		finish(id: string, status: AuditStatus, result: AuditResult | null): StoredAudit | null {
+			db.transaction(() => {
+				db.query("UPDATE audit SET status = ?, finished_at = ?, score = ?, pages = ?, skipped = ? WHERE id = ?").run(
+					status,
+					Date.now(),
+					result?.score ?? null,
+					JSON.stringify(result?.pages ?? []),
+					result?.skipped.length ?? 0,
+					id,
+				);
+				let position = 0;
+				for (const finding of result?.findings ?? []) {
+					db.query("INSERT INTO finding (id, audit_id, position, check_id, severity, url, title, evidence, fix) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
+						crypto.randomUUID(),
+						id,
+						position,
+						finding.checkId,
+						finding.severity,
+						finding.url,
+						finding.title,
+						finding.evidence,
+						finding.fix,
+					);
+					position += 1;
+				}
+			})();
+			return audits.get(id);
+		},
+		findings: (auditId: string): Finding[] =>
+			db
+				.query<FindingRow, [string]>("SELECT check_id, severity, url, title, evidence, fix FROM finding WHERE audit_id = ? ORDER BY position")
+				.all(auditId)
+				.map((r) => ({ checkId: r.check_id, severity: r.severity, url: r.url, title: r.title, evidence: r.evidence, fix: r.fix })),
+		interruptStale(isAlive: (pid: number) => boolean = pidAlive): number {
+			const running = db.query<{ id: string; owner_pid: number | null }, []>("SELECT id, owner_pid FROM audit WHERE status = 'running'").all();
+			let count = 0;
+			for (const row of running) {
+				if (row.owner_pid !== null && isAlive(row.owner_pid)) continue;
+				count += db.query("UPDATE audit SET status = 'interrupted', finished_at = ? WHERE id = ? AND status = 'running'").run(Date.now(), row.id).changes;
+			}
+			return count;
+		},
+	};
+
+	return { projects, competitors, prompts, runs, answers, settings, audits };
 }
 
 export type Store = ReturnType<typeof createStore>;

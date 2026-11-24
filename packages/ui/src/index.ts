@@ -1,6 +1,7 @@
 export { AnswerText } from "./AnswerText";
 export { AnswersPage, type AnswersPageProps } from "./AnswersPage";
 export { AppShell, type AppShellProps } from "./AppShell";
+export { AuditPage, type AuditPageProps } from "./AuditPage";
 export { CompetitorsPage, type CompetitorsPageProps } from "./CompetitorsPage";
 export { Onboarding, type OnboardingProps } from "./Onboarding";
 export { Overview, type OverviewProps } from "./Overview";

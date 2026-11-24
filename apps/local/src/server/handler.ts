@@ -1,15 +1,18 @@
+import { artefacts, type AuditResult, buildFixBrief, type Finding } from "@openaeo/engine";
 import type { z } from "zod";
+import { AuditError, type AuditService } from "../audits";
 import type { EngineStatus } from "../engines";
 import { buildReport } from "../report";
 import { RunError, type RunService } from "../runs";
-import type { Store } from "../store/store";
+import type { Store, StoredAudit } from "../store/store";
 import { fallbackPrompts, type SuggestContext } from "../suggest";
 import { allowedHost, validToken } from "./guard";
-import { AddPromptsSchema, CompetitorsSchema, CreateProjectSchema, EntitySchema, MASK, PatchPromptSchema, SECRET_SETTINGS, SettingsSchema } from "./schemas";
+import { AddPromptsSchema, CompetitorsSchema, CreateProjectSchema, EntitySchema, MASK, PatchPromptSchema, SECRET_SETTINGS, SettingsSchema, StartAuditSchema } from "./schemas";
 
 export type HandlerDeps = {
 	store: Store;
 	runs: RunService;
+	audits?: AuditService;
 	engines: () => EngineStatus[];
 	token: string;
 	port: number;
@@ -48,6 +51,11 @@ async function read<S extends z.ZodType>(request: Request, schema: S): Promise<z
 }
 
 const RUN_STATUS: Record<string, number> = { already_running: 409, no_prompts: 400, no_engines: 400, not_found: 404 };
+const AUDIT_STATUS: Record<string, number> = { already_running: 409, no_url: 400, bad_url: 400, not_found: 404 };
+
+export function resultOf(audit: StoredAudit, findings: Finding[]): AuditResult {
+	return { origin: audit.origin, startedAt: audit.startedAt, pages: audit.pages, findings, score: audit.score ?? 0, skipped: [] };
+}
 
 export function createHandler(deps: HandlerDeps) {
 	const { store, runs } = deps;
@@ -140,6 +148,39 @@ export function createHandler(deps: HandlerDeps) {
 				const runId = new URL(request.url).searchParams.get("run") ?? undefined;
 				if (runId && store.runs.get(runId)?.projectId !== b) throw notFound("That run");
 				return json(buildReport(store, b, { runId }));
+			}
+		}
+
+		if (a === "projects" && b && c === "audits" && deps.audits) {
+			if (parts.length === 3 && method === "POST") {
+				const input = await read(request, StartAuditSchema);
+				try {
+					return json({ audit: deps.audits.start(b, input.url) }, 202);
+				} catch (error) {
+					if (error instanceof AuditError) throw new HttpError(AUDIT_STATUS[error.code] ?? 400, error.message);
+					throw error;
+				}
+			}
+			if (parts.length === 4 && parts[3] === "latest" && method === "GET") {
+				const found = project(b);
+				const audit = store.audits.latest(b);
+				if (!audit) return json({ audit: null, findings: [], artefacts: {} });
+				const findings = store.audits.findings(audit.id);
+				return json({ audit, findings, artefacts: audit.status === "done" ? artefacts(resultOf(audit, findings), { name: found.name }) : {} });
+			}
+		}
+
+		if (a === "audits" && b && deps.audits) {
+			const audit = store.audits.get(b);
+			if (!audit) throw notFound("That audit");
+			if (parts.length === 3 && c === "cancel" && method === "POST") {
+				deps.audits.cancel(b);
+				return json({ ok: true });
+			}
+			if (parts.length === 3 && c === "brief" && method === "GET") {
+				return new Response(buildFixBrief(resultOf(audit, store.audits.findings(b))), {
+					headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
+				});
 			}
 		}
 

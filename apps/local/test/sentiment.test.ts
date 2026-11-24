@@ -77,7 +77,7 @@ test("an existing database gains the sentiment column", async () => {
 		const path = join(dir, "openaeo.db");
 		openDb(path).close();
 		const raw = new Database(path);
-		raw.exec("ALTER TABLE answer DROP COLUMN sentiment; ALTER TABLE run DROP COLUMN owner_pid; PRAGMA user_version = 1");
+		raw.exec("ALTER TABLE answer DROP COLUMN sentiment; ALTER TABLE run DROP COLUMN owner_pid; DROP TABLE finding; DROP TABLE audit; PRAGMA user_version = 1");
 		raw.close();
 		const db = openDb(path);
 		const columns = db.query<{ name: string }, []>("PRAGMA table_info(answer)").all().map((c) => c.name);

@@ -817,3 +817,75 @@ textarea.oa-input {
 	max-width: 980px;
 	margin: 24px auto -16px;
 }
+
+.oa-form-row .oa-actions {
+	flex-wrap: nowrap;
+}
+
+.oa-tiles-3 {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.oa-tag[data-level="high"] {
+	border-color: var(--oa-danger);
+	color: var(--oa-danger);
+}
+
+.oa-tag[data-level="medium"] {
+	border-color: var(--oa-ink-2);
+	color: var(--oa-ink);
+}
+
+.oa-section > .oa-h2 {
+	font-family: var(--oa-font-body);
+	font-size: 14px;
+	color: var(--oa-ink-2);
+}
+
+.oa-section > .oa-h2:not(:has(.oa-tag)) {
+	font-family: var(--oa-font-display);
+	font-size: 22px;
+	color: var(--oa-ink);
+}
+
+.oa-finding {
+	padding: 16px 0;
+	border-top: 1px solid var(--oa-rule);
+}
+
+.oa-finding-title {
+	margin: 0 0 4px;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.oa-finding-evidence {
+	margin: 0 0 8px;
+	max-width: 76ch;
+	color: var(--oa-ink-2);
+	overflow-wrap: anywhere;
+}
+
+.oa-code {
+	margin: 0 0 8px;
+	padding: 10px 12px;
+	max-width: 76ch;
+	border: 1px solid var(--oa-rule);
+	border-radius: 6px;
+	background: var(--oa-surface);
+	color: var(--oa-ink);
+	font-family: var(--oa-font-mono);
+	font-size: 12px;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.oa-finding-urls {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font-family: var(--oa-font-mono);
+	font-size: 12px;
+	color: var(--oa-ink-3);
+	overflow-wrap: anywhere;
+}

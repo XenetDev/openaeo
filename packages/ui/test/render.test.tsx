@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { AnswersPage, AppShell, CompetitorsPage, Onboarding, Overview, PromptsPage, SettingsPage, SourcesPage } from "../src/index";
+import { AnswersPage, AppShell, AuditPage, CompetitorsPage, Onboarding, Overview, PromptsPage, SettingsPage, SourcesPage } from "../src/index";
 import { byLine } from "../src/format";
 import { answers, emptyReport, engines, project, prompts, report } from "./sample";
 
@@ -163,4 +163,47 @@ test("a partly failed run still shows results and lists what failed", () => {
 test("competitor names keep their commas", () => {
 	expect(html(<CompetitorsPage report={report} competitors={[{ name: "Acme, Inc.", aliases: [], domains: [] }]} onSave={noop} />)).toContain("Acme, Inc.");
 	expect(byLine("Acme, Inc.\n  HubSpot \n\n")).toEqual(["Acme, Inc.", "HubSpot"]);
+});
+
+const auditDone = { id: "a1", origin: "https://pipedrive.com", status: "done" as const, startedAt: 1_700_000_000_000, finishedAt: 1_700_000_004_000, score: 64, pages: [{ url: "https://pipedrive.com/", status: 200, words: 900 }, { url: "https://pipedrive.com/x", status: 403, words: 0, error: "The server answered with status 403." }], skipped: 12 };
+const auditFindings = [
+	{ checkId: "crawler-blocked", severity: "high" as const, url: "https://pipedrive.com/robots.txt", title: "robots.txt blocks OAI-SearchBot (OpenAI)", evidence: "OAI-SearchBot builds the index.", fix: "Add this group to robots.txt:\nUser-agent: OAI-SearchBot\nAllow: /" },
+	{ checkId: "no-structured-data", severity: "medium" as const, url: "https://pipedrive.com/", title: "The page has no structured data", evidence: "<script>alert(1)</script> No JSON-LD was found.", fix: "Add JSON-LD." },
+	{ checkId: "no-structured-data", severity: "medium" as const, url: "https://pipedrive.com/pricing", title: "The page has no structured data", evidence: "No JSON-LD was found.", fix: "Add JSON-LD." },
+	{ checkId: "llms-txt-missing", severity: "low" as const, url: "https://pipedrive.com/llms.txt", title: "No llms.txt file", evidence: "Disputed.", fix: "Optionally add /llms.txt." },
+];
+
+test("the audit page shows the score, grouped findings with fixes, and pages it could not read", () => {
+	const out = html(<AuditPage audit={auditDone} findings={auditFindings} artefacts={{ robotsTxt: "User-agent: GPTBot\nAllow: /" }} defaultUrl="pipedrive.com" onRun={noop} onCancel={noop} onCopyBrief={noop} />);
+	expect(out).toContain("64");
+	expect(out).toContain("robots.txt blocks OAI-SearchBot (OpenAI)");
+	expect(out).toContain("User-agent: OAI-SearchBot");
+	expect(out).toMatch(/2 pages/);
+	expect(out).toContain("https://pipedrive.com/pricing");
+	expect(out).not.toContain("<script>alert");
+	expect(out).toContain("The server answered with status 403.");
+	expect(out).toContain("12 more pages were not checked");
+	expect(out).toContain("Copy fix brief");
+	expect(out.indexOf("High")).toBeLessThan(out.indexOf("Medium"));
+	expect(out.indexOf("Medium")).toBeLessThan(out.indexOf("Low"));
+	expect(out).toContain("User-agent: GPTBot");
+});
+
+test("the audit page before any audit, during one, and after a clean one", () => {
+	const none = html(<AuditPage audit={null} findings={[]} artefacts={{}} defaultUrl="pipedrive.com" onRun={noop} onCancel={noop} onCopyBrief={noop} />);
+	expect(none).toMatch(/No audit yet/);
+	expect(none).toContain('value="pipedrive.com"');
+	expect(none).toContain("Run audit");
+	const running = html(<AuditPage audit={{ ...auditDone, status: "running", finishedAt: null, score: null, pages: [] }} findings={[]} artefacts={{}} defaultUrl="" onRun={noop} onCancel={noop} onCopyBrief={noop} />);
+	expect(running).toMatch(/Reading https:\/\/pipedrive.com/);
+	expect(running).toContain("Stop");
+	const clean = html(<AuditPage audit={{ ...auditDone, score: 100, pages: [auditDone.pages[0] as (typeof auditDone.pages)[0]], skipped: 0 }} findings={[]} artefacts={{}} defaultUrl="" onRun={noop} onCancel={noop} onCopyBrief={noop} />);
+	expect(clean).toMatch(/No problems found/);
+	const stopped = html(<AuditPage audit={{ ...auditDone, status: "interrupted", score: null }} findings={[]} artefacts={{}} defaultUrl="" onRun={noop} onCancel={noop} onCopyBrief={noop} />);
+	expect(stopped).toMatch(/stopped before it finished/i);
+});
+
+test("the shell links to the audit page", () => {
+	const out = html(<AppShell projects={[project]} project={project} page="audit" onNavigate={noop} onSelectProject={noop} onNewProject={noop}><p>x</p></AppShell>);
+	expect(out).toMatch(/aria-current="page"[^>]*>.{0,80}?Audit</);
 });

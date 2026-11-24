@@ -83,10 +83,14 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 	if (seen.current === null) seen.current = new Set(answers.map((a) => a.id));
 	const known = seen.current;
 
-	const questions = [...new Set(answers.map((a) => a.promptText))];
+	const keyOf = (a: AnswerView) => a.promptId ?? a.promptText;
+	const labels = new Map(answers.map((a) => [keyOf(a), a.promptText]));
+	const questions = [...labels.keys()];
 	const ids = [...new Set(answers.map((a) => a.engine))];
-	const question = questions.includes(filter) ? filter : (questions[0] ?? "");
-	const group = answers.filter((a) => a.promptText === question);
+	const wanted = answers.find((a) => a.promptText === filter);
+	const key = wanted ? keyOf(wanted) : (questions[0] ?? "");
+	const question = labels.get(key) ?? "";
+	const group = answers.filter((a) => keyOf(a) === key);
 	const [picked, setPicked] = useState("");
 	const engine = ids.includes(picked) ? picked : (group[0]?.engine ?? ids[0] ?? "");
 	const answer = group.find((a) => a.engine === engine);
@@ -106,11 +110,12 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 					<Card className="oa-qlist">
 						<CardHeader title="Questions" description={`${questions.length} in the latest run`} />
 						<nav aria-label="Questions">
-							{questions.map((text) => {
-								const good = answers.filter((a) => a.promptText === text && a.errorCode === null);
+							{questions.map((id) => {
+								const text = labels.get(id) ?? "";
+								const good = answers.filter((a) => keyOf(a) === id && a.errorCode === null);
 								const named = good.filter((a) => a.brandRank !== null).length;
 								return (
-									<button key={text} type="button" className="oa-q" aria-current={text === question || undefined} onClick={() => onFilter(text)}>
+									<button key={id} type="button" className="oa-q" aria-current={id === key || undefined} onClick={() => onFilter(text)}>
 										<span>{text}</span>
 										<Badge tone={good.length === 0 ? "danger" : named === good.length ? "success" : named === 0 ? "warning" : "neutral"}>{good.length === 0 ? "Failed" : `${named}/${good.length}`}</Badge>
 									</button>

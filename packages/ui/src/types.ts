@@ -21,6 +21,7 @@ export type ReportView = {
 export type AnswerView = {
 	id: string;
 	engine: string;
+	promptId?: string;
 	promptText: string;
 	text: string;
 	searched: boolean;

@@ -62,9 +62,11 @@ export function App() {
 	const [theme, setTheme] = useState<Theme>(storedTheme);
 	const commandRef = useRef<(id: string, text?: string) => void>(() => {});
 	const loading = useRef(0);
+	const liveId = useRef<string | null>(null);
 
 	const project = projects?.find((p) => p.id === projectId) ?? projects?.[0] ?? null;
 	const currentId = project?.id ?? null;
+	liveId.current = currentId;
 
 	const loadState = useCallback(async () => {
 		const [state, stored] = await Promise.all([api.state(), api.settings()]);
@@ -105,6 +107,7 @@ export function App() {
 	useEffect(() => {
 		setData(null);
 		setSuggestions(null);
+		setSuggesting(false);
 		setAnswerFilter("");
 		setTurns([]);
 		if (currentId) void guard(() => loadProject(currentId));
@@ -278,7 +281,10 @@ export function App() {
 		else if (command === "suggest") {
 			navigate("prompts");
 			setSuggesting(true);
-			void guard(async () => setSuggestions(await api.suggest(id))).finally(() => setSuggesting(false));
+			void guard(async () => {
+						const result = await api.suggest(id);
+						if (liveId.current === id) setSuggestions(result);
+					}).finally(() => liveId.current === id && setSuggesting(false));
 		} else if (command === "ask" && text?.trim()) {
 			act(async () => {
 				await api.addPrompts(id, [text.trim()]);
@@ -329,7 +335,10 @@ export function App() {
 				onDismissSuggestions={() => setSuggestions(null)}
 				onSuggest={() => {
 					setSuggesting(true);
-					void guard(async () => setSuggestions(await api.suggest(id))).finally(() => setSuggesting(false));
+					void guard(async () => {
+						const result = await api.suggest(id);
+						if (liveId.current === id) setSuggestions(result);
+					}).finally(() => liveId.current === id && setSuggesting(false));
 				}}
 				onOpen={(text) => {
 					setAnswerFilter(text);
@@ -402,7 +411,7 @@ export function App() {
 					if (turns.some((t) => t.pending)) return;
 					const kept = turns.filter((t) => !t.failed);
 					if (kept[kept.length - 1]?.role === "user") kept.pop();
-					const history = kept.map((t) => ({ role: t.role, text: t.text }));
+					const history = kept.slice(-8).map((t) => ({ role: t.role, text: t.text }));
 					const reply = crypto.randomUUID();
 					setTurns([...kept, { id: crypto.randomUUID(), role: "user", text: question }, { id: reply, role: "assistant", text: "", engine, pending: true }]);
 					const asked = Date.now();

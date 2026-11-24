@@ -104,6 +104,7 @@ for (let port = first; port < first + (args.port ? 1 : 20) && !server; port += 1
 		const handler = createHandler({ store, runs, audits, engines: () => detectEngines(engineDeps), token, port, assets, suggest: (context) => suggestPrompts(buildProviders(engineDeps)[0] ?? null, context),
 			describeSite: async (domain) => {
 				const page = await get(/^https?:\/\//i.test(domain) ? domain : `https://${domain}`);
+				if (page.status < 200 || page.status > 299 || !/html/i.test(page.contentType)) return null;
 				const model = parsePage(page.url, page.text);
 				const lines = [model.title, model.description, model.h1 ?? "", ...model.headings.slice(0, 8).map((h) => h.text)].map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
 				return [...new Set(lines)].join("\n") || null;

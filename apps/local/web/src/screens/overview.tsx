@@ -67,7 +67,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 				tooltip={false}
 				label={`${label} by run`}
 				labels={points.map((_, index) => labels[index] ?? "")}
-				series={[{ label, values: points }]}
+				series={[{ label, values: points, color: "var(--muted)" }]}
 			/>
 		);
 	};
@@ -320,6 +320,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 								value: percent(c.mentionRate),
 								share: c.mentionRate * 100,
 								badge: c.isBrand ? <Badge>You</Badge> : undefined,
+								quiet: !c.isBrand,
 							}))}
 						/>
 					</CardContent>
@@ -333,6 +334,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 								value: `${d.citations}`,
 								share: (d.citations / Math.max(1, report.topDomains[0]?.citations ?? 1)) * 100,
 								badge: d.isBrand ? <Badge>Yours</Badge> : undefined,
+								quiet: !d.isBrand,
 							}))}
 							empty={
 								<EmptyState

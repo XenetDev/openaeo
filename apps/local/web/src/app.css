@@ -1098,3 +1098,7 @@ body,
 	row-gap: 10px;
 	padding-bottom: 12px;
 }
+
+.ui-as-rev__product i[data-quiet] {
+	background: var(--faint);
+}

@@ -1294,7 +1294,7 @@ body,
 	opacity: 0.6;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 600px) {
 	.oa-step > .ui-crdc__head {
 		flex-wrap: wrap;
 	}

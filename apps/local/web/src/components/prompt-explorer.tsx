@@ -28,6 +28,7 @@ import {
   Search01Icon,
   Target02Icon,
 } from "@hugeicons/core-free-icons";
+import { Button } from "@/components/ui/button-clean";
 import { EmptyState, Icon, Loading, Skeleton, rove, useToast, type AppShellProps, type ShellNavItem } from "@/components/app-shell";
 
 /* ---------- Types ---------- */
@@ -292,7 +293,7 @@ export function PromptExplorerScreen({
     const el = field.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, bulk ? 156 : 64)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, bulk ? 156 : 24)}px`;
   }, [query, bulk]);
 
   const trending = trend === "rising" ? rising : falling;
@@ -308,64 +309,42 @@ export function PromptExplorerScreen({
         <h1 className="ui-pex-sr">Prompt explorer</h1>
 
         {/* The hero: a soft gradient with the heading and the field */}
-        <section className="ui-pex-hero" aria-labelledby={`${id}-title`}>
-          <span className="ui-pex-hero__bg" aria-hidden="true">
-            <i />
-          </span>
-          <h2 id={`${id}-title`} className="ui-pex-title">
-            {title}
-          </h2>
+        <section className="oa-audit-hero oa-prompt-hero" aria-labelledby={`${id}-title`}>
+          <h2 id={`${id}-title`}>{title}</h2>
+          <p>Track the questions people ask AI assistants before they pick a business like yours. Every run asks each engine all of them.</p>
 
-          <div className="ui-pex-box" data-open={showList || undefined}>
+          <div className="ui-pex-box oa-pill" data-open={showList || undefined} data-bulk={bulk || undefined}>
             <label htmlFor={`${id}-field`} className="ui-pex-sr">
               {mode === "url" ? "A page's address" : bulk ? "Prompts, one per line" : "A prompt or keyword"}
             </label>
+            <div className="oa-pill-row">
+              <Icon icon={Search01Icon} size={18} />
             <textarea
-              ref={field}
-              id={`${id}-field`}
-              className="ui-pex-field"
-              rows={bulk ? 3 : 2}
-              value={query}
-              placeholder={bulk ? "One question per line…" : "Type a question a buyer would ask an AI assistant…"}
-              role="combobox"
-              aria-expanded={showList}
-              aria-controls={`${id}-list`}
-              aria-autocomplete="list"
-              aria-activedescendant={showList ? `${id}-opt-${at}` : undefined}
-              aria-keyshortcuts="Enter ArrowDown ArrowUp Escape"
-              spellCheck={false}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setOpen(true);
-                setActive(0);
-              }}
-              onFocus={() => setOpen(true)}
-              onBlur={() => window.setTimeout(() => setOpen(false), 120)}
-              onKeyDown={onFieldKey}
-            />
-            <div className="ui-pex-bar">
-              {actions}
-              <span className="ui-pex-bar__gap" />
-              {bulk && lines > 0 && <span className="ui-pex-count ui-pex-num">{lines === 1 ? "1 question" : `${lines} questions`}</span>}
-              <button
-                type="button"
-                className="ui-pex-switch"
-                role="switch"
-                aria-checked={bulk}
-                disabled={mode === "url"}
-                onClick={() => {
-                  setBulk((b) => !b);
-                  field.current?.focus();
+                ref={field}
+                id={`${id}-field`}
+                className="ui-pex-field"
+                rows={bulk ? 3 : 1}
+                value={query}
+                placeholder={bulk ? "One question per line…" : "Type a question a buyer would ask an AI assistant…"}
+                role="combobox"
+                aria-expanded={showList}
+                aria-controls={`${id}-list`}
+                aria-autocomplete="list"
+                aria-activedescendant={showList ? `${id}-opt-${at}` : undefined}
+                aria-keyshortcuts="Enter ArrowDown ArrowUp Escape"
+                spellCheck={false}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setOpen(true);
+                  setActive(0);
                 }}
-              >
-                <span className="ui-pex-switch__track" aria-hidden="true">
-                  <i />
-                </span>
-                Several at once
-              </button>
-              <button type="button" className="ui-pex-go" aria-busy={busy || undefined} onClick={analyseNow}>
-                {busy ? "Adding…" : "Track"}
-              </button>
+                onFocus={() => setOpen(true)}
+                onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+                onKeyDown={onFieldKey}
+              />
+              <Button type="button" loading={busy} onClick={analyseNow}>
+                Track
+              </Button>
             </div>
 
             {/* Relevant searches: each completes what you typed, with its prompts a month and the change */}
@@ -393,6 +372,26 @@ export function PromptExplorerScreen({
                 </div>
               ))}
             </div>
+          </div>
+          <div className="oa-crawlers">
+            {actions}
+            <button
+              type="button"
+              className="ui-pex-switch"
+              role="switch"
+              aria-checked={bulk}
+              disabled={mode === "url"}
+              onClick={() => {
+                setBulk((b) => !b);
+                field.current?.focus();
+              }}
+            >
+              <span className="ui-pex-switch__track" aria-hidden="true">
+                <i />
+              </span>
+              Several at once
+            </button>
+            {bulk && lines > 0 && <span className="ui-pex-count ui-pex-num">{lines === 1 ? "1 question" : `${lines} questions`}</span>}
           </div>
           {note}
         </section>

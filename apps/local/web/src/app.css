@@ -575,3 +575,65 @@ body,
 	line-height: 18px;
 	color: var(--muted);
 }
+
+.oa-prompt-hero {
+	padding-top: 44px;
+}
+
+.ui-pex-box.oa-pill {
+	width: min(620px, 100%);
+	border-radius: 26px;
+	background: var(--card);
+	box-shadow: var(--card-shadow);
+	text-align: left;
+}
+
+.ui-pex-box.oa-pill[data-bulk],
+.ui-pex-box.oa-pill[data-open] {
+	border-radius: 18px;
+}
+
+.ui-pex-box.oa-pill:focus-within {
+	box-shadow: 0 0 0 2px var(--aui-focus), var(--card-shadow);
+}
+
+.oa-pill-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 52px;
+	padding: 8px 8px 8px 18px;
+	color: var(--muted);
+}
+
+.oa-pill[data-bulk] .oa-pill-row {
+	align-items: flex-end;
+}
+
+.oa-pill[data-bulk] .oa-pill-row > svg {
+	align-self: flex-start;
+	margin-top: 9px;
+}
+
+.oa-pill-row .ui-pex-field {
+	flex: 1;
+	min-height: 24px;
+	padding: 0;
+	font-size: 15px;
+	line-height: 24px;
+}
+
+.oa-pill-row button {
+	flex: none;
+	border-radius: 18px;
+}
+
+.oa-crawlers .ui-pex-switch {
+	color: var(--muted);
+}
+
+.oa-missed .oa-grow > span {
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 18px;
+}

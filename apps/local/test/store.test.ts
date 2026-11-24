@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { type MatchResult, ProviderError, type RunItem } from "@openaeo/engine";
 import { openDb } from "../src/store/db";
 import { createStore } from "../src/store/store";
+import { freshStore, seed } from "./helpers";
 
 const fresh = () => createStore(openDb(":memory:"));
 
@@ -208,8 +209,40 @@ test("a file database keeps its data when reopened", () => {
 		const second = openDb(path);
 		expect(createStore(second).projects.get(p.id)?.name).toBe("Kept");
 		expect(statSync(path).mode & 0o777).toBe(0o600);
-		expect(second.query("PRAGMA user_version").get()).toEqual({ user_version: 5 });
+		expect(second.query("PRAGMA user_version").get()).toEqual({ user_version: 6 });
 		second.close();
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("tags on a question are trimmed, de-duplicated and capped", () => {
+	const store = freshStore();
+	const project = seed(store, ["q"]);
+	const [prompt] = store.prompts.list(project.id);
+	expect(prompt?.tags).toEqual([]);
+	store.prompts.setTags(prompt?.id as string, ["  Pricing ", "pricing", "", "Comparison", "x".repeat(80)]);
+	expect(store.prompts.get(prompt?.id as string)?.tags).toEqual(["Pricing", "Comparison", "x".repeat(40)]);
+	store.prompts.setTags(
+		prompt?.id as string,
+		Array.from({ length: 30 }, (_, index) => `tag ${index}`),
+	);
+	expect(store.prompts.get(prompt?.id as string)?.tags.length).toBe(10);
+	expect(store.prompts.tags(project.id)).toContain("tag 0");
+});
+
+test("an older database gains tags on its questions without losing them", async () => {
+	const { Database } = await import("bun:sqlite");
+	const dir = mkdtempSync(join(tmpdir(), "openaeo-tags-"));
+	try {
+		const path = join(dir, "openaeo.db");
+		const before = createStore(openDb(path));
+		const project = seed(before, ["kept question"]);
+		const raw = new Database(path);
+		raw.exec("ALTER TABLE prompt DROP COLUMN tags; PRAGMA user_version = 5");
+		raw.close();
+		const after = createStore(openDb(path));
+		expect(after.prompts.list(project.id).map((p) => [p.text, p.tags])).toEqual([["kept question", []]]);
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}

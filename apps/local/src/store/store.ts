@@ -14,7 +14,14 @@ import type {
 export type EntityInput = { name: string; aliases: string[]; domains: string[] };
 export type Project = EntityInput & { id: string; createdAt: number };
 export type Competitor = EntityInput & { id: string; projectId: string };
-export type Prompt = { id: string; projectId: string; text: string; active: boolean; createdAt: number };
+export type Prompt = {
+	id: string;
+	projectId: string;
+	text: string;
+	active: boolean;
+	tags: string[];
+	createdAt: number;
+};
 export type RunStatus = "running" | "done" | "interrupted";
 export type Run = {
 	id: string;
@@ -87,7 +94,7 @@ type FindingRow = {
 type EntityRow = { id: string; name: string; aliases: string; domains: string };
 type ProjectRow = EntityRow & { created_at: number };
 type CompetitorRow = EntityRow & { project_id: string };
-type PromptRow = { id: string; project_id: string; text: string; active: number; created_at: number };
+type PromptRow = { id: string; project_id: string; text: string; active: number; tags: string; created_at: number };
 type RunRow = {
 	id: string;
 	project_id: string;
@@ -152,8 +159,21 @@ const toPrompt = (r: PromptRow): Prompt => ({
 	projectId: r.project_id,
 	text: r.text,
 	active: r.active === 1,
+	tags: JSON.parse(r.tags) as string[],
 	createdAt: r.created_at,
 });
+const MAX_TAGS = 10;
+const MAX_TAG_LENGTH = 40;
+
+export function cleanTags(tags: string[]): string[] {
+	const seen = new Map<string, string>();
+	for (const raw of tags) {
+		const tag = raw.replace(/\s+/g, " ").trim().slice(0, MAX_TAG_LENGTH);
+		if (tag && !seen.has(tag.toLowerCase())) seen.set(tag.toLowerCase(), tag);
+	}
+	return [...seen.values()].slice(0, MAX_TAGS);
+}
+
 const toRun = (r: RunRow): Run => ({
 	id: r.id,
 	projectId: r.project_id,
@@ -291,7 +311,14 @@ export function createStore(db: Database) {
 				for (const raw of texts) {
 					const text = raw.trim();
 					if (!text) continue;
-					const prompt: Prompt = { id: crypto.randomUUID(), projectId, text, active: true, createdAt: Date.now() };
+					const prompt: Prompt = {
+						id: crypto.randomUUID(),
+						projectId,
+						text,
+						active: true,
+						tags: [],
+						createdAt: Date.now(),
+					};
 					const result = db
 						.query(
 							"INSERT OR IGNORE INTO prompt (id, project_id, text, text_key, active, created_at) VALUES (?, ?, ?, ?, 1, ?)",
@@ -304,6 +331,13 @@ export function createStore(db: Database) {
 		},
 		setActive(id: string, active: boolean): void {
 			db.query("UPDATE prompt SET active = ? WHERE id = ?").run(active ? 1 : 0, id);
+		},
+		setTags(id: string, tags: string[]): void {
+			db.query("UPDATE prompt SET tags = ? WHERE id = ?").run(JSON.stringify(cleanTags(tags)), id);
+		},
+		tags(projectId: string): string[] {
+			const all = prompts.list(projectId).flatMap((prompt) => prompt.tags);
+			return [...new Map(all.map((tag) => [tag.toLowerCase(), tag])).values()].sort((a, b) => a.localeCompare(b));
 		},
 		remove(id: string): void {
 			db.query("DELETE FROM prompt WHERE id = ?").run(id);

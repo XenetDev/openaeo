@@ -32,7 +32,9 @@ export function promptRoutes({ store }: HandlerDeps): Route[] {
 		route("PATCH", "/api/prompts/:id", async ({ request, params }) => {
 			const id = params.id as string;
 			requirePrompt(id);
-			store.prompts.setActive(id, (await read(request, PatchPromptSchema)).active);
+			const input = await read(request, PatchPromptSchema);
+			if (input.active !== undefined) store.prompts.setActive(id, input.active);
+			if (input.tags) store.prompts.setTags(id, input.tags);
 			return json<{ prompt: PromptView }>({ prompt: requirePrompt(id) });
 		}),
 		route("DELETE", "/api/prompts/:id", ({ params }) => {

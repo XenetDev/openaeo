@@ -20,7 +20,7 @@ export type EngineView = {
 };
 export type EntityView = { name: string; aliases: string[]; domains: string[] };
 export type ProjectView = EntityView & { id: string };
-export type PromptView = { id: string; text: string; active: boolean };
+export type PromptView = { id: string; text: string; active: boolean; tags: string[] };
 export type RunView = {
 	id: string;
 	status: "running" | "done" | "interrupted";
@@ -39,13 +39,15 @@ export type MetricsView = {
 };
 export type SourceView = { url: string; domain: string; title?: string };
 
+export type SentimentView = { score: number | null; positive: number; neutral: number; negative: number };
+
 export type ReportView = {
 	run: RunView | null;
-	overall: { metrics: MetricsView; visibility: number };
-	engines: { engine: string; metrics: MetricsView; visibility: number; errors: number }[];
+	overall: { metrics: MetricsView; visibility: number; sentiment: SentimentView };
+	engines: { engine: string; metrics: MetricsView; visibility: number; sentiment: SentimentView; errors: number }[];
 	competitors: { name: string; mentionRate: number; averageRank: number | null; isBrand: boolean }[];
 	topDomains: { domain: string; citations: number; isBrand: boolean }[];
-	trend: { runId: string; startedAt: number; visibility: number; mentionRate: number }[];
+	trend: { runId: string; startedAt: number; visibility: number; mentionRate: number; sentiment: number | null }[];
 	problems: { engine: string; message: string; count: number }[];
 };
 

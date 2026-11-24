@@ -53,6 +53,13 @@ export const api = {
 		call<{ prompts: PromptView[] }>("POST", `/api/projects/${id}/prompts`, { texts }),
 	setPromptActive: (id: string, active: boolean) =>
 		call<{ prompt: PromptView }>("PATCH", `/api/prompts/${id}`, { active }),
+	setPromptTags: (id: string, tags: string[]) => call<{ prompt: PromptView }>("PATCH", `/api/prompts/${id}`, { tags }),
+	exportAnswers: async (id: string) => {
+		const response = await fetch(`/api/projects/${id}/export/answers.csv`, { headers: { "x-openaeo-token": token } });
+		if (!response.ok) throw new ApiError("The export could not be created.");
+		const name = /filename="([^"]+)"/.exec(response.headers.get("content-disposition") ?? "")?.[1] ?? "answers.csv";
+		return { name, blob: await response.blob() };
+	},
 	suggest: (id: string) => call<Suggestions>("POST", `/api/projects/${id}/suggestions`),
 	promptStats: (id: string) => call<{ stats: PromptStatView[] }>("GET", `/api/projects/${id}/prompt-stats`),
 	removePrompt: (id: string) => call<Ok>("DELETE", `/api/prompts/${id}`),

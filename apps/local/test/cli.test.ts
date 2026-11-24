@@ -109,3 +109,21 @@ test("the data directory honours OPENAEO_HOME and is private", () => {
 		rmSync(base, { recursive: true, force: true });
 	}
 });
+
+test("the printed report includes sentiment once answers are labelled", async () => {
+	const { formatReport } = await import("../src/format");
+	const { buildReport } = await import("../src/report");
+	const { createRunService } = await import("../src/runs");
+	const { fakeProvider, freshStore, seed } = await import("./helpers");
+	const store = freshStore();
+	const project = seed(store, ["q1", "q2"]);
+	const runs = createRunService({ store, providers: () => [fakeProvider("claude-cli", () => "Pipedrive").provider] });
+	const run = await runs.wait(runs.start(project.id).id);
+	expect(formatReport("Pipedrive", buildReport(store, project.id))).not.toContain("Sentiment");
+	const [first, second] = store.answers.listByRun(run.id);
+	store.answers.setSentiment(first?.id as string, "positive");
+	store.answers.setSentiment(second?.id as string, "negative");
+	expect(formatReport("Pipedrive", buildReport(store, project.id))).toContain(
+		"Sentiment         50 / 100 (1 positive, 0 neutral, 1 negative)",
+	);
+});

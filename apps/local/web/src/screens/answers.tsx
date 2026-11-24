@@ -139,7 +139,12 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 							onChange={setPicked}
 							options={ids.map((id) => {
 								const state = standing(group.find((a) => a.engine === id));
-								return { value: id, label: engineLabel(engines, id), icon: <EngineLogo engine={id} label={engineLabel(engines, id)} />, badge: <Badge tone={state.tone}>{state.text}</Badge> };
+								return { value: id, label: engineLabel(engines, id), icon: <EngineLogo engine={id} label={engineLabel(engines, id)} />, badge: (
+										<span className="oa-tab-badge">
+											<Badge tone={state.tone}>{state.text}</Badge>
+										</span>
+									),
+								};
 							})}
 						/>
 						{!answer ? (

@@ -1,6 +1,6 @@
 import type { EngineInfo, PageId, ProjectView, ReportView } from "@openaeo/ui";
-import { Analytics01Icon, ChartIncreaseIcon, News01Icon } from "@hugeicons/core-free-icons";
-import { EmptyState } from "@/components/app-shell";
+import { Analytics01Icon, ArrowRight02Icon, ChartIncreaseIcon, News01Icon, PlayIcon, StopIcon } from "@hugeicons/core-free-icons";
+import { EmptyState, Icon } from "@/components/app-shell";
 import { ChartCard } from "@/components/analytics";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -49,12 +49,12 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 				<Badge tone="info" live>
 					Asking {run.completed} of {run.total}
 				</Badge>
-				<Button variant="secondary" size="sm" onClick={onCancel}>
+				<Button variant="secondary" size="sm" onClick={onCancel} icon={<Icon icon={StopIcon} size={14} />}>
 					Stop
 				</Button>
 			</>
 		) : (
-			<Button size="sm" onClick={onRun} disabled={usable.length === 0}>
+			<Button size="sm" onClick={onRun} disabled={usable.length === 0} icon={<Icon icon={PlayIcon} size={14} />}>
 				Run now
 			</Button>
 		);
@@ -119,7 +119,7 @@ export function OverviewScreen({ project, report, engines, loading, onRun, onCan
 						text="A run asks each AI engine every question on your Prompts page, then records who was mentioned and which sites were cited. It takes about half a minute per question."
 						action={
 							running ? undefined : (
-								<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")}>
+								<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")} iconRight={<Icon icon={ArrowRight02Icon} size={14} />}>
 									Review your questions
 								</Button>
 							)

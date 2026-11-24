@@ -1,7 +1,7 @@
 import type { EngineInfo, OpportunitiesView, PageId, ProjectView } from "@openaeo/ui";
-import { Target02Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight02Icon, Target02Icon } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
-import { EmptyState } from "@/components/app-shell";
+import { EmptyState, Icon } from "@/components/app-shell";
 import { Avatar } from "@/components/ui/avatar-clean";
 import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -25,7 +25,7 @@ export function OpportunitiesScreen({ project, engines, found, onOpenQuestion, o
 					title={found.runId ? "Nothing to chase right now" : "No runs yet"}
 					text={found.runId ? "You are named wherever your competitors are, and no outside site is being cited. Add more questions to look wider." : "After a run, this page lists the questions you are missing from, the sites worth getting mentioned on and the website fixes that matter most."}
 					action={
-						<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")}>
+						<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")} iconRight={<Icon icon={ArrowRight02Icon} size={14} />}>
 							Go to Prompts
 						</Button>
 					}
@@ -60,7 +60,7 @@ export function OpportunitiesScreen({ project, engines, found, onOpenQuestion, o
 													{miss.named.length > 6 ? <Badge>+{miss.named.length - 6}</Badge> : null}
 												</span>
 											</span>
-											<Button variant="secondary" size="sm" onClick={() => onOpenQuestion(miss.question)}>
+											<Button variant="secondary" size="sm" onClick={() => onOpenQuestion(miss.question)} iconRight={<Icon icon={ArrowRight02Icon} size={14} />}>
 												Read the answers
 											</Button>
 										</div>
@@ -90,7 +90,7 @@ export function OpportunitiesScreen({ project, engines, found, onOpenQuestion, o
 								title="Website fixes that matter most"
 								description="From your latest audit, most serious first."
 								action={
-									<Button variant="secondary" size="sm" onClick={() => onNavigate("audit")}>
+									<Button variant="secondary" size="sm" onClick={() => onNavigate("audit")} iconRight={<Icon icon={ArrowRight02Icon} size={14} />}>
 										Open the audit
 									</Button>
 								}

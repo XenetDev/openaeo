@@ -1,3 +1,5 @@
+import { Icon } from "@/components/app-shell";
+import { ArrowRight02Icon, Plug01Icon } from "@hugeicons/core-free-icons";
 import type { EngineInfo } from "@openaeo/ui";
 import { type ReactNode, useState } from "react";
 import { OnboardingFrame, Steps } from "@/components/onboarding-website";
@@ -62,7 +64,7 @@ export function EnginesStep({ frame, step, engines, preview, onBack, onContinue,
 											}}
 										>
 											<TextField type="password" aria-label={`${e.label} API key`} placeholder="Paste an API key" value={keys[e.id] ?? ""} onChange={(event) => setKeys((all) => ({ ...all, [e.id]: event.target.value }))} autoComplete="off" />
-											<Button type="submit" variant="secondary" loading={saving === e.id} disabled={!(keys[e.id] ?? "").trim()}>
+											<Button type="submit" variant="secondary" loading={saving === e.id} disabled={!(keys[e.id] ?? "").trim()} icon={<Icon icon={Plug01Icon} size={14} />}>
 												Connect
 											</Button>
 										</form>
@@ -74,7 +76,7 @@ export function EnginesStep({ frame, step, engines, preview, onBack, onContinue,
 			</div>
 
 			<div className="oa-ob-foot">
-				<Button data-autofocus disabled={ready === 0} onClick={onContinue}>
+				<Button data-autofocus disabled={ready === 0} iconRight={ready === 0 ? undefined : <Icon icon={ArrowRight02Icon} size={14} />} onClick={onContinue}>
 					{ready === 0 ? "Connect an engine to continue" : `Continue with ${ready} ${ready === 1 ? "engine" : "engines"}`}
 				</Button>
 			</div>
@@ -104,7 +106,7 @@ export function FirstRunStep({ frame, step, brand, tasks, finished, preview, onO
 			</div>
 
 			<div className="oa-ob-foot">
-				<Button data-autofocus variant={finished ? "primary" : "secondary"} onClick={onOpen}>
+				<Button data-autofocus variant={finished ? "primary" : "secondary"} iconRight={<Icon icon={ArrowRight02Icon} size={14} />} onClick={onOpen}>
 					{finished ? "Open my dashboard" : "Open the dashboard now"}
 				</Button>
 			</div>

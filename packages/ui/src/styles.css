@@ -248,6 +248,7 @@ textarea.oa-input {
 	color: var(--oa-accent-ink);
 	font: inherit;
 	font-weight: 600;
+	white-space: nowrap;
 	cursor: pointer;
 	transition: transform 0.12s ease, filter 0.12s ease;
 }

@@ -13,7 +13,7 @@ import { type ReactNode, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { AgentMark, AuditMark, BrandMark, BriefMark, RunMark, SuggestMark } from "../screens/command-icons";
 import { saveTheme, storedTheme, type Theme } from "../theme";
-import { brandKey, isPage, NAV, NEW_BRAND, NEW_BRAND_KEY, pageKey } from "./pages";
+import { brandKey, isPage, NAV, NAV_GROUPS, NEW_BRAND, NEW_BRAND_KEY, pageKey } from "./pages";
 
 const THEMES = [
 	["System", ComputerIcon],
@@ -109,6 +109,7 @@ export function Shell({ projects, project, page, children, onPage, onBrand, onNe
 			groups={
 				projects.length > 0
 					? [
+							...(project ? NAV_GROUPS : []),
 							{
 								label: "Brands",
 								items: [

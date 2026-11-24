@@ -2,7 +2,7 @@ import type { EngineView, ProjectView } from "@api";
 import { Mark } from "@/components/mark";
 import { SetupPreview } from "../screens/onboarding";
 import { FirstRunStep } from "../screens/onboarding-steps";
-import { NAV } from "./pages";
+import { NAV, NAV_GROUPS } from "./pages";
 import type { Setup } from "./use-setup";
 import type { ProjectData } from "./use-workspace";
 
@@ -66,6 +66,7 @@ export function FirstRun({ setup, project, data, engines, onOpen }: Props) {
 					competitors={data?.competitors.map((c) => c.name) ?? []}
 					engines={engines}
 					nav={NAV}
+					groups={NAV_GROUPS}
 				/>
 			}
 			tasks={[

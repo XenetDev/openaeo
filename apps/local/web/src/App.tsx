@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Toaster, toast } from "@/components/ui/toaster-clean";
 import { api } from "./api";
 import { FirstRun } from "./app/first-run";
-import { NAV, pageFromHash } from "./app/pages";
+import { NAV, NAV_GROUPS, pageFromHash } from "./app/pages";
 import { Screen } from "./app/screens";
 import { Shell } from "./app/shell";
 import { useAsk } from "./app/use-ask";
@@ -91,6 +91,7 @@ export function App() {
 				<OnboardingFlow
 					engines={engines}
 					nav={NAV}
+					groups={NAV_GROUPS}
 					busy={busy}
 					onCancel={project ? () => setCreating(false) : undefined}
 					onFindCompetitors={

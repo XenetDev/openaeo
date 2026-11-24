@@ -1,6 +1,9 @@
 import { type Answer, type EngineId, type Provider, ProviderError, type ProviderErrorCode } from "./types";
 
-export type RunItem = { prompt: string; engine: EngineId } & ({ ok: true; answer: Answer } | { ok: false; error: ProviderError });
+export type RunItem = { prompt: string; engine: EngineId } & (
+	| { ok: true; answer: Answer }
+	| { ok: false; error: ProviderError }
+);
 
 export type RunOptions = {
 	prompts: string[];

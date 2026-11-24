@@ -6,9 +6,12 @@ Thanks for helping. Issues and pull requests are welcome.
 
 ```sh
 bun install
+bun run lint
 bun run typecheck
 bun run test
 ```
+
+`bun run format` fixes formatting and import order.
 
 To run the app from source:
 
@@ -20,7 +23,7 @@ bun run dev
 
 ## Before you open a pull request
 
-- `bun run typecheck` and `bun run test` pass.
+- `bun run lint`, `bun run typecheck` and `bun run test` pass.
 - New behaviour has a test. Engine parsing is tested against recorded output in `packages/engine/test/fixtures`.
 - Keep `packages/engine` free of storage and server code so it can be reused.
 - Text that comes from a website or from an AI answer must reach a model only as quoted data. See `apps/local/src/ask.ts` for the pattern.

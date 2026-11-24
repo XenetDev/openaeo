@@ -1,11 +1,12 @@
 #!/usr/bin/env bun
 import { randomBytes } from "node:crypto";
 import { writeSync } from "node:fs";
+import { createSafeFetch, parsePage } from "@openaeo/engine";
 import pkg from "../package.json" with { type: "json" };
 import { diskAssets, embeddedAssets } from "./assets";
-import { createSafeFetch, parsePage } from "@openaeo/engine";
 import { createAuditService } from "./audits";
 import { auditOnce, HELP, parseArgs, runOnce } from "./cli";
+import { suggestCompetitors } from "./competitor-ideas";
 import { embedded } from "./embedded";
 import { buildProviders, detectEngines } from "./engines";
 import { dataDir, dbPath } from "./paths";
@@ -14,7 +15,6 @@ import { createScheduler } from "./scheduler";
 import { createHandler } from "./server/handler";
 import { openDb } from "./store/db";
 import { createStore } from "./store/store";
-import { suggestCompetitors } from "./competitor-ideas";
 import { suggestPrompts } from "./suggest";
 
 function out(line: string) {
@@ -51,7 +51,10 @@ if (args.command === "help") {
 const store = createStore(openDb(dbPath(dataDir())));
 store.runs.interruptStale();
 store.audits.interruptStale();
-const get = createSafeFetch({ allowPrivate: true, userAgent: `OpenAEO-Audit/${pkg.version} (+https://github.com/jdships/openaeo)` });
+const get = createSafeFetch({
+	allowPrivate: true,
+	userAgent: `OpenAEO-Audit/${pkg.version} (+https://github.com/jdships/openaeo)`,
+});
 const audits = createAuditService({ store, get });
 const engineDeps = { store, which: (bin: string) => Bun.which(bin) };
 const runs = createRunService({ store, providers: () => buildProviders(engineDeps), sentiment: true });
@@ -69,9 +72,15 @@ process.on("SIGHUP", stop);
 
 if (args.command === "status") {
 	const projects = store.projects.list();
-	out(projects.length ? `Projects: ${projects.map((p) => p.name).join(", ")}` : "No project yet. Run `openaeo` to set one up.");
+	out(
+		projects.length
+			? `Projects: ${projects.map((p) => p.name).join(", ")}`
+			: "No project yet. Run `openaeo` to set one up.",
+	);
 	for (const engine of detectEngines(engineDeps)) {
-		out(`${engine.label.padEnd(18)}${engine.available ? (engine.enabled ? "ready" : "turned off") : `unavailable: ${engine.reason}`}`);
+		out(
+			`${engine.label.padEnd(18)}${engine.available ? (engine.enabled ? "ready" : "turned off") : `unavailable: ${engine.reason}`}`,
+		);
 	}
 	await exit(0);
 }
@@ -102,12 +111,22 @@ const first = args.port ?? 4747;
 let server: ReturnType<typeof Bun.serve> | null = null;
 for (let port = first; port < first + (args.port ? 1 : 20) && !server; port += 1) {
 	try {
-		const handler = createHandler({ store, runs, audits, engines: () => detectEngines(engineDeps), token, port, assets, suggest: (context) => suggestPrompts(buildProviders(engineDeps)[0] ?? null, context),
+		const handler = createHandler({
+			store,
+			runs,
+			audits,
+			engines: () => detectEngines(engineDeps),
+			token,
+			port,
+			assets,
+			suggest: (context) => suggestPrompts(buildProviders(engineDeps)[0] ?? null, context),
 			describeSite: async (domain) => {
 				const page = await get(/^https?:\/\//i.test(domain) ? domain : `https://${domain}`);
 				if (page.status < 200 || page.status > 299 || !/html/i.test(page.contentType)) return null;
 				const model = parsePage(page.url, page.text);
-				const lines = [model.title, model.description, model.h1 ?? "", ...model.headings.slice(0, 8).map((h) => h.text)].map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+				const lines = [model.title, model.description, model.h1 ?? "", ...model.headings.slice(0, 8).map((h) => h.text)]
+					.map((line) => line.replace(/\s+/g, " ").trim())
+					.filter(Boolean);
 				return [...new Set(lines)].join("\n") || null;
 			},
 			competitorIdeas: (context) => suggestCompetitors(buildProviders(engineDeps)[0] ?? null, context),
@@ -118,7 +137,11 @@ for (let port = first; port < first + (args.port ? 1 : 20) && !server; port += 1
 		});
 		server = Bun.serve({ hostname: "127.0.0.1", port, fetch: handler, idleTimeout: 255 });
 	} catch (error) {
-		if (!(error instanceof Error) || !/EADDRINUSE|in use/i.test(`${error.message} ${"code" in error ? String(error.code) : ""}`)) throw error;
+		if (
+			!(error instanceof Error) ||
+			!/EADDRINUSE|in use/i.test(`${error.message} ${"code" in error ? String(error.code) : ""}`)
+		)
+			throw error;
 	}
 }
 if (!server) {

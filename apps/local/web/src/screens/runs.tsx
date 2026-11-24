@@ -1,4 +1,3 @@
-import type { AnswerView, EngineInfo, ProjectView, ReportView, RunView } from "@/types";
 import { ArrowRight02Icon, Clock01Icon, PlayIcon, StopIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
@@ -6,7 +5,8 @@ import { Badge, type BadgeTone } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { Select } from "@/components/ui/select-clean";
-import { TraceWaterfall, type TraceSpan } from "@/components/ui/trace-waterfall-clean";
+import { type TraceSpan, TraceWaterfall } from "@/components/ui/trace-waterfall-clean";
+import type { AnswerView, EngineInfo, ProjectView, ReportView, RunView } from "@/types";
 import { api } from "../api";
 import { runTree } from "./run-tree";
 import { EngineLogo, engineLabel, Facts, Page, percent, span, when } from "./shared";
@@ -34,9 +34,21 @@ const STATUS: Record<RunView["status"], { label: string; tone: BadgeTone }> = {
 	interrupted: { label: "Stopped early", tone: "warning" },
 };
 
-const withMarks = (root: TraceSpan): TraceSpan => ({ ...root, children: root.children?.map((child) => ({ ...child, icon: <EngineLogo engine={child.id} label={child.name} /> })) });
+const withMarks = (root: TraceSpan): TraceSpan => ({
+	...root,
+	children: root.children?.map((child) => ({ ...child, icon: <EngineLogo engine={child.id} label={child.name} /> })),
+});
 
-export function RunsScreen({ project, engines, report, schedule, onSchedule, onStart, onCancel, onOpenAnswers }: Props) {
+export function RunsScreen({
+	project,
+	engines,
+	report,
+	schedule,
+	onSchedule,
+	onStart,
+	onCancel,
+	onOpenAnswers,
+}: Props) {
 	const [runs, setRuns] = useState<RunView[] | null>(null);
 	const [picked, setPicked] = useState<string | null>(null);
 	const [detail, setDetail] = useState<{ run: RunView; answers: AnswerView[] } | null>(null);
@@ -44,6 +56,7 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 	const beat = `${latest?.id}:${latest?.status}:${latest?.completed}`;
 	const selected = runs?.find((r) => r.id === picked)?.id ?? runs?.[0]?.id ?? null;
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: beat changes whenever the latest run moves on
 	useEffect(() => {
 		let stale = false;
 		void api.runs(project.id).then(
@@ -55,6 +68,7 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 		};
 	}, [project.id, beat]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: beat changes whenever the latest run moves on
 	useEffect(() => {
 		if (!selected) return setDetail(null);
 		let stale = false;
@@ -92,7 +106,10 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 			}
 		>
 			{runs === null ? null : runs.length === 0 ? (
-				<EmptyState icon={Clock01Icon} title="No runs yet" text="A run asks every AI engine each of your questions once. Every run is kept here, so you can see how the answers change over time."
+				<EmptyState
+					icon={Clock01Icon}
+					title="No runs yet"
+					text="A run asks every AI engine each of your questions once. Every run is kept here, so you can see how the answers change over time."
 					action={
 						<Button variant="secondary" size="sm" onClick={onStart} icon={<Icon icon={PlayIcon} size={14} />}>
 							Run now
@@ -102,14 +119,24 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 			) : (
 				<div className="oa-answers" data-wide="">
 					<Card className="oa-qlist">
-						<CardHeader title="History" description={`${runs.length} ${runs.length === 1 ? "run" : "runs"}, newest first`} />
+						<CardHeader
+							title="History"
+							description={`${runs.length} ${runs.length === 1 ? "run" : "runs"}, newest first`}
+						/>
 						<nav aria-label="Runs">
 							{runs.map((run) => (
-								<button key={run.id} type="button" className="oa-q" aria-current={run.id === selected || undefined} onClick={() => setPicked(run.id)}>
+								<button
+									key={run.id}
+									type="button"
+									className="oa-q"
+									aria-current={run.id === selected || undefined}
+									onClick={() => setPicked(run.id)}
+								>
 									<span>
 										{when(run.startedAt)}
 										<small>
-											{run.completed} of {run.total} answers{trend.has(run.id) ? ` · visibility ${Math.round(trend.get(run.id)?.visibility ?? 0)}` : ""}
+											{run.completed} of {run.total} answers
+											{trend.has(run.id) ? ` · visibility ${Math.round(trend.get(run.id)?.visibility ?? 0)}` : ""}
 										</small>
 									</span>
 									<Badge tone={STATUS[run.status].tone} live={run.status === "running"}>
@@ -123,9 +150,22 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 					<div className="oa-answer-main">
 						{shown ? (
 							shown.answers.length === 0 ? (
-								<EmptyState icon={Clock01Icon} title={shown.run.status === "running" ? "Waiting for the first answer" : "This run has no answers"} text={shown.run.status === "running" ? "Each answer shows here as it arrives." : "It was stopped before any engine answered."} />
+								<EmptyState
+									icon={Clock01Icon}
+									title={shown.run.status === "running" ? "Waiting for the first answer" : "This run has no answers"}
+									text={
+										shown.run.status === "running"
+											? "Each answer shows here as it arrives."
+											: "It was stopped before any engine answered."
+									}
+								/>
 							) : (
-								<TraceWaterfall className="oa-trace" title="Timeline" root={withMarks(runTree(shown.run, shown.answers, (id) => engineLabel(engines, id)))} startedAt={shown.run.status === "running" ? shown.run.startedAt : undefined} />
+								<TraceWaterfall
+									className="oa-trace"
+									title="Timeline"
+									root={withMarks(runTree(shown.run, shown.answers, (id) => engineLabel(engines, id)))}
+									startedAt={shown.run.status === "running" ? shown.run.startedAt : undefined}
+								/>
 							)
 						) : null}
 					</div>
@@ -133,17 +173,35 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 					<aside className="oa-answer-rail">
 						{shown ? (
 							<Card>
-								<CardHeader title="This run" description={when(shown.run.startedAt)} action={<Badge tone={STATUS[shown.run.status].tone}>{STATUS[shown.run.status].label}</Badge>} />
+								<CardHeader
+									title="This run"
+									description={when(shown.run.startedAt)}
+									action={<Badge tone={STATUS[shown.run.status].tone}>{STATUS[shown.run.status].label}</Badge>}
+								/>
 								<CardContent>
 									<Facts
 										rows={[
 											["Answers", `${shown.run.completed} of ${shown.run.total}${failed ? `, ${failed} failed` : ""}`],
-											["Took", shown.run.finishedAt ? span(shown.run.finishedAt - shown.run.startedAt) : "Still running"],
-											...(point ? ([["Visibility score", String(Math.round(point.visibility))], ["Named in", `${percent(point.mentionRate)} of answers`]] as [string, string][]) : []),
+											[
+												"Took",
+												shown.run.finishedAt ? span(shown.run.finishedAt - shown.run.startedAt) : "Still running",
+											],
+											...(point
+												? ([
+														["Visibility score", String(Math.round(point.visibility))],
+														["Named in", `${percent(point.mentionRate)} of answers`],
+													] as [string, string][])
+												: []),
 										]}
 									/>
 									{shown.run.id === latest?.id ? (
-										<Button variant="secondary" size="sm" style={{ marginTop: 12 }} onClick={onOpenAnswers} iconRight={<Icon icon={ArrowRight02Icon} size={14} />}>
+										<Button
+											variant="secondary"
+											size="sm"
+											style={{ marginTop: 12 }}
+											onClick={onOpenAnswers}
+											iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
+										>
 											Read the answers
 										</Button>
 									) : null}
@@ -151,11 +209,25 @@ export function RunsScreen({ project, engines, report, schedule, onSchedule, onS
 							</Card>
 						) : null}
 						<Card>
-							<CardHeader title="Schedule" description="Automatic runs only happen while OpenAEO is open on this computer." />
+							<CardHeader
+								title="Schedule"
+								description="Automatic runs only happen while OpenAEO is open on this computer."
+							/>
 							<CardContent>
-								<Select aria-label="Run schedule" options={SCHEDULES} value={schedule} onChange={(value, option) => onSchedule(value, String(option.label))} />
+								<Select
+									aria-label="Run schedule"
+									options={SCHEDULES}
+									value={schedule}
+									onChange={(value, option) => onSchedule(value, String(option.label))}
+								/>
 								<p className="oa-quiet" style={{ marginTop: 10 }}>
-									{next ? (next <= Date.now() ? "The next run starts within a minute." : `Next run: ${when(next)}.`) : period ? "The schedule starts after your first run." : "Nothing runs on its own."}
+									{next
+										? next <= Date.now()
+											? "The next run starts within a minute."
+											: `Next run: ${when(next)}.`
+										: period
+											? "The schedule starts after your first run."
+											: "Nothing runs on its own."}
 								</p>
 							</CardContent>
 						</Card>

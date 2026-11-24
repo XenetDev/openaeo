@@ -25,7 +25,8 @@ export function parseSentiment(text: string, count: number): Map<number, Sentime
 	const add = (key: unknown, value: unknown) => {
 		const index = Number(key);
 		const label = typeof value === "string" ? value.trim().toLowerCase() : "";
-		if (Number.isInteger(index) && index >= 1 && index <= count && LABELS.has(label)) labels.set(index, label as Sentiment);
+		if (Number.isInteger(index) && index >= 1 && index <= count && LABELS.has(label))
+			labels.set(index, label as Sentiment);
 	};
 	const start = text.indexOf("{");
 	const end = text.lastIndexOf("}");

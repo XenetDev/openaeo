@@ -1,5 +1,5 @@
 import type { Answer } from "./types";
-import { URL_SOURCE, sameSite, toDomain } from "./url";
+import { sameSite, toDomain, URL_SOURCE } from "./url";
 
 export type Entity = { name: string; aliases?: string[]; domains?: string[] };
 
@@ -20,12 +20,12 @@ const ORDINARY_WORD = /^\p{Lu}\p{Ll}*$/u;
 type Term = { entity: number; firstChar: string | null };
 
 const keyOf = (text: string) => text.toLowerCase().replace(/\s+/g, " ");
-const escape = (term: string) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+const escapeTerm = (term: string) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
 
 function buildPattern(terms: string[]): RegExp | null {
 	const longestFirst = [...terms].sort((a, b) => b.length - a.length);
-	const spaced = longestFirst.filter((t) => !UNSPACED_SCRIPT.test(t)).map(escape);
-	const unspaced = longestFirst.filter((t) => UNSPACED_SCRIPT.test(t)).map(escape);
+	const spaced = longestFirst.filter((t) => !UNSPACED_SCRIPT.test(t)).map(escapeTerm);
+	const unspaced = longestFirst.filter((t) => UNSPACED_SCRIPT.test(t)).map(escapeTerm);
 	const parts: string[] = [];
 	if (spaced.length) parts.push(`(?<![\\p{L}\\p{N}])(?:${spaced.join("|")})(?![\\p{L}\\p{N}])`);
 	if (unspaced.length) parts.push(`(?:${unspaced.join("|")})`);
@@ -38,7 +38,11 @@ function siteOf(value: string): string | null {
 	return toDomain(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
 }
 
-export function match(answer: Pick<Answer, "text" | "citations" | "sources">, brand: Entity, competitors: Entity[]): MatchResult {
+export function match(
+	answer: Pick<Answer, "text" | "citations" | "sources">,
+	brand: Entity,
+	competitors: Entity[],
+): MatchResult {
 	const entities: { name: string; terms: string[] }[] = [];
 	const seen = new Set<string>();
 	for (const entity of [brand, ...competitors]) {

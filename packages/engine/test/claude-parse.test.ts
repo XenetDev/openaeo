@@ -16,7 +16,8 @@ function codeOf(run: () => unknown) {
 	return null;
 }
 
-const errorResult = (text: string) => `${JSON.stringify({ type: "result", subtype: "success", is_error: true, result: text })}\n`;
+const errorResult = (text: string) =>
+	`${JSON.stringify({ type: "result", subtype: "success", is_error: true, result: text })}\n`;
 
 test("parses a searched answer with sources and citations", () => {
 	const answer = parseClaudeStream(fixture("claude-search.jsonl"), 22_000);
@@ -63,7 +64,10 @@ test("tolerates a search result with an unexpected shape", () => {
 });
 
 test("output without a result event fails", () => {
-	const noResult = fixture("claude-search.jsonl").split("\n").filter((l) => !l.includes('"type":"result"')).join("\n");
+	const noResult = fixture("claude-search.jsonl")
+		.split("\n")
+		.filter((l) => !l.includes('"type":"result"'))
+		.join("\n");
 	expect(codeOf(() => parseClaudeStream(noResult, 1))).toBe("failed");
 	expect(codeOf(() => parseClaudeStream("", 1))).toBe("failed");
 });
@@ -73,7 +77,9 @@ test("a login error is reported as not_logged_in", () => {
 });
 
 test("a limit error is reported as rate_limited", () => {
-	expect(codeOf(() => parseClaudeStream(errorResult("Claude usage limit reached. Your limit will reset at 3pm."), 1))).toBe("rate_limited");
+	expect(
+		codeOf(() => parseClaudeStream(errorResult("Claude usage limit reached. Your limit will reset at 3pm."), 1)),
+	).toBe("rate_limited");
 	expect(codeOf(() => parseClaudeStream(errorResult("API Error: 429 rate limit exceeded"), 1))).toBe("rate_limited");
 });
 

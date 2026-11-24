@@ -1,4 +1,3 @@
-import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@/types";
 import { CheckListIcon, Copy01Icon, Globe02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
@@ -8,10 +7,11 @@ import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { CodeBlock } from "@/components/ui/code-block-clean";
+import { SegmentedControl } from "@/components/ui/segmented-control-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
+import type { ArtefactsView, AuditView, FindingView, ProjectView } from "@/types";
 import { AgentMark, FilesMark, HighMark, LowMark, MediumMark, SkippedMark } from "./command-icons";
 import { EngineLogo, Page, when } from "./shared";
-import { SegmentedControl } from "@/components/ui/segmented-control-clean";
 
 type Props = {
 	project: ProjectView;
@@ -25,15 +25,53 @@ type Props = {
 };
 
 const AREAS: { id: string; name: string; checks: string[] }[] = [
-	{ id: "access", name: "Crawler access", checks: ["crawler-blocked", "crawler-partly-blocked", "robots-error", "robots-missing", "llms-txt-missing", "site-unreachable"] },
+	{
+		id: "access",
+		name: "Crawler access",
+		checks: [
+			"crawler-blocked",
+			"crawler-partly-blocked",
+			"robots-error",
+			"robots-missing",
+			"llms-txt-missing",
+			"site-unreachable",
+		],
+	},
 	{ id: "content", name: "Readable content", checks: ["js-only-content", "no-h1", "missing-title-or-description"] },
-	{ id: "data", name: "Structured data", checks: ["no-structured-data", "invalid-structured-data", "no-organization-schema", "faq-without-schema"] },
-	{ id: "answers", name: "Answers and trust", checks: ["no-direct-answer", "no-question-headings", "no-author", "no-date", "stale-content", "no-outbound-citations"] },
+	{
+		id: "data",
+		name: "Structured data",
+		checks: ["no-structured-data", "invalid-structured-data", "no-organization-schema", "faq-without-schema"],
+	},
+	{
+		id: "answers",
+		name: "Answers and trust",
+		checks: [
+			"no-direct-answer",
+			"no-question-headings",
+			"no-author",
+			"no-date",
+			"stale-content",
+			"no-outbound-citations",
+		],
+	},
 ];
 const SEVERITY = { high: "critical", medium: "warning", low: "note" } as const;
 const LEVELS = [
-	{ id: "high", label: "High", tone: "danger", mark: <HighMark />, note: "These stop AI engines from reading or using the site." },
-	{ id: "medium", label: "Medium", tone: "warning", mark: <MediumMark />, note: "These make pages harder for engines to quote and trust." },
+	{
+		id: "high",
+		label: "High",
+		tone: "danger",
+		mark: <HighMark />,
+		note: "These stop AI engines from reading or using the site.",
+	},
+	{
+		id: "medium",
+		label: "Medium",
+		tone: "warning",
+		mark: <MediumMark />,
+		note: "These make pages harder for engines to quote and trust.",
+	},
 	{ id: "low", label: "Low", tone: "info", mark: <LowMark />, note: "Smaller improvements." },
 ] as const;
 const FILES: { key: keyof ArtefactsView; name: string; language: string }[] = [
@@ -101,14 +139,25 @@ function FixCard({ count, own, onCopyBrief }: { count: number; own: boolean; onC
 					) : (
 						<>
 							<ol className="oa-steps">
-								<li>Run one of these once in a terminal. Your agent can then read your reports and findings by itself.</li>
+								<li>
+									Run one of these once in a terminal. Your agent can then read your reports and findings by itself.
+								</li>
 							</ol>
-							<CodeBlock language="sh" filename="Claude Code" code="claude mcp add openaeo --scope user -- openaeo mcp" />
+							<CodeBlock
+								language="sh"
+								filename="Claude Code"
+								code="claude mcp add openaeo --scope user -- openaeo mcp"
+							/>
 							<CodeBlock language="sh" filename="Codex" code="codex mcp add openaeo -- openaeo mcp" />
 							<ol className="oa-steps" start={2}>
 								<li>In your website's code, tell your agent:</li>
 							</ol>
-							<CodeBlock language="txt" filename="Say this" code="Get the OpenAEO fix brief and fix the findings." wrap />
+							<CodeBlock
+								language="txt"
+								filename="Say this"
+								code="Get the OpenAEO fix brief and fix the findings."
+								wrap
+							/>
 						</>
 					)}
 				</div>
@@ -123,15 +172,24 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 	const unread = audit?.pages.filter((p) => p.error) ?? [];
 	const read = (audit?.pages.length ?? 0) - unread.length;
 	const at = audit?.finishedAt ?? audit?.startedAt ?? 0;
-	const done = audit?.status === "done";
 
 	const agents: FindingAgent[] = AREAS.map((area) => {
 		const count = findings.filter((f) => area.checks.includes(f.checkId)).length;
-		return { id: area.id, name: area.name, step: count === 0 ? "No problems" : `${count} ${count === 1 ? "finding" : "findings"}`, done: area.checks.length, total: area.checks.length };
+		return {
+			id: area.id,
+			name: area.name,
+			step: count === 0 ? "No problems" : `${count} ${count === 1 ? "finding" : "findings"}`,
+			done: area.checks.length,
+			total: area.checks.length,
+		};
 	});
 	const seen = new Set<string>();
 	const feed: Finding[] = findings
-		.filter((f) => (seen.has(f.title) ? false : (seen.add(f.title), true)))
+		.filter((f) => {
+			if (seen.has(f.title)) return false;
+			seen.add(f.title);
+			return true;
+		})
 		.map((f, i) => ({
 			id: `${f.checkId}-${i}`,
 			agentId: AREAS.find((a) => a.checks.includes(f.checkId))?.id ?? "answers",
@@ -142,10 +200,7 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 		}));
 
 	return (
-		<Page
-			brand={project.name}
-			title="Audit"
-		>
+		<Page brand={project.name} title="Audit">
 			<section className="oa-audit-hero" data-tall={!audit || undefined}>
 				<h2>Can AI read your website?</h2>
 				<p>Reads up to 25 pages the way an AI crawler does and shows what stops engines quoting you.</p>
@@ -159,14 +214,24 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 					maxLines={1}
 					disabled={running}
 					textareaProps={{ autoCapitalize: "off", autoCorrect: "off" }}
-					action={running ? <PillButton kind="stop" label="Stop the audit" onClick={onCancel} /> : <PillButton label={audit ? "Check again" : "Check my site"} disabled={url.trim() === ""} onClick={() => onRun(url.trim())} />}
+					action={
+						running ? (
+							<PillButton kind="stop" label="Stop the audit" onClick={onCancel} />
+						) : (
+							<PillButton
+								label={audit ? "Check again" : "Check my site"}
+								disabled={url.trim() === ""}
+								onClick={() => onRun(url.trim())}
+							/>
+						)
+					}
 				/>
 				{running ? (
 					<Badge tone="info" live>
 						Reading the site
 					</Badge>
 				) : (
-					<div className="oa-crawlers" aria-label="Crawlers checked">
+					<div className="oa-crawlers">
 						<span>Checks access for</span>
 						{["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"].map((bot) => (
 							<Badge key={bot}>{bot}</Badge>
@@ -184,7 +249,11 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 				</div>
 			) : audit.status === "interrupted" ? (
 				<Card>
-					<CardHeader title="The last audit stopped before it finished" description={`Run the audit of ${audit.origin} again.`} action={<Badge tone="warning">Interrupted</Badge>} />
+					<CardHeader
+						title="The last audit stopped before it finished"
+						description={`Run the audit of ${audit.origin} again.`}
+						action={<Badge tone="warning">Interrupted</Badge>}
+					/>
 				</Card>
 			) : (
 				<>
@@ -198,9 +267,22 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 						</Card>
 					) : null}
 					<div className="oa-cols-3">
-						<StatCard label="Audit score" value={audit.score ?? 0} format={(n) => `${Math.round(n)} / 100`} footer="A rough guide. It counts problems; it does not predict AI visibility." />
-						<StatCard label="Pages read" value={read} footer={unread.length > 0 ? `${unread.length} could not be read` : "All readable"} />
-						<StatCard label="Findings" value={findings.length} footer={`${findings.filter((f) => f.severity === "high").length} high · ${when(audit.startedAt)}`} />
+						<StatCard
+							label="Audit score"
+							value={audit.score ?? 0}
+							format={(n) => `${Math.round(n)} / 100`}
+							footer="A rough guide. It counts problems; it does not predict AI visibility."
+						/>
+						<StatCard
+							label="Pages read"
+							value={read}
+							footer={unread.length > 0 ? `${unread.length} could not be read` : "All readable"}
+						/>
+						<StatCard
+							label="Findings"
+							value={findings.length}
+							footer={`${findings.filter((f) => f.severity === "high").length} high · ${when(audit.startedAt)}`}
+						/>
 					</div>
 
 					{findings.length === 0 ? (
@@ -208,16 +290,28 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 					) : (
 						<>
 							<div className="oa-cols-2">
-								<AgentFindings title={`Checks on ${audit.origin.replace(/^https?:\/\//, "")}`} agents={agents} findings={feed} rows={Math.min(6, feed.length)} now={at} />
+								<AgentFindings
+									title={`Checks on ${audit.origin.replace(/^https?:\/\//, "")}`}
+									agents={agents}
+									findings={feed}
+									rows={Math.min(6, feed.length)}
+									now={at}
+								/>
 								<FixCard count={findings.length} own={audit.own !== false} onCopyBrief={onCopyBrief} />
 							</div>
 							{LEVELS.map((level) => {
 								const groups = new Map<string, FindingView[]>();
-								for (const finding of findings.filter((f) => f.severity === level.id)) groups.set(finding.title, [...(groups.get(finding.title) ?? []), finding]);
+								for (const finding of findings.filter((f) => f.severity === level.id))
+									groups.set(finding.title, [...(groups.get(finding.title) ?? []), finding]);
 								if (groups.size === 0) return null;
 								return (
 									<Card key={level.id}>
-										<CardHeader icon={level.mark} title={`${level.label} priority`} description={level.note} action={<Badge tone={level.tone}>{groups.size} to fix</Badge>} />
+										<CardHeader
+											icon={level.mark}
+											title={`${level.label} priority`}
+											description={level.note}
+											action={<Badge tone={level.tone}>{groups.size} to fix</Badge>}
+										/>
 										<CardContent>
 											<div className="oa-finding-list" data-tone={level.id}>
 												{[...groups.entries()].map(([title, group]) => (
@@ -245,10 +339,24 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 
 					{FILES.some((f) => artefacts[f.key]) ? (
 						<Card>
-							<CardHeader icon={<FilesMark />} title="Starter files" description="Drafts to adapt, not to paste blindly. Keep any rules your current robots.txt needs." />
+							<CardHeader
+								icon={<FilesMark />}
+								title="Starter files"
+								description="Drafts to adapt, not to paste blindly. Keep any rules your current robots.txt needs."
+							/>
 							<CardContent>
 								<div className="oa-stack">
-									{FILES.map((file) => (artefacts[file.key] ? <CodeBlock key={file.key} code={artefacts[file.key] ?? ""} language={file.language} filename={file.name} maxHeight={220} /> : null))}
+									{FILES.map((file) =>
+										artefacts[file.key] ? (
+											<CodeBlock
+												key={file.key}
+												code={artefacts[file.key] ?? ""}
+												language={file.language}
+												filename={file.name}
+												maxHeight={220}
+											/>
+										) : null,
+									)}
 								</div>
 							</CardContent>
 						</Card>
@@ -256,7 +364,15 @@ export function AuditScreen({ project, audit, findings, artefacts, defaultUrl, o
 
 					{unread.length > 0 || audit.skipped > 0 ? (
 						<Card>
-							<CardHeader icon={<SkippedMark />} title="Not checked" description={audit.skipped > 0 ? `${audit.skipped} more pages were not checked, because an audit reads 25 pages at most.` : undefined} />
+							<CardHeader
+								icon={<SkippedMark />}
+								title="Not checked"
+								description={
+									audit.skipped > 0
+										? `${audit.skipped} more pages were not checked, because an audit reads 25 pages at most.`
+										: undefined
+								}
+							/>
 							{unread.length > 0 ? (
 								<CardContent>
 									<ul className="oa-urls" style={{ marginTop: 0 }}>

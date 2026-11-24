@@ -18,7 +18,11 @@ function domainOf(url: string): string {
 	}
 }
 
-export function toAnswerMarkup(text: string, citations: Citation[], brand: string[]): { answer: string; sources: MarkupSource[] } {
+export function toAnswerMarkup(
+	text: string,
+	citations: Citation[],
+	brand: string[],
+): { answer: string; sources: MarkupSource[] } {
 	const sources: MarkupSource[] = [];
 	const index = new Map<string, number>();
 	const cite = (url: string, title?: string) => {
@@ -30,8 +34,15 @@ export function toAnswerMarkup(text: string, citations: Citation[], brand: strin
 	};
 	for (const c of citations) if (isHttp(c.url)) cite(c.url, c.title);
 
-	let body = text.replace(/\r\n?/g, "\n").replace(/\[([^\]\n]+)\]\(((?:[^()\s]|\([^()\s]*\))*)\)/g, (_, label: string, url: string) => (isHttp(url) ? `${label} [${cite(url)}]` : label));
-	body = body.replace(/https?:\/\/[^\s)\]>"']+/gi, (url) => `[${cite(url.replace(/[.,;:!?]+$/, ""))}]${/[.,;:!?]+$/.exec(url)?.[0] ?? ""}`);
+	let body = text
+		.replace(/\r\n?/g, "\n")
+		.replace(/\[([^\]\n]+)\]\(((?:[^()\s]|\([^()\s]*\))*)\)/g, (_, label: string, url: string) =>
+			isHttp(url) ? `${label} [${cite(url)}]` : label,
+		);
+	body = body.replace(
+		/https?:\/\/[^\s)\]>"']+/gi,
+		(url) => `[${cite(url.replace(/[.,;:!?]+$/, ""))}]${/[.,;:!?]+$/.exec(url)?.[0] ?? ""}`,
+	);
 
 	body = body.replace(/\*\*([^*\n]+)\*\*/g, (whole, inner: string) =>
 		/\[\d+\]/.test(inner)
@@ -45,13 +56,23 @@ export function toAnswerMarkup(text: string, citations: Citation[], brand: strin
 
 	const names = brand.map((n) => n.trim()).filter(Boolean);
 	const brandPattern = names.length
-		? new RegExp(`(?<![\\p{L}\\p{N}*])(?:${[...names].sort((a, b) => b.length - a.length).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(?![\\p{L}\\p{N}])`, "gu")
+		? new RegExp(
+				`(?<![\\p{L}\\p{N}*])(?:${[...names]
+					.sort((a, b) => b.length - a.length)
+					.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+					.join("|")})(?![\\p{L}\\p{N}])`,
+				"gu",
+			)
 		: null;
 	const embolden = (line: string) =>
 		brandPattern
 			? line
 					.split(/(\*\*[^*\n]+\*\*)/)
-					.map((part) => (part.startsWith("**") && part.endsWith("**") && part.length > 4 ? part : part.replace(brandPattern, (hit) => `**${hit}**`)))
+					.map((part) =>
+						part.startsWith("**") && part.endsWith("**") && part.length > 4
+							? part
+							: part.replace(brandPattern, (hit) => `**${hit}**`),
+					)
 					.join("")
 			: line;
 
@@ -74,7 +95,15 @@ export function toAnswerMarkup(text: string, citations: Citation[], brand: strin
 			while (i < lines.length && TABLE_ROW.test(lines[i] as string)) {
 				const current = lines[i] as string;
 				if (TABLE_RULE.test(current)) headed = headed || i === start + 1;
-				else rows.push(current.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim()));
+				else
+					rows.push(
+						current
+							.trim()
+							.replace(/^\|/, "")
+							.replace(/\|$/, "")
+							.split("|")
+							.map((cell) => cell.trim()),
+					);
 				i += 1;
 			}
 			i -= 1;
@@ -98,13 +127,22 @@ export function toAnswerMarkup(text: string, citations: Citation[], brand: strin
 	for (const line of out) {
 		const previous = spaced[spaced.length - 1];
 		const isItem = line.startsWith("- ");
-		if (previous !== undefined && previous !== "" && line !== "" && isItem !== previous.startsWith("- ")) spaced.push("");
+		if (previous !== undefined && previous !== "" && line !== "" && isItem !== previous.startsWith("- "))
+			spaced.push("");
 		spaced.push(line);
 	}
 	while (spaced.length && spaced[spaced.length - 1] === "") spaced.pop();
 	let tail = spaced.length;
 	while (tail > 0 && ((spaced[tail - 1] as string).startsWith("- ") || spaced[tail - 1] === "")) tail -= 1;
-	if (tail > 0 && tail < spaced.length && /^(?:sources|references|citations|links)\s*:?$/i.test(plain(spaced[tail - 1] as string))) spaced.length = tail - 1;
-	const answer = spaced.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+	if (
+		tail > 0 &&
+		tail < spaced.length &&
+		/^(?:sources|references|citations|links)\s*:?$/i.test(plain(spaced[tail - 1] as string))
+	)
+		spaced.length = tail - 1;
+	const answer = spaced
+		.join("\n")
+		.replace(/\n{3,}/g, "\n\n")
+		.trim();
 	return { answer, sources };
 }

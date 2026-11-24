@@ -4,7 +4,11 @@ import { toAnswerMarkup } from "../web/src/screens/answer-markup";
 const cite = (url: string, title?: string) => ({ url, domain: new URL(url).hostname.replace(/^www\./, ""), title });
 
 test("links become numbered citations that point at the sources", () => {
-	const out = toAnswerMarkup("Linear is fast. [Linear pricing](https://linear.app/pricing) and [Jira](https://atlassian.com/jira).", [cite("https://linear.app/pricing", "Pricing")], []);
+	const out = toAnswerMarkup(
+		"Linear is fast. [Linear pricing](https://linear.app/pricing) and [Jira](https://atlassian.com/jira).",
+		[cite("https://linear.app/pricing", "Pricing")],
+		[],
+	);
 	expect(out.answer).toBe("Linear is fast. Linear pricing [1] and Jira [2].");
 	expect(out.sources).toEqual([
 		{ title: "Pricing", name: "linear.app", href: "https://linear.app/pricing" },
@@ -25,8 +29,14 @@ test("a bare address becomes a citation", () => {
 });
 
 test("a table becomes a list with the first cell in bold", () => {
-	const out = toAnswerMarkup("Options:\n\n| Tool | When | Tradeoff |\n|---|---|---|\n| **Linear** | Small teams | Per-user price |\n| Jira | Compliance | Setup time |", [], []);
-	expect(out.answer).toBe("Options:\n\n- **Linear**: Small teams · Per-user price\n- **Jira**: Compliance · Setup time");
+	const out = toAnswerMarkup(
+		"Options:\n\n| Tool | When | Tradeoff |\n|---|---|---|\n| **Linear** | Small teams | Per-user price |\n| Jira | Compliance | Setup time |",
+		[],
+		[],
+	);
+	expect(out.answer).toBe(
+		"Options:\n\n- **Linear**: Small teams · Per-user price\n- **Jira**: Compliance · Setup time",
+	);
 });
 
 test("headings become bold lines and numbered or starred lists become plain lists", () => {
@@ -51,8 +61,14 @@ test("citations given but never linked in the text are still listed as sources",
 });
 
 test("a list directly under a line of text is separated from it, and from what follows", () => {
-	const out = toAnswerMarkup("**My recommendation:**\n- For a small team, use Notion.\n- For control, use Outline.\nPrices change often.", [], []);
-	expect(out.answer).toBe("**My recommendation:**\n\n- For a small team, use Notion.\n- For control, use Outline.\n\nPrices change often.");
+	const out = toAnswerMarkup(
+		"**My recommendation:**\n- For a small team, use Notion.\n- For control, use Outline.\nPrices change often.",
+		[],
+		[],
+	);
+	expect(out.answer).toBe(
+		"**My recommendation:**\n\n- For a small team, use Notion.\n- For control, use Outline.\n\nPrices change often.",
+	);
 });
 
 test("indented sub-items stay list items", () => {
@@ -61,7 +77,11 @@ test("indented sub-items stay list items", () => {
 });
 
 test("drops a closing list of sources, since the cards already show them", () => {
-	const out = toAnswerMarkup("Pick Acme.\n\nSources:\n- [Acme pricing](https://acme.com/pricing)\n- https://example.org/review", [], []);
+	const out = toAnswerMarkup(
+		"Pick Acme.\n\nSources:\n- [Acme pricing](https://acme.com/pricing)\n- https://example.org/review",
+		[],
+		[],
+	);
 	expect(out.answer).toBe("Pick Acme.");
 	expect(out.sources.map((s) => s.href)).toEqual(["https://acme.com/pricing", "https://example.org/review"]);
 });

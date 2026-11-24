@@ -1,4 +1,3 @@
-import type { AnswerView, EngineInfo, PageId, ProjectView } from "@/types";
 import { ArrowRight02Icon, BubbleChatIcon, PlayIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
@@ -9,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { SegmentedControl } from "@/components/ui/segmented-control-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
 import { toast } from "@/components/ui/toaster-clean";
+import type { AnswerView, EngineInfo, PageId, ProjectView } from "@/types";
 import { toAnswerMarkup } from "./answer-markup";
 import { EngineLogo, engineLabel, Facts, ordinal, Page, ShareList } from "./shared";
 
@@ -48,18 +48,45 @@ function Favicon({ href }: { href: string }) {
 
 function facts(answer: AnswerView, brand: string): [string, string][] {
 	return [
-		["Position", answer.brandRank === null ? `${brand} is not named` : `${ordinal(answer.brandRank)} of ${answer.mentions.length} ${answer.mentions.length === 1 ? "brand" : "brands"}`],
+		[
+			"Position",
+			answer.brandRank === null
+				? `${brand} is not named`
+				: `${ordinal(answer.brandRank)} of ${answer.mentions.length} ${answer.mentions.length === 1 ? "brand" : "brands"}`,
+		],
 		["Your site", answer.brandCited ? "Linked as a source" : "Not linked"],
-		["Based on", answer.searched ? `A web search, ${answer.citations.length} ${answer.citations.length === 1 ? "source" : "sources"}` : "The engine's memory"],
-		...(answer.sentiment ? ([["Tone about you", answer.sentiment[0]?.toUpperCase() + answer.sentiment.slice(1)]] as [string, string][]) : []),
+		[
+			"Based on",
+			answer.searched
+				? `A web search, ${answer.citations.length} ${answer.citations.length === 1 ? "source" : "sources"}`
+				: "The engine's memory",
+		],
+		...(answer.sentiment
+			? ([["Tone about you", answer.sentiment[0]?.toUpperCase() + answer.sentiment.slice(1)]] as [string, string][])
+			: []),
 	];
 }
 
-function Answer({ answer, question, brand, animate, onSeen, onNavigate }: { answer: AnswerView; question: string; brand: string[]; animate: boolean; onSeen: () => void; onNavigate: (page: PageId) => void }) {
+function Answer({
+	answer,
+	question,
+	brand,
+	animate,
+	onSeen,
+	onNavigate,
+}: {
+	answer: AnswerView;
+	question: string;
+	brand: string[];
+	animate: boolean;
+	onSeen: () => void;
+	onNavigate: (page: PageId) => void;
+}) {
 	const [streamed] = useState(animate);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: marks the answer as seen once, when it first appears
 	useEffect(() => {
 		onSeen();
-	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+	}, []);
 	const markup = useMemo(() => toAnswerMarkup(answer.text, answer.citations, brand), [answer, brand]);
 	return (
 		<AIAnswer
@@ -98,7 +125,17 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 	const top = Math.max(1, ...(answer?.mentions.map((m) => m.count) ?? []));
 
 	return (
-		<Page brand={project.name} title="Answers" actions={live ? <Badge tone="info" live>Collecting answers</Badge> : undefined}>
+		<Page
+			brand={project.name}
+			title="Answers"
+			actions={
+				live ? (
+					<Badge tone="info" live>
+						Collecting answers
+					</Badge>
+				) : undefined
+			}
+		>
 			{answers.length === 0 ? (
 				<EmptyState
 					icon={BubbleChatIcon}
@@ -106,7 +143,12 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 					text="After a run, every question shows here with what each AI engine answered, who it named and the sites it relied on."
 					action={
 						live ? undefined : (
-							<Button variant="secondary" size="sm" onClick={() => onNavigate("prompts")} iconRight={<Icon icon={ArrowRight02Icon} size={14} />}>
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() => onNavigate("prompts")}
+								iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
+							>
 								Go to Prompts
 							</Button>
 						)
@@ -122,9 +164,27 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 								const good = answers.filter((a) => keyOf(a) === id && a.errorCode === null);
 								const named = good.filter((a) => a.brandRank !== null).length;
 								return (
-									<button key={id} type="button" className="oa-q" aria-current={id === key || undefined} onClick={() => onFilter(text)}>
+									<button
+										key={id}
+										type="button"
+										className="oa-q"
+										aria-current={id === key || undefined}
+										onClick={() => onFilter(text)}
+									>
 										<span>{text}</span>
-										<Badge tone={good.length === 0 ? "danger" : named === good.length ? "success" : named === 0 ? "warning" : "neutral"}>{good.length === 0 ? "Failed" : `${named}/${good.length}`}</Badge>
+										<Badge
+											tone={
+												good.length === 0
+													? "danger"
+													: named === good.length
+														? "success"
+														: named === 0
+															? "warning"
+															: "neutral"
+											}
+										>
+											{good.length === 0 ? "Failed" : `${named}/${good.length}`}
+										</Badge>
 									</button>
 								);
 							})}
@@ -139,7 +199,11 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 							onChange={setPicked}
 							options={ids.map((id) => {
 								const state = standing(group.find((a) => a.engine === id));
-								return { value: id, label: engineLabel(engines, id), icon: <EngineLogo engine={id} label={engineLabel(engines, id)} />, badge: (
+								return {
+									value: id,
+									label: engineLabel(engines, id),
+									icon: <EngineLogo engine={id} label={engineLabel(engines, id)} />,
+									badge: (
 										<span className="oa-tab-badge">
 											<Badge tone={state.tone}>{state.text}</Badge>
 										</span>
@@ -150,14 +214,25 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 						{!answer ? (
 							live ? (
 								<Card>
-									<CardHeader icon={<Spinner />} title={`Waiting for ${label}`} description="The answer appears here as soon as it arrives." />
+									<CardHeader
+										icon={<Spinner />}
+										title={`Waiting for ${label}`}
+										description="The answer appears here as soon as it arrives."
+									/>
 								</Card>
 							) : (
-								<EmptyState icon={BubbleChatIcon} title={`No answer from ${label}`} text="This engine was not asked this question in the latest run." />
+								<EmptyState
+									icon={BubbleChatIcon}
+									title={`No answer from ${label}`}
+									text="This engine was not asked this question in the latest run."
+								/>
 							)
 						) : answer.errorCode !== null ? (
 							<Card>
-								<CardHeader title={`${label} could not answer`} description={answer.errorMessage ?? "No reason was given."} />
+								<CardHeader
+									title={`${label} could not answer`}
+									description={answer.errorMessage ?? "No reason was given."}
+								/>
 								<CardContent>
 									<Button variant="secondary" size="sm" onClick={onRunAgain} icon={<Icon icon={PlayIcon} size={14} />}>
 										Run again
@@ -165,7 +240,15 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 								</CardContent>
 							</Card>
 						) : (
-							<Answer key={answer.id} answer={answer} question={question} brand={brand} animate={!known.has(answer.id)} onSeen={() => known.add(answer.id)} onNavigate={onNavigate} />
+							<Answer
+								key={answer.id}
+								answer={answer}
+								question={question}
+								brand={brand}
+								animate={!known.has(answer.id)}
+								onSeen={() => known.add(answer.id)}
+								onNavigate={onNavigate}
+							/>
 						)}
 					</div>
 
@@ -181,14 +264,23 @@ export function AnswersScreen({ answers, project, engines, live, filter, onFilte
 								<CardHeader title="Brands named, in order" description="The order they first appear in this answer." />
 								<CardContent>
 									<ShareList
-										empty={<EmptyState bare icon={UserMultipleIcon} title="No tracked brand named" text="This answer names neither you nor a competitor you track." />}
+										empty={
+											<EmptyState
+												bare
+												icon={UserMultipleIcon}
+												title="No tracked brand named"
+												text="This answer names neither you nor a competitor you track."
+											/>
+										}
 										items={[...answer.mentions]
 											.sort((a, b) => a.rank - b.rank)
 											.map((m) => ({
 												label: `${m.rank}. ${m.entity}`,
 												value: `${m.count}×`,
 												share: (m.count / top) * 100,
-												badge: brand.some((n) => n.toLowerCase() === m.entity.toLowerCase()) ? <Badge tone="success">You</Badge> : undefined,
+												badge: brand.some((n) => n.toLowerCase() === m.entity.toLowerCase()) ? (
+													<Badge tone="success">You</Badge>
+												) : undefined,
 											}))}
 									/>
 								</CardContent>

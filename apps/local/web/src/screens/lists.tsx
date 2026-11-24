@@ -1,24 +1,28 @@
-import type { EntityView, ProjectView, ReportView } from "@/types";
 import { Add01Icon, News01Icon, SparklesIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
-import { Spinner } from "@/components/ui/spinner-clean";
-import type { CompetitorIdea } from "../api";
-import { SuggestMark } from "./command-icons";
 import { Avatar } from "@/components/ui/avatar-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { DataTable } from "@/components/ui/data-table-clean";
 import { Dialog } from "@/components/ui/dialog-clean";
+import { Spinner } from "@/components/ui/spinner-clean";
 import { TagInput } from "@/components/ui/tag-input-clean";
 import { TextField } from "@/components/ui/text-field-clean";
+import type { EntityView, ProjectView, ReportView } from "@/types";
+import type { CompetitorIdea } from "../api";
+import { SuggestMark } from "./command-icons";
 import { Page } from "./shared";
 
 export function SourcesScreen({ project, report }: { project: ProjectView; report: ReportView }) {
 	return (
 		<Page brand={project.name} title="Sources">
 			{report.topDomains.length === 0 ? (
-				<EmptyState icon={News01Icon} title="No sources yet" text="After a run, this lists the sites the engines linked to in their answers. These are the places worth being mentioned on." />
+				<EmptyState
+					icon={News01Icon}
+					title="No sources yet"
+					text="After a run, this lists the sites the engines linked to in their answers. These are the places worth being mentioned on."
+				/>
 			) : (
 				<DataTable
 					title="Sites cited in the latest answers"
@@ -29,7 +33,14 @@ export function SourcesScreen({ project, report }: { project: ProjectView; repor
 						{ key: "owner", label: "Whose", type: "tag", width: "140px" },
 						{ key: "link", label: "Open", type: "link" },
 					]}
-					rows={report.topDomains.map((d) => ({ id: d.domain, logo: <Avatar name={d.domain} size={20} shape="square" />, site: d.domain, citations: d.citations, owner: d.isBrand ? "Yours" : "Other", link: `https://${d.domain}` }))}
+					rows={report.topDomains.map((d) => ({
+						id: d.domain,
+						logo: <Avatar name={d.domain} size={20} shape="square" />,
+						site: d.domain,
+						citations: d.citations,
+						owner: d.isBrand ? "Yours" : "Other",
+						link: `https://${d.domain}`,
+					}))}
 					tagTones={{ Yours: "green", Other: "gray" }}
 				/>
 			)}
@@ -49,16 +60,33 @@ type CompetitorsProps = {
 	onDismissIdeas: () => void;
 };
 
-export function CompetitorsScreen({ project, report, competitors, onSave, ideas, finding, canFind, onFind, onDismissIdeas }: CompetitorsProps) {
+export function CompetitorsScreen({
+	project,
+	report,
+	competitors,
+	onSave,
+	ideas,
+	finding,
+	canFind,
+	onFind,
+	onDismissIdeas,
+}: CompetitorsProps) {
 	const tracked = new Set([project.name, ...competitors.map((c) => c.name)].map((n) => n.toLowerCase()));
 	const fresh = (ideas ?? []).filter((idea) => !tracked.has(idea.name.toLowerCase()));
-	const toEntity = (idea: CompetitorIdea): EntityView => ({ name: idea.name, aliases: [], domains: idea.domain ? [idea.domain] : [] });
+	const toEntity = (idea: CompetitorIdea): EntityView => ({
+		name: idea.name,
+		aliases: [],
+		domains: idea.domain ? [idea.domain] : [],
+	});
 	const [open, setOpen] = useState(false);
 	const [name, setName] = useState("");
 	const [site, setSite] = useState("");
 	const [aliases, setAliases] = useState<string[]>([]);
 	const clean = name.trim();
-	const taken = clean !== "" && (competitors.some((c) => c.name.toLowerCase() === clean.toLowerCase()) || project.name.toLowerCase() === clean.toLowerCase());
+	const taken =
+		clean !== "" &&
+		(competitors.some((c) => c.name.toLowerCase() === clean.toLowerCase()) ||
+			project.name.toLowerCase() === clean.toLowerCase());
 	const stats = new Map(report.competitors.map((c) => [c.name.toLowerCase(), c]));
 	const brand = report.competitors.find((c) => c.isBrand);
 	const rows = [
@@ -72,7 +100,21 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 	};
 	const add = () => {
 		if (!clean || taken) return;
-		onSave([...competitors, { name: clean, aliases, domains: site.trim() ? [site.trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "")] : [] }]);
+		onSave([
+			...competitors,
+			{
+				name: clean,
+				aliases,
+				domains: site.trim()
+					? [
+							site
+								.trim()
+								.replace(/^https?:\/\//i, "")
+								.replace(/\/.*$/, ""),
+						]
+					: [],
+			},
+		]);
 		setOpen(false);
 		reset();
 	};
@@ -84,7 +126,13 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 			actions={
 				<>
 					{canFind ? (
-						<Button variant="ghost" size="sm" loading={finding} onClick={onFind} icon={<Icon icon={SparklesIcon} size={14} />}>
+						<Button
+							variant="ghost"
+							size="sm"
+							loading={finding}
+							onClick={onFind}
+							icon={<Icon icon={SparklesIcon} size={14} />}
+						>
 							Find competitors
 						</Button>
 					) : null}
@@ -119,7 +167,11 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 
 			{finding ? (
 				<Card>
-					<CardHeader icon={<Spinner />} title={`Finding ${project.name}'s competitors`} description="Your AI engine reads your website, your questions and the latest answers. This takes about half a minute." />
+					<CardHeader
+						icon={<Spinner />}
+						title={`Finding ${project.name}'s competitors`}
+						description="Your AI engine reads your website, your questions and the latest answers. This takes about half a minute."
+					/>
 				</Card>
 			) : ideas ? (
 				<Card>
@@ -134,7 +186,11 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 						action={
 							<span className="oa-inline">
 								{fresh.length > 1 ? (
-									<Button size="sm" onClick={() => onSave([...competitors, ...fresh.map(toEntity)])} icon={<Icon icon={Add01Icon} size={14} />}>
+									<Button
+										size="sm"
+										onClick={() => onSave([...competitors, ...fresh.map(toEntity)])}
+										icon={<Icon icon={Add01Icon} size={14} />}
+									>
 										Add all {fresh.length}
 									</Button>
 								) : null}
@@ -146,11 +202,25 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 					/>
 					<CardContent>
 						{fresh.length === 0 ? (
-							<EmptyState bare icon={UserMultipleIcon} title={ideas.length ? "You already track all of these" : "No competitors found"} text={ideas.length ? "Press Find competitors again after your next run." : "The engine could not tell who you compete with. Add them yourself, or try again after a run."} />
+							<EmptyState
+								bare
+								icon={UserMultipleIcon}
+								title={ideas.length ? "You already track all of these" : "No competitors found"}
+								text={
+									ideas.length
+										? "Press Find competitors again after your next run."
+										: "The engine could not tell who you compete with. Add them yourself, or try again after a run."
+								}
+							/>
 						) : (
 							<div className="oa-suggest">
 								{fresh.map((idea) => (
-									<button key={idea.name} type="button" onClick={() => onSave([...competitors, toEntity(idea)])} aria-label={`Track ${idea.name}`}>
+									<button
+										key={idea.name}
+										type="button"
+										onClick={() => onSave([...competitors, toEntity(idea)])}
+										aria-label={`Track ${idea.name}`}
+									>
 										<Avatar name={idea.name} size={20} shape="square" />
 										<span className="oa-suggest-text">
 											{idea.name}
@@ -169,16 +239,21 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 
 			{competitors.length === 0 ? (
 				<div>
-				<EmptyState
-					icon={UserMultipleIcon}
-					title="No competitors yet"
-					text="Add the businesses you lose work to. OpenAEO then shows how often each is named beside you, and which questions they win."
-					action={
-						<Button variant="secondary" size="sm" onClick={() => setOpen(true)} icon={<Icon icon={Add01Icon} size={14} />}>
-							Add competitor
-						</Button>
-					}
-				/>
+					<EmptyState
+						icon={UserMultipleIcon}
+						title="No competitors yet"
+						text="Add the businesses you lose work to. OpenAEO then shows how often each is named beside you, and which questions they win."
+						action={
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() => setOpen(true)}
+								icon={<Icon icon={Add01Icon} size={14} />}
+							>
+								Add competitor
+							</Button>
+						}
+					/>
 				</div>
 			) : (
 				<Card>
@@ -190,9 +265,20 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 									<Avatar name={c.name} size={20} shape="square" />
 									<span className="oa-grow">
 										<b>{c.name}</b>
-										{c.domains[0] || c.aliases.length ? <span>{[c.domains[0], c.aliases.length ? `also: ${c.aliases.join(", ")}` : ""].filter(Boolean).join(" · ")}</span> : null}
+										{c.domains[0] || c.aliases.length ? (
+											<span>
+												{[c.domains[0], c.aliases.length ? `also: ${c.aliases.join(", ")}` : ""]
+													.filter(Boolean)
+													.join(" · ")}
+											</span>
+										) : null}
 									</span>
-									<Button variant="ghost" size="sm" aria-label={`Remove ${c.name}`} onClick={() => onSave(competitors.filter((x) => x.name !== c.name))}>
+									<Button
+										variant="ghost"
+										size="sm"
+										aria-label={`Remove ${c.name}`}
+										onClick={() => onSave(competitors.filter((x) => x.name !== c.name))}
+									>
 										Remove
 									</Button>
 								</div>
@@ -229,10 +315,31 @@ export function CompetitorsScreen({ project, report, competitors, onSave, ideas,
 						add();
 					}}
 				>
-					<TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Acme Studio" error={taken ? "You already track this name." : undefined} autoFocus />
-					<TextField label="Website" optional value={site} onChange={(e) => setSite(e.target.value)} placeholder="acme.com" hint="Used to tell when an answer links to their site." />
+					<TextField
+						label="Name"
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						placeholder="Acme Studio"
+						error={taken ? "You already track this name." : undefined}
+						autoFocus
+					/>
+					<TextField
+						label="Website"
+						optional
+						value={site}
+						onChange={(e) => setSite(e.target.value)}
+						placeholder="acme.com"
+						hint="Used to tell when an answer links to their site."
+					/>
 					<div>
-						<TagInput aria-label="Other names" value={aliases} onChange={setAliases} placeholder="Other names they go by (optional)" max={10} normalize={(t) => t.trim()} />
+						<TagInput
+							aria-label="Other names"
+							value={aliases}
+							onChange={setAliases}
+							placeholder="Other names they go by (optional)"
+							max={10}
+							normalize={(t) => t.trim()}
+						/>
 					</div>
 				</form>
 			</Dialog>

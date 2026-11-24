@@ -116,7 +116,9 @@ body,
 	text-align: left;
 	color: var(--text);
 	cursor: pointer;
-	transition: background-color 140ms ease, color 140ms ease;
+	transition:
+		background-color 140ms ease,
+		color 140ms ease;
 }
 
 .oa-q > span:first-child {
@@ -413,8 +415,16 @@ body,
 
 .oa-cta {
 	background:
-		radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--aui-blue, #0190fe) 16%, transparent) 0%, transparent 60%),
-		radial-gradient(90% 80% at 0% 100%, color-mix(in srgb, var(--aui-teal, #13b3a0) 12%, transparent) 0%, transparent 60%),
+		radial-gradient(
+			120% 90% at 100% 0%,
+			color-mix(in srgb, var(--aui-blue, #0190fe) 16%, transparent) 0%,
+			transparent 60%
+		),
+		radial-gradient(
+			90% 80% at 0% 100%,
+			color-mix(in srgb, var(--aui-teal, #13b3a0) 12%, transparent) 0%,
+			transparent 60%
+		),
 		var(--card);
 }
 
@@ -504,7 +514,11 @@ body,
 	gap: 14px;
 	padding: 36px 16px 28px;
 	text-align: center;
-	background: radial-gradient(58% 170px at 50% 124px, color-mix(in srgb, var(--aui-blue, #0190fe) 12%, transparent) 0%, transparent 72%);
+	background: radial-gradient(
+		58% 170px at 50% 124px,
+		color-mix(in srgb, var(--aui-blue, #0190fe) 12%, transparent) 0%,
+		transparent 72%
+	);
 	border-radius: calc(var(--aui-radius-lg, 10px) + 2px);
 }
 
@@ -512,7 +526,11 @@ body,
 	flex: 1;
 	justify-content: center;
 	padding-bottom: 96px;
-	background: radial-gradient(56% 300px at 50% 44%, color-mix(in srgb, var(--aui-blue, #0190fe) 12%, transparent) 0%, transparent 72%);
+	background: radial-gradient(
+		56% 300px at 50% 44%,
+		color-mix(in srgb, var(--aui-blue, #0190fe) 12%, transparent) 0%,
+		transparent 72%
+	);
 }
 
 .oa-audit-hero h2 {
@@ -603,7 +621,9 @@ body,
 	text-align: left;
 	color: var(--ink);
 	cursor: pointer;
-	transition: background-color 140ms ease, transform 140ms ease;
+	transition:
+		background-color 140ms ease,
+		transform 140ms ease;
 }
 
 .oa-suggest-text {
@@ -621,7 +641,9 @@ body,
 	background: var(--card);
 	box-shadow: var(--card-shadow);
 	color: var(--muted);
-	transition: background-color 140ms ease, color 140ms ease;
+	transition:
+		background-color 140ms ease,
+		color 140ms ease;
 }
 
 .oa-suggest > button:hover {
@@ -651,7 +673,9 @@ body,
 	background: var(--card);
 	box-shadow: var(--card-shadow);
 	text-align: left;
-	transition: box-shadow 160ms ease, border-radius 160ms ease;
+	transition:
+		box-shadow 160ms ease,
+		border-radius 160ms ease;
 }
 
 .oa-pill[data-multi] {
@@ -659,7 +683,9 @@ body,
 }
 
 .oa-pill:focus-within {
-	box-shadow: 0 0 0 2px var(--aui-focus), var(--card-shadow);
+	box-shadow:
+		0 0 0 2px var(--aui-focus),
+		var(--card-shadow);
 }
 
 .oa-pill-row {
@@ -720,7 +746,10 @@ body,
 	background: var(--ink);
 	color: var(--panel);
 	cursor: pointer;
-	transition: opacity 140ms ease, transform 140ms ease, background-color 140ms ease;
+	transition:
+		opacity 140ms ease,
+		transform 140ms ease,
+		background-color 140ms ease;
 }
 
 .oa-pill-go:not(:disabled):hover {
@@ -757,12 +786,17 @@ body,
 	padding: 6px;
 	border-radius: 0 0 16px 16px;
 	background: var(--card);
-	box-shadow: var(--card-shadow), 0 18px 32px -14px rgba(0, 0, 0, 0.4);
+	box-shadow:
+		var(--card-shadow),
+		0 18px 32px -14px rgba(0, 0, 0, 0.4);
 	clip-path: none;
 }
 
 .oa-pill:focus-within .ui-pex-list {
-	box-shadow: 0 0 0 2px var(--aui-focus), var(--card-shadow), 0 18px 32px -14px rgba(0, 0, 0, 0.4);
+	box-shadow:
+		0 0 0 2px var(--aui-focus),
+		var(--card-shadow),
+		0 18px 32px -14px rgba(0, 0, 0, 0.4);
 }
 
 .oa-pill .ui-pex-list::before {
@@ -803,7 +837,11 @@ body,
 	flex: 1;
 	flex-direction: column;
 	border-radius: calc(var(--aui-radius-lg, 10px) + 2px);
-	background: radial-gradient(56% 300px at 50% 46%, color-mix(in srgb, var(--aui-blue, #0190fe) 12%, transparent) 0%, transparent 72%);
+	background: radial-gradient(
+		56% 300px at 50% 46%,
+		color-mix(in srgb, var(--aui-blue, #0190fe) 12%, transparent) 0%,
+		transparent 72%
+	);
 }
 
 .oa-ask-dock > .oa-pill {
@@ -819,7 +857,6 @@ body,
 .ui-as-rev__content > .ui-pex > .oa-prompt-hero {
 	padding-top: 28px;
 }
-
 
 .oa-suggest small {
 	display: block;

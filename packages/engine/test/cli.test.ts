@@ -72,7 +72,16 @@ test("codex adapter puts --search before exec and the prompt last", async () => 
 	const { exec, calls } = fake({ stdout: fixture("codex-search.jsonl") });
 	const answer = await createCodexCli({ exec }).ask("best crm?");
 	expect(calls[0]?.cmd).toBe("codex");
-	expect(calls[0]?.args).toEqual(["--search", "exec", "--sandbox", "read-only", "--skip-git-repo-check", "--ephemeral", "--json", "best crm?"]);
+	expect(calls[0]?.args).toEqual([
+		"--search",
+		"exec",
+		"--sandbox",
+		"read-only",
+		"--skip-git-repo-check",
+		"--ephemeral",
+		"--json",
+		"best crm?",
+	]);
 	expect(calls[0]?.cwdWasEmptyTemp).toBe(true);
 	expect(answer.engine).toBe("codex-cli");
 });
@@ -80,7 +89,18 @@ test("codex adapter puts --search before exec and the prompt last", async () => 
 test("codex adapter passes a model after exec", async () => {
 	const { exec, calls } = fake({ stdout: fixture("codex-search.jsonl") });
 	await createCodexCli({ exec, model: "gpt-x" }).ask("q");
-	expect(calls[0]?.args).toEqual(["--search", "exec", "-m", "gpt-x", "--sandbox", "read-only", "--skip-git-repo-check", "--ephemeral", "--json", "q"]);
+	expect(calls[0]?.args).toEqual([
+		"--search",
+		"exec",
+		"-m",
+		"gpt-x",
+		"--sandbox",
+		"read-only",
+		"--skip-git-repo-check",
+		"--ephemeral",
+		"--json",
+		"q",
+	]);
 });
 
 test("a prompt that looks like a flag is not parsed as one by codex", async () => {
@@ -100,12 +120,18 @@ test("a missing binary is reported as not_installed", async () => {
 });
 
 test("a timed out run is reported as timeout", async () => {
-	expect((await codeOf(createClaudeCli({ exec: fake({ timedOut: true, code: null }).exec }).ask("q"))).code).toBe("timeout");
-	expect((await codeOf(createCodexCli({ exec: fake({ timedOut: true, code: null }).exec }).ask("q"))).code).toBe("timeout");
+	expect((await codeOf(createClaudeCli({ exec: fake({ timedOut: true, code: null }).exec }).ask("q"))).code).toBe(
+		"timeout",
+	);
+	expect((await codeOf(createCodexCli({ exec: fake({ timedOut: true, code: null }).exec }).ask("q"))).code).toBe(
+		"timeout",
+	);
 });
 
 test("a crash with no output includes the end of stderr", async () => {
-	const error = await codeOf(createClaudeCli({ exec: fake({ code: 1, stderr: "boom: config is broken" }).exec }).ask("q"));
+	const error = await codeOf(
+		createClaudeCli({ exec: fake({ code: 1, stderr: "boom: config is broken" }).exec }).ask("q"),
+	);
 	expect(error.code).toBe("failed");
 	expect(error.message).toContain("boom: config is broken");
 });
@@ -117,7 +143,11 @@ test("the temp directory is removed when the run fails", async () => {
 });
 
 test("runCommand captures output and passes stdin", async () => {
-	const result = await runCommand("sh", ["-c", "cat; echo err >&2"], { cwd: tmpdir(), stdin: "hello", timeoutMs: 5000 });
+	const result = await runCommand("sh", ["-c", "cat; echo err >&2"], {
+		cwd: tmpdir(),
+		stdin: "hello",
+		timeoutMs: 5000,
+	});
 	expect(result.code).toBe(0);
 	expect(result.stdout).toBe("hello");
 	expect(result.stderr.trim()).toBe("err");
@@ -135,11 +165,17 @@ test("runCommand stops when the signal aborts", async () => {
 	const controller = new AbortController();
 	setTimeout(() => controller.abort(), 50);
 	const started = Date.now();
-	const result = await runCommand("sh", ["-c", "sleep 5"], { cwd: tmpdir(), timeoutMs: 10_000, signal: controller.signal });
+	const result = await runCommand("sh", ["-c", "sleep 5"], {
+		cwd: tmpdir(),
+		timeoutMs: 10_000,
+		signal: controller.signal,
+	});
 	expect(Date.now() - started).toBeLessThan(2000);
 	expect(result.code).not.toBe(0);
 });
 
 test("runCommand rejects with ENOENT for a missing binary", async () => {
-	expect(runCommand("definitely-not-a-binary", [], { cwd: tmpdir(), timeoutMs: 1000 })).rejects.toMatchObject({ code: "ENOENT" });
+	expect(runCommand("definitely-not-a-binary", [], { cwd: tmpdir(), timeoutMs: 1000 })).rejects.toMatchObject({
+		code: "ENOENT",
+	});
 });

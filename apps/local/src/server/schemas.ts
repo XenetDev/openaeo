@@ -18,10 +18,16 @@ export const AddPromptsSchema = z.object({ texts: z.array(z.string().max(2000)).
 export const StartAuditSchema = z.object({ url: z.string().trim().max(2000).optional() });
 export const AskSchema = z.object({
 	question: z.string().trim().min(1, "Type a question first").max(2000),
-	history: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(20_000) })).max(40).default([]),
+	history: z
+		.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(20_000) }))
+		.max(40)
+		.default([]),
 	engine: z.string().max(40).optional(),
 });
-export const CompetitorIdeasSchema = z.object({ name: z.string().trim().min(1, "name is required").max(200), domain: z.string().trim().max(300).optional() });
+export const CompetitorIdeasSchema = z.object({
+	name: z.string().trim().min(1, "name is required").max(200),
+	domain: z.string().trim().max(300).optional(),
+});
 export const PatchPromptSchema = z.object({ active: z.boolean() });
 
 const toggle = z.enum(["true", "false"]);
@@ -32,7 +38,12 @@ const ENGINE_IDS = ["claude-cli", "codex-cli", ...API_IDS] as const;
 
 export const SettingsSchema = z
 	.object({
-		...Object.fromEntries(API_IDS.flatMap((id) => [[`${id}.apiKey`, z.string().trim().max(400)], [`${id}.model`, model]])),
+		...Object.fromEntries(
+			API_IDS.flatMap((id) => [
+				[`${id}.apiKey`, z.string().trim().max(400)],
+				[`${id}.model`, model],
+			]),
+		),
 		"claude.model": model,
 		"codex.model": model,
 		schedule: z.enum(["off", "daily", "weekly"]),

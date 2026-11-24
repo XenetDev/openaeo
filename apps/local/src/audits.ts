@@ -33,8 +33,17 @@ export function createAuditService(deps: { store: Store; get: (url: string) => P
 	async function execute(created: StoredAudit, controller: AbortController): Promise<StoredAudit> {
 		let finished: StoredAudit | null = null;
 		try {
-			const result = await runAudit({ url: created.origin, get: deps.get, maxPages: deps.maxPages, signal: controller.signal });
-			finished = store.audits.finish(created.id, controller.signal.aborted ? "interrupted" : "done", controller.signal.aborted ? null : result);
+			const result = await runAudit({
+				url: created.origin,
+				get: deps.get,
+				maxPages: deps.maxPages,
+				signal: controller.signal,
+			});
+			finished = store.audits.finish(
+				created.id,
+				controller.signal.aborted ? "interrupted" : "done",
+				controller.signal.aborted ? null : result,
+			);
 		} catch {
 			try {
 				finished = store.audits.finish(created.id, "interrupted", null);
@@ -52,7 +61,8 @@ export function createAuditService(deps: { store: Store; get: (url: string) => P
 			if (!target) throw new AuditError("no_url", "Add your website in Settings, or give an address to audit.");
 			const origin = toOrigin(target);
 			if (!origin) throw new AuditError("bad_url", `"${target.slice(0, 100)}" is not a web address OpenAEO can audit.`);
-			if (store.audits.active(projectId)) throw new AuditError("already_running", "An audit is already in progress for this project.");
+			if (store.audits.active(projectId))
+				throw new AuditError("already_running", "An audit is already in progress for this project.");
 			const host = toDomain(origin) ?? "";
 			const sites = project.domains.map((d) => toDomain(toOrigin(d) ?? "")).filter((d): d is string => Boolean(d));
 			const own = sites.length === 0 || sites.some((site) => sameSite(host, site) || sameSite(site, host));

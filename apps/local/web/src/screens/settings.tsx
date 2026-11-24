@@ -1,4 +1,3 @@
-import type { EngineInfo, EntityView, ProjectView } from "@/types";
 import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { Icon } from "@/components/app-shell";
@@ -9,6 +8,7 @@ import { CodeBlock } from "@/components/ui/code-block-clean";
 import { Switch } from "@/components/ui/switch-clean";
 import { TagInput } from "@/components/ui/tag-input-clean";
 import { TextField } from "@/components/ui/text-field-clean";
+import type { EngineInfo, EntityView, ProjectView } from "@/types";
 
 type Props = {
 	engines: EngineInfo[];
@@ -19,7 +19,6 @@ type Props = {
 	onDeleteProject: () => void;
 };
 
-
 const API_ENGINES = [
 	{ id: "openai", name: "OpenAI", model: "gpt-6.1-terra" },
 	{ id: "anthropic", name: "Anthropic", model: "claude-sonnet-5-5" },
@@ -28,14 +27,26 @@ const API_ENGINES = [
 	{ id: "perplexity", name: "Perplexity", model: "perplexity/sonar" },
 ];
 
-function ApiRow({ api, savedKey, savedModel, onSave }: { api: (typeof API_ENGINES)[number]; savedKey: string; savedModel: string; onSave: (next: Record<string, string>, message: string) => void }) {
+function ApiRow({
+	api,
+	savedKey,
+	savedModel,
+	onSave,
+}: {
+	api: (typeof API_ENGINES)[number];
+	savedKey: string;
+	savedModel: string;
+	onSave: (next: Record<string, string>, message: string) => void;
+}) {
 	const [key, setKey] = useState(savedKey);
 	const [model, setModel] = useState(savedModel);
 	return (
 		<div className="ui-sg-row">
 			<span className="ui-sg-label">
 				<b>{api.name}</b>
-				<small>{savedKey ? "Key saved" : "No key"} · model {savedModel || api.model}</small>
+				<small>
+					{savedKey ? "Key saved" : "No key"} · model {savedModel || api.model}
+				</small>
 			</span>
 			<span className="oa-key-fields">
 				<TextField
@@ -46,7 +57,10 @@ function ApiRow({ api, savedKey, savedModel, onSave }: { api: (typeof API_ENGINE
 					autoComplete="off"
 					spellCheck={false}
 					onChange={(e) => setKey(e.target.value)}
-					onBlur={() => key !== savedKey && onSave({ [`${api.id}.apiKey`]: key }, key ? `${api.name} key saved` : `${api.name} key removed`)}
+					onBlur={() =>
+						key !== savedKey &&
+						onSave({ [`${api.id}.apiKey`]: key }, key ? `${api.name} key saved` : `${api.name} key removed`)
+					}
 				/>
 				<TextField
 					aria-label={`${api.name} model`}
@@ -55,7 +69,10 @@ function ApiRow({ api, savedKey, savedModel, onSave }: { api: (typeof API_ENGINE
 					autoComplete="off"
 					spellCheck={false}
 					onChange={(e) => setModel(e.target.value)}
-					onBlur={() => model !== savedModel && onSave({ [`${api.id}.model`]: model }, model ? `${api.name} model saved` : `${api.name} model reset`)}
+					onBlur={() =>
+						model !== savedModel &&
+						onSave({ [`${api.id}.model`]: model }, model ? `${api.name} model saved` : `${api.name} model reset`)
+					}
 				/>
 			</span>
 		</div>
@@ -67,7 +84,12 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 	const [deleting, setDeleting] = useState(false);
 	const [confirm, setConfirm] = useState("");
 	const canDelete = confirm.trim() === project.name.trim();
-	const entity = (patch: Partial<EntityView>): EntityView => ({ name: project.name, aliases: project.aliases, domains: project.domains, ...patch });
+	const entity = (patch: Partial<EntityView>): EntityView => ({
+		name: project.name,
+		aliases: project.aliases,
+		domains: project.domains,
+		...patch,
+	});
 
 	return (
 		<div className="ui-as-page ui-sg">
@@ -85,37 +107,54 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 				{engines
 					.filter((engine) => engine.id.endsWith("-cli") || engine.available)
 					.map((engine) => (
-					<div key={engine.id} className="ui-sg-row">
-						<span className="ui-sg-label">
-							<b>{engine.label}</b>
-							<small>{engine.reason ?? (engine.enabled ? "Asked in every run" : "Skipped in runs")}</small>
-						</span>
-						<span className="ui-sg-control">
-							{engine.available ? null : <Badge tone="warning">Unavailable</Badge>}
-							<Switch
-								aria-label={`Use ${engine.label}`}
-								checked={engine.available && engine.enabled}
-								disabled={!engine.available}
-								onChange={(e) => onSave({ [`engine.${engine.id}.enabled`]: e.target.checked ? "true" : "false" }, `${engine.label} turned ${e.target.checked ? "on" : "off"}`)}
-							/>
-						</span>
-					</div>
-				))}
+						<div key={engine.id} className="ui-sg-row">
+							<span className="ui-sg-label">
+								<b>{engine.label}</b>
+								<small>{engine.reason ?? (engine.enabled ? "Asked in every run" : "Skipped in runs")}</small>
+							</span>
+							<span className="ui-sg-control">
+								{engine.available ? null : <Badge tone="warning">Unavailable</Badge>}
+								<Switch
+									aria-label={`Use ${engine.label}`}
+									checked={engine.available && engine.enabled}
+									disabled={!engine.available}
+									onChange={(e) =>
+										onSave(
+											{ [`engine.${engine.id}.enabled`]: e.target.checked ? "true" : "false" },
+											`${engine.label} turned ${e.target.checked ? "on" : "off"}`,
+										)
+									}
+								/>
+							</span>
+						</div>
+					))}
 			</section>
 
 			<header className="ui-sg-head">
 				<h2>API keys</h2>
-				<p>Optional. Each key adds that provider as an engine. Keys are stored only on this computer and are never shown again in full.</p>
+				<p>
+					Optional. Each key adds that provider as an engine. Keys are stored only on this computer and are never shown
+					again in full.
+				</p>
 			</header>
 			<section className="ui-sg-card" aria-label="API keys">
 				{API_ENGINES.map((api) => (
-					<ApiRow key={api.id} api={api} savedKey={settings[`${api.id}.apiKey`] ?? ""} savedModel={settings[`${api.id}.model`] ?? ""} onSave={onSave} />
+					<ApiRow
+						key={api.id}
+						api={api}
+						savedKey={settings[`${api.id}.apiKey`] ?? ""}
+						savedModel={settings[`${api.id}.model`] ?? ""}
+						onSave={onSave}
+					/>
 				))}
 			</section>
 
 			<header className="ui-sg-head">
 				<h2>Connect your AI agent</h2>
-				<p>Let Claude Code or Codex read your reports and audit findings and fix problems in your site's code. Run one of these once in a terminal, then ask your agent to “get the OpenAEO fix brief and fix the findings”.</p>
+				<p>
+					Let Claude Code or Codex read your reports and audit findings and fix problems in your site's code. Run one of
+					these once in a terminal, then ask your agent to “get the OpenAEO fix brief and fix the findings”.
+				</p>
 			</header>
 			<div className="oa-stack oa-after-head">
 				<CodeBlock language="sh" filename="Claude Code" code="claude mcp add openaeo --scope user -- openaeo mcp" />
@@ -137,7 +176,11 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 						value={name}
 						maxLength={200}
 						onChange={(e) => setName(e.target.value)}
-						onBlur={() => (name.trim() && name.trim() !== project.name ? onSaveProject(entity({ name: name.trim() }), "Brand name saved") : setName(project.name))}
+						onBlur={() =>
+							name.trim() && name.trim() !== project.name
+								? onSaveProject(entity({ name: name.trim() }), "Brand name saved")
+								: setName(project.name)
+						}
 					/>
 				</label>
 				<div className="ui-sg-row">
@@ -145,7 +188,14 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 						<b>Other names</b>
 						<small>Short forms and product names that also count as a mention</small>
 					</span>
-					<TagInput className="ui-sg-field" aria-label="Other names" value={project.aliases} onChange={(aliases) => onSaveProject(entity({ aliases }), "Names saved")} placeholder="Add a name" max={20} />
+					<TagInput
+						className="ui-sg-field"
+						aria-label="Other names"
+						value={project.aliases}
+						onChange={(aliases) => onSaveProject(entity({ aliases }), "Names saved")}
+						placeholder="Add a name"
+						max={20}
+					/>
 				</div>
 				<div className="ui-sg-row">
 					<span className="ui-sg-label">
@@ -159,7 +209,13 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 						onChange={(domains) => onSaveProject(entity({ domains }), "Websites saved")}
 						placeholder="yourcompany.com"
 						max={20}
-						normalize={(t) => t.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "")}
+						normalize={(t) =>
+							t
+								.trim()
+								.toLowerCase()
+								.replace(/^https?:\/\//, "")
+								.replace(/\/.*$/, "")
+						}
 					/>
 				</div>
 			</section>
@@ -193,7 +249,14 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 							<span>
 								Type <b>{project.name}</b> to confirm
 							</span>
-							<TextField className="ui-sg-field" value={confirm} autoFocus autoComplete="off" spellCheck={false} onChange={(e) => setConfirm(e.target.value)} />
+							<TextField
+								className="ui-sg-field"
+								value={confirm}
+								autoFocus
+								autoComplete="off"
+								spellCheck={false}
+								onChange={(e) => setConfirm(e.target.value)}
+							/>
 						</label>
 						<span className="ui-sg-control">
 							<Button size="sm" variant="secondary" type="button" onClick={() => setDeleting(false)}>

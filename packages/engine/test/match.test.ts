@@ -10,7 +10,11 @@ const hubspot: Entity = { name: "HubSpot" };
 const attio: Entity = { name: "Attio" };
 
 test("ranks entities by first appearance and counts mentions", () => {
-	const result = match(answer("**HubSpot** is the default. Pipedrive is cheaper; HubSpot's paid tiers add up."), pipedrive, [hubspot, attio]);
+	const result = match(
+		answer("**HubSpot** is the default. Pipedrive is cheaper; HubSpot's paid tiers add up."),
+		pipedrive,
+		[hubspot, attio],
+	);
 	expect(result.mentions.map((m) => [m.entity, m.rank, m.count])).toEqual([
 		["HubSpot", 1, 2],
 		["Pipedrive", 2, 1],
@@ -21,7 +25,11 @@ test("ranks entities by first appearance and counts mentions", () => {
 });
 
 test("does not match a name inside a longer word", () => {
-	const result = match(answer("In the beginning, Bigin-like tools were rare. Rebigin is unrelated."), { name: "Bigin" }, []);
+	const result = match(
+		answer("In the beginning, Bigin-like tools were rare. Rebigin is unrelated."),
+		{ name: "Bigin" },
+		[],
+	);
 	expect(result.mentions).toEqual([{ entity: "Bigin", rank: 1, firstIndex: 18, count: 1 }]);
 });
 
@@ -31,7 +39,11 @@ test("a longer tracked name wins over a shorter one inside it", () => {
 });
 
 test("the shorter name still counts where it stands alone", () => {
-	const result = match(answer("HubSpot CRM is popular, and HubSpot also sells marketing tools."), { name: "HubSpot CRM" }, [hubspot]);
+	const result = match(
+		answer("HubSpot CRM is popular, and HubSpot also sells marketing tools."),
+		{ name: "HubSpot CRM" },
+		[hubspot],
+	);
 	expect(result.mentions.map((m) => [m.entity, m.count])).toEqual([
 		["HubSpot CRM", 1],
 		["HubSpot", 1],
@@ -46,7 +58,11 @@ test("aliases count towards the entity's name", () => {
 });
 
 test("a name that only appears inside a URL is not a mention", () => {
-	const result = match(answer("See https://pipedrive.com/pricing and [pricing](https://www.pipedrive.com/en/pricing)."), pipedrive, []);
+	const result = match(
+		answer("See https://pipedrive.com/pricing and [pricing](https://www.pipedrive.com/en/pricing)."),
+		pipedrive,
+		[],
+	);
 	expect(result.brandMentioned).toBe(false);
 	expect(result.brandRank).toBeNull();
 });
@@ -86,7 +102,15 @@ test("brandCited is true for a citation on the brand's site or subdomain", () =>
 });
 
 test("brandSourced without brandCited when the brand is only in search results", () => {
-	const result = match(answer("x", [src("https://a.com/1", "a.com"), src("https://a.com/2", "a.com")], [src("https://pipedrive.com/p", "pipedrive.com")]), pipedrive, []);
+	const result = match(
+		answer(
+			"x",
+			[src("https://a.com/1", "a.com"), src("https://a.com/2", "a.com")],
+			[src("https://pipedrive.com/p", "pipedrive.com")],
+		),
+		pipedrive,
+		[],
+	);
 	expect(result.brandCited).toBe(false);
 	expect(result.brandSourced).toBe(true);
 	expect(result.citedDomains).toEqual(["a.com"]);

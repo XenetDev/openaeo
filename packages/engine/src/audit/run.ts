@@ -23,7 +23,14 @@ export type RunAuditOptions = {
 };
 
 const WEIGHT: Record<Severity, number> = { high: 12, medium: 5, low: 2 };
-const SITE_CHECKS = new Set(["crawler-blocked", "crawler-partly-blocked", "robots-error", "robots-missing", "llms-txt-missing", "site-unreachable"]);
+const SITE_CHECKS = new Set([
+	"crawler-blocked",
+	"crawler-partly-blocked",
+	"robots-error",
+	"robots-missing",
+	"llms-txt-missing",
+	"site-unreachable",
+]);
 const NOT_A_PAGE = "This address is not a web page.";
 const FETCH_MESSAGES: Record<string, string> = {
 	bad_url: "That is not a web address.",
@@ -35,10 +42,14 @@ const FETCH_MESSAGES: Record<string, string> = {
 };
 const ASSET = /\.(png|jpe?g|gif|svg|webp|ico|css|js|mjs|pdf|zip|gz|mp4|mp3|woff2?|ttf|xml|txt|md|json|rss|atom)$/i;
 
-const messageOf = (error: unknown) => (error instanceof AuditFetchError ? (FETCH_MESSAGES[error.code] ?? "The page could not be fetched.") : "The page could not be fetched.");
+const messageOf = (error: unknown) =>
+	error instanceof AuditFetchError
+		? (FETCH_MESSAGES[error.code] ?? "The page could not be fetched.")
+		: "The page could not be fetched.";
 const ok = (f: Fetched) => f.status >= 200 && f.status < 300;
 const isHtml = (f: Fetched) => /html/i.test(f.contentType) || (!f.contentType && /^\s*</.test(f.text));
-const locs = (xml: string) => [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map((m) => (m[1] ?? "").replace(/&amp;/g, "&"));
+const locs = (xml: string) =>
+	[...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map((m) => (m[1] ?? "").replace(/&amp;/g, "&"));
 
 export function scoreOf(findings: Finding[], pages: AuditPage[] = []): number {
 	if (findings.some((f) => f.checkId === "site-unreachable")) return 0;
@@ -79,7 +90,8 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 	try {
 		const parsed = new URL(o.url.includes("://") ? o.url : `https://${o.url}`);
 		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("scheme");
-		if (!parsed.hostname.includes(".") && !parsed.hostname.includes(":") && parsed.hostname !== "localhost") throw new Error("host");
+		if (!parsed.hostname.includes(".") && !parsed.hostname.includes(":") && parsed.hostname !== "localhost")
+			throw new Error("host");
 		origin = parsed.origin;
 	} catch {
 		throw new Error("That is not a web address OpenAEO can audit.");
@@ -102,7 +114,8 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 		home = await o.get(homeUrl);
 		if (!ok(home)) throw new HomeStatus(home.status);
 	} catch (error) {
-		const reason = error instanceof HomeStatus ? `The home page answered with status ${error.status}.` : messageOf(error);
+		const reason =
+			error instanceof HomeStatus ? `The home page answered with status ${error.status}.` : messageOf(error);
 		const finding: Finding = {
 			checkId: "site-unreachable",
 			severity: "high",
@@ -111,7 +124,14 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 			evidence: reason,
 			fix: "Check the address, and that the site is public and not blocking automated requests.",
 		};
-		return { origin, startedAt, pages: [{ url: homeUrl, status: 0, words: 0, error: reason }], findings: [finding], score: 0, skipped: [] };
+		return {
+			origin,
+			startedAt,
+			pages: [{ url: homeUrl, status: 0, words: 0, error: reason }],
+			findings: [finding],
+			score: 0,
+			skipped: [],
+		};
 	}
 
 	try {
@@ -119,7 +139,11 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 	} catch {}
 	const landing = home.url || homeUrl;
 
-	const [robots, llms, sitemap] = await Promise.all([tryGet(`${origin}/robots.txt`), tryGet(`${origin}/llms.txt`), tryGet(`${origin}/sitemap.xml`)]);
+	const [robots, llms, sitemap] = await Promise.all([
+		tryGet(`${origin}/robots.txt`),
+		tryGet(`${origin}/llms.txt`),
+		tryGet(`${origin}/sitemap.xml`),
+	]);
 
 	const homePage = { ...parsePage(landing, home.text), isHome: true };
 	let discovered: string[] = [];
@@ -168,7 +192,10 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 	};
 	const findings: Finding[] = checkSite({ origin, robots, llms, paths: [landing, ...chosen].map(pathOf) });
 
-	const pages: (AuditPage | null)[] = [{ url: landing, status: home.status, words: homePage.words }, ...chosen.map(() => null)];
+	const pages: (AuditPage | null)[] = [
+		{ url: landing, status: home.status, words: homePage.words },
+		...chosen.map(() => null),
+	];
 	const perPage: Finding[][] = [checkPage(homePage, startedAt), ...chosen.map(() => [])];
 
 	let next = 0;
@@ -180,7 +207,13 @@ export async function runAudit(o: RunAuditOptions): Promise<AuditResult> {
 			next += 1;
 			try {
 				const got = await o.get(url);
-				if (!ok(got)) pages[index + 1] = { url, status: got.status, words: 0, error: `The server answered with status ${got.status}.` };
+				if (!ok(got))
+					pages[index + 1] = {
+						url,
+						status: got.status,
+						words: 0,
+						error: `The server answered with status ${got.status}.`,
+					};
 				else if (!isHtml(got)) pages[index + 1] = { url, status: got.status, words: 0, error: NOT_A_PAGE };
 				else {
 					const page = parsePage(url, got.text);

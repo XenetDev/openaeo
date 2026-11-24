@@ -1,4 +1,16 @@
-import { ANTHROPIC_DEFAULT_MODEL, createAnthropic, createGemini, createOpenAI, createPerplexity, createXai, type EngineId, GEMINI_DEFAULT_MODEL, PERPLEXITY_DEFAULT_MODEL, type Provider, XAI_DEFAULT_MODEL } from "@openaeo/engine";
+import {
+	ANTHROPIC_DEFAULT_MODEL,
+	createAnthropic,
+	createGemini,
+	createOpenAI,
+	createPerplexity,
+	createXai,
+	type EngineId,
+	GEMINI_DEFAULT_MODEL,
+	PERPLEXITY_DEFAULT_MODEL,
+	type Provider,
+	XAI_DEFAULT_MODEL,
+} from "@openaeo/engine";
 import { createClaudeCli, createCodexCli } from "@openaeo/engine/cli";
 import type { Store } from "./store/store";
 
@@ -32,20 +44,28 @@ const setting = (deps: EngineDeps, key: string) => deps.store.settings.get(key)?
 const DEFINITIONS: Definition[] = [
 	{
 		id: "claude-cli",
-		reason: (deps) => (deps.which("claude") ? null : "Claude Code is not installed. Install it and log in, then reopen OpenAEO."),
+		reason: (deps) =>
+			deps.which("claude") ? null : "Claude Code is not installed. Install it and log in, then reopen OpenAEO.",
 		build: (deps) => createClaudeCli({ model: setting(deps, "claude.model") }),
 	},
 	{
 		id: "codex-cli",
-		reason: (deps) => (deps.which("codex") ? null : "The Codex CLI is not installed. Install it and log in, then reopen OpenAEO."),
+		reason: (deps) =>
+			deps.which("codex") ? null : "The Codex CLI is not installed. Install it and log in, then reopen OpenAEO.",
 		build: (deps) => createCodexCli({ model: setting(deps, "codex.model") }),
 	},
 	...API_ENGINES.map(
 		(api): Definition => ({
 			id: api.id,
-			reason: (deps) => (setting(deps, `${api.id}.apiKey`) ? null : `Add ${/^[AEIOU]/.test(api.name) ? "an" : "a"} ${api.name} API key to use this engine.`),
+			reason: (deps) =>
+				setting(deps, `${api.id}.apiKey`)
+					? null
+					: `Add ${/^[AEIOU]/.test(api.name) ? "an" : "a"} ${api.name} API key to use this engine.`,
 			build: (deps) => {
-				const options = { apiKey: setting(deps, `${api.id}.apiKey`) ?? "", model: setting(deps, `${api.id}.model`) ?? api.model };
+				const options = {
+					apiKey: setting(deps, `${api.id}.apiKey`) ?? "",
+					model: setting(deps, `${api.id}.model`) ?? api.model,
+				};
 				if (api.id === "openai") return createOpenAI(options);
 				if (api.id === "anthropic") return createAnthropic(options);
 				if (api.id === "xai") return createXai(options);
@@ -61,7 +81,13 @@ const enabled = (deps: EngineDeps, id: EngineId) => deps.store.settings.get(`eng
 export function detectEngines(deps: EngineDeps): EngineStatus[] {
 	return DEFINITIONS.map((definition) => {
 		const reason = definition.reason(deps);
-		return { id: definition.id, label: ENGINE_LABELS[definition.id] ?? definition.id, available: reason === null, reason, enabled: enabled(deps, definition.id) };
+		return {
+			id: definition.id,
+			label: ENGINE_LABELS[definition.id] ?? definition.id,
+			available: reason === null,
+			reason,
+			enabled: enabled(deps, definition.id),
+		};
 	});
 }
 

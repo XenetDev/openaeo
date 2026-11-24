@@ -75,7 +75,11 @@ function parseV6(value: string): number[] | null {
 const embedded = (high: number, low: number) => v4Private([high >> 8, high & 255, low >> 8, low & 255]);
 
 export function isPrivateAddress(ip: string): boolean {
-	const value = ip.trim().toLowerCase().replace(/^\[|\]$/g, "").replace(/%.*$/, "");
+	const value = ip
+		.trim()
+		.toLowerCase()
+		.replace(/^\[|\]$/g, "")
+		.replace(/%.*$/, "");
 	const v4 = parseV4(value);
 	if (v4) return v4Private(v4);
 	const g = parseV6(value);
@@ -138,7 +142,10 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 			isPrivate = addresses.some(isPrivateAddress);
 		}
 		if (isPrivate && !allowPrivateHere) {
-			throw new AuditFetchError("blocked", "That address points to a private or internal network, which OpenAEO will not fetch.");
+			throw new AuditFetchError(
+				"blocked",
+				"That address points to a private or internal network, which OpenAEO will not fetch.",
+			);
 		}
 		return { url, isPrivate };
 	}
@@ -189,9 +196,13 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 					method: "GET",
 					redirect: "manual",
 					signal,
-					headers: { "user-agent": userAgent, "accept-encoding": "identity", accept: "text/html,application/xhtml+xml,text/plain,application/xml;q=0.9,*/*;q=0.5" },
+					headers: {
+						"user-agent": userAgent,
+						"accept-encoding": "identity",
+						accept: "text/html,application/xhtml+xml,text/plain,application/xml;q=0.9,*/*;q=0.5",
+					},
 				});
-			} catch (error) {
+			} catch {
 				if (signal.aborted) throw new AuditFetchError("timeout", "The page took too long to load.");
 				throw new AuditFetchError("network", "The site could not be reached.");
 			}
@@ -211,7 +222,13 @@ export function createSafeFetch(o: SafeFetchOptions = {}): (url: string) => Prom
 				if (signal.aborted) throw new AuditFetchError("timeout", "The page took too long to load.");
 				throw new AuditFetchError("network", "The page could not be read.");
 			}
-			return { url: url.toString(), status: response.status, contentType: response.headers.get("content-type") ?? "", text, redirects };
+			return {
+				url: url.toString(),
+				status: response.status,
+				contentType: response.headers.get("content-type") ?? "",
+				text,
+				redirects,
+			};
 		}
 	};
 }

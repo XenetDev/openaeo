@@ -64,7 +64,12 @@ export function robotsAllows(robots: Robots, userAgent: string, path: string): b
 	let best: Rule | null = null;
 	for (const rule of groups.flatMap((g) => g.rules)) {
 		if (!matches(rule.pattern, path)) continue;
-		if (!best || rule.pattern.length > best.pattern.length || (rule.pattern.length === best.pattern.length && rule.allow)) best = rule;
+		if (
+			!best ||
+			rule.pattern.length > best.pattern.length ||
+			(rule.pattern.length === best.pattern.length && rule.allow)
+		)
+			best = rule;
 	}
 	return best ? best.allow : true;
 }

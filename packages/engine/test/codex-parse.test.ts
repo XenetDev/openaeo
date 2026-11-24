@@ -17,7 +17,8 @@ function errorOf(run: () => unknown): ProviderError {
 }
 
 const line = (value: unknown) => `${JSON.stringify(value)}\n`;
-const failure = (message: string) => line({ type: "error", message }) + line({ type: "turn.failed", error: { message } });
+const failure = (message: string) =>
+	line({ type: "error", message }) + line({ type: "turn.failed", error: { message } });
 
 test("parses a searched answer", () => {
 	const answer = parseCodexStream(fixture("codex-search.jsonl"), 39_900);
@@ -43,8 +44,14 @@ test("sources carry titles and domains", () => {
 
 test("opening a page without a search still counts as searched", () => {
 	const stdout =
-		line({ type: "item.completed", item: { type: "web_search", action: { type: "open_page", url: "https://a.com/x" }, results: [{ type: "text_result", url: "https://a.com/x", title: "A" }] } }) +
-		line({ type: "item.completed", item: { type: "agent_message", text: "Answer." } });
+		line({
+			type: "item.completed",
+			item: {
+				type: "web_search",
+				action: { type: "open_page", url: "https://a.com/x" },
+				results: [{ type: "text_result", url: "https://a.com/x", title: "A" }],
+			},
+		}) + line({ type: "item.completed", item: { type: "agent_message", text: "Answer." } });
 	const answer = parseCodexStream(stdout, 1);
 	expect(answer.searched).toBe(true);
 	expect(answer.sources).toEqual([{ url: "https://a.com/x", domain: "a.com", title: "A" }]);
@@ -79,10 +86,21 @@ test("a model outside the plan is reported as model_unavailable", () => {
 });
 
 test("limit and login failures are classified", () => {
-	expect(errorOf(() => parseCodexStream(failure("You've hit your usage limit. Try again at 4pm."), 1)).code).toBe("rate_limited");
-	expect(errorOf(() => parseCodexStream(failure(JSON.stringify({ status: 429, error: { message: "Too many requests" } })), 1)).code).toBe("rate_limited");
-	expect(errorOf(() => parseCodexStream(failure(JSON.stringify({ status: 401, error: { message: "Unauthorized" } })), 1)).code).toBe("not_logged_in");
-	expect(errorOf(() => parseCodexStream(failure("Not logged in. Please log in with `codex login`."), 1)).code).toBe("not_logged_in");
+	expect(errorOf(() => parseCodexStream(failure("You've hit your usage limit. Try again at 4pm."), 1)).code).toBe(
+		"rate_limited",
+	);
+	expect(
+		errorOf(() =>
+			parseCodexStream(failure(JSON.stringify({ status: 429, error: { message: "Too many requests" } })), 1),
+		).code,
+	).toBe("rate_limited");
+	expect(
+		errorOf(() => parseCodexStream(failure(JSON.stringify({ status: 401, error: { message: "Unauthorized" } })), 1))
+			.code,
+	).toBe("not_logged_in");
+	expect(errorOf(() => parseCodexStream(failure("Not logged in. Please log in with `codex login`."), 1)).code).toBe(
+		"not_logged_in",
+	);
 });
 
 test("a plain-text error message is passed through", () => {

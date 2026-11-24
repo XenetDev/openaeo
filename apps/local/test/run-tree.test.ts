@@ -21,11 +21,18 @@ test("each answer becomes a bar placed by when it finished and how long it took"
 	expect(tree.end).toBe(30_000);
 	const engine = tree.children?.[0];
 	expect(engine?.name).toBe("Claude");
-	expect(engine?.children?.[0]).toMatchObject({ name: "Best CRM?", start: 2_000, end: 10_000, status: "done", detail: "searched the web" });
+	expect(engine?.children?.[0]).toMatchObject({
+		name: "Best CRM?",
+		start: 2_000,
+		end: 10_000,
+		status: "done",
+		detail: "searched the web",
+	});
 });
 
 test("a failed answer is marked failed with its reason and no output", () => {
-	const call = runTree(run, [answer({ errorCode: "timeout", errorMessage: "Took too long", text: "" })], label).children?.[0]?.children?.[0];
+	const call = runTree(run, [answer({ errorCode: "timeout", errorMessage: "Took too long", text: "" })], label)
+		.children?.[0]?.children?.[0];
 	expect(call).toMatchObject({ status: "failed", error: "Took too long" });
 	expect(call?.output).toBeUndefined();
 });

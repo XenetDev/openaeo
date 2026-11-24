@@ -38,12 +38,24 @@ export function cliProvider(spec: Spec): Provider {
 					.exec(spec.bin, spec.args(prompt), { cwd, stdin: spec.stdin?.(prompt), timeoutMs, signal: opts.signal })
 					.catch((error: unknown) => {
 						if (isMissingBinary(error)) {
-							throw new ProviderError(spec.id, "not_installed", `${spec.label} was not found (looked for \`${spec.bin}\`). Install it and try again.`);
+							throw new ProviderError(
+								spec.id,
+								"not_installed",
+								`${spec.label} was not found (looked for \`${spec.bin}\`). Install it and try again.`,
+							);
 						}
-						throw new ProviderError(spec.id, "failed", `${spec.label} could not be started: ${error instanceof Error ? error.message : String(error)}`);
+						throw new ProviderError(
+							spec.id,
+							"failed",
+							`${spec.label} could not be started: ${error instanceof Error ? error.message : String(error)}`,
+						);
 					});
 				if (result.timedOut) {
-					throw new ProviderError(spec.id, "timeout", `${spec.label} did not answer within ${Math.round(timeoutMs / 1000)} seconds.`);
+					throw new ProviderError(
+						spec.id,
+						"timeout",
+						`${spec.label} did not answer within ${Math.round(timeoutMs / 1000)} seconds.`,
+					);
 				}
 				try {
 					return spec.parse(result.stdout, result.durationMs);

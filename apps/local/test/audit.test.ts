@@ -7,7 +7,8 @@ import { createHandler } from "../src/server/handler";
 import { freshStore, seed } from "./helpers";
 
 const words = (n: number) => Array.from({ length: n }, () => "word").join(" ");
-const page = (title: string) => `<html><head><title>${title}</title></head><body><h1>${title}</h1><p>${words(400)}</p></body></html>`;
+const page = (title: string) =>
+	`<html><head><title>${title}</title></head><body><h1>${title}</h1><p>${words(400)}</p></body></html>`;
 
 function site(delayMs = 0) {
 	const calls: string[] = [];
@@ -132,7 +133,11 @@ function api() {
 		const response = await handler(
 			new Request(`http://127.0.0.1:4747${path}`, {
 				method,
-				headers: { host: "127.0.0.1:4747", "x-openaeo-token": "t", ...(body === undefined ? {} : { "content-type": "application/json" }) },
+				headers: {
+					host: "127.0.0.1:4747",
+					"x-openaeo-token": "t",
+					...(body === undefined ? {} : { "content-type": "application/json" }),
+				},
 				body: body === undefined ? undefined : JSON.stringify(body),
 			}),
 		);
@@ -148,7 +153,11 @@ function api() {
 
 test("the api starts an audit and returns the latest with findings, generated files and a brief", async () => {
 	const { project, audits, call } = api();
-	expect((await call("GET", `/api/projects/${project.id}/audits/latest`)).json).toEqual({ audit: null, findings: [], artefacts: {} });
+	expect((await call("GET", `/api/projects/${project.id}/audits/latest`)).json).toEqual({
+		audit: null,
+		findings: [],
+		artefacts: {},
+	});
 	const started = await call("POST", `/api/projects/${project.id}/audits`, {});
 	expect(started.status).toBe(202);
 	await audits.wait(started.json.audit.id);
@@ -174,8 +183,19 @@ test("the api reports audit problems with the right status", async () => {
 
 test("the audit command is parsed with an optional address", () => {
 	expect(parseArgs(["audit"])).toEqual({ command: "audit", open: true, json: false });
-	expect(parseArgs(["audit", "https://acme.com", "--json"])).toEqual({ command: "audit", open: true, json: true, url: "https://acme.com" });
-	expect(parseArgs(["audit", "acme.com", "--project", "Acme"])).toEqual({ command: "audit", open: true, json: false, url: "acme.com", project: "Acme" });
+	expect(parseArgs(["audit", "https://acme.com", "--json"])).toEqual({
+		command: "audit",
+		open: true,
+		json: true,
+		url: "https://acme.com",
+	});
+	expect(parseArgs(["audit", "acme.com", "--project", "Acme"])).toEqual({
+		command: "audit",
+		open: true,
+		json: false,
+		url: "acme.com",
+		project: "Acme",
+	});
 	expect(parseArgs(["run", "acme.com"]).command).toBe("error");
 	expect(parseArgs(["mcp"])).toEqual({ command: "mcp", open: true, json: false });
 });
@@ -185,7 +205,14 @@ test("openaeo audit <url> with no project prints findings without storing", asyn
 	const store = freshStore();
 	const lines: string[] = [];
 	const get = site().get;
-	const code = await auditOnce({ store, audits: createAuditService({ store, get }), get, out: (l) => lines.push(l), json: false, url: "pipedrive.com" });
+	const code = await auditOnce({
+		store,
+		audits: createAuditService({ store, get }),
+		get,
+		out: (l) => lines.push(l),
+		json: false,
+		url: "pipedrive.com",
+	});
 	const text = lines.join("\n");
 	expect(code).toBe(0);
 	expect(text).toMatch(/Score\s+\d+ \/ 100/);
@@ -200,7 +227,13 @@ test("openaeo audit for a project stores the audit; --json prints data", async (
 	const project = seed(store);
 	const lines: string[] = [];
 	const get = site().get;
-	const code = await auditOnce({ store, audits: createAuditService({ store, get }), get, out: (l) => lines.push(l), json: true });
+	const code = await auditOnce({
+		store,
+		audits: createAuditService({ store, get }),
+		get,
+		out: (l) => lines.push(l),
+		json: true,
+	});
 	expect(code).toBe(0);
 	const data = JSON.parse(lines.join("\n"));
 	expect(data.origin).toBe("https://pipedrive.com");
@@ -216,12 +249,23 @@ test("openaeo audit explains what is missing", async () => {
 	const lines: string[] = [];
 	expect(await auditOnce({ store, audits, get, out: (l) => lines.push(l), json: false })).toBe(1);
 	expect(lines.join("\n")).toMatch(/address/i);
-	expect(await auditOnce({ store, audits, get, out: (l) => lines.push(l), json: false, url: "not a url at all" })).toBe(1);
+	expect(await auditOnce({ store, audits, get, out: (l) => lines.push(l), json: false, url: "not a url at all" })).toBe(
+		1,
+	);
 	const down = async (): Promise<Fetched> => {
 		throw new Error("Could not reach x.com");
 	};
 	lines.length = 0;
-	expect(await auditOnce({ store, audits: createAuditService({ store, get: down }), get: down, out: (l) => lines.push(l), json: false, url: "x.com" })).toBe(1);
+	expect(
+		await auditOnce({
+			store,
+			audits: createAuditService({ store, get: down }),
+			get: down,
+			out: (l) => lines.push(l),
+			json: false,
+			url: "x.com",
+		}),
+	).toBe(1);
 	expect(lines.join("\n")).toContain("The site could not be read");
 	expect(lines.join("\n")).not.toContain("Could not reach x.com");
 });

@@ -11,14 +11,35 @@ function setup(opts: { delayMs?: number } = {}) {
 	const store = freshStore();
 	const claude = fakeProvider("claude-cli", () => "Pipedrive is best, HubSpot second.", opts.delayMs ?? 0);
 	const runs = createRunService({ store, providers: () => [claude.provider] });
-	const engines = (): EngineStatus[] => [{ id: "claude-cli", label: "Claude", available: true, reason: null, enabled: true }];
-	const assets = (path: string) => (path === "/index.html" ? new Response("<html><head></head><body>app</body></html>", { headers: { "content-type": "text/html" } }) : null);
-	const handler = createHandler({ store, runs, engines, token: TOKEN, port: PORT, assets, suggest: async (context) => ({ prompts: [`Best alternative to ${context.competitors[0] ?? context.brand}?`], fallback: false }) });
+	const engines = (): EngineStatus[] => [
+		{ id: "claude-cli", label: "Claude", available: true, reason: null, enabled: true },
+	];
+	const assets = (path: string) =>
+		path === "/index.html"
+			? new Response("<html><head></head><body>app</body></html>", { headers: { "content-type": "text/html" } })
+			: null;
+	const handler = createHandler({
+		store,
+		runs,
+		engines,
+		token: TOKEN,
+		port: PORT,
+		assets,
+		suggest: async (context) => ({
+			prompts: [`Best alternative to ${context.competitors[0] ?? context.brand}?`],
+			fallback: false,
+		}),
+	});
 	const call = async (method: string, path: string, body?: unknown, headers: Record<string, string> = {}) => {
 		const response = await handler(
 			new Request(`http://127.0.0.1:${PORT}${path}`, {
 				method,
-				headers: { host: `127.0.0.1:${PORT}`, "x-openaeo-token": TOKEN, ...(body === undefined ? {} : { "content-type": "application/json" }), ...headers },
+				headers: {
+					host: `127.0.0.1:${PORT}`,
+					"x-openaeo-token": TOKEN,
+					...(body === undefined ? {} : { "content-type": "application/json" }),
+					...headers,
+				},
 				body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
 			}),
 		);
@@ -33,13 +54,25 @@ function setup(opts: { delayMs?: number } = {}) {
 }
 
 async function project(call: ReturnType<typeof setup>["call"]) {
-	const created = await call("POST", "/api/projects", { name: "Pipedrive", aliases: [], domains: ["pipedrive.com"], competitors: [{ name: "HubSpot", aliases: [], domains: [] }], prompts: ["best crm?", "cheapest crm?"] });
+	const created = await call("POST", "/api/projects", {
+		name: "Pipedrive",
+		aliases: [],
+		domains: ["pipedrive.com"],
+		competitors: [{ name: "HubSpot", aliases: [], domains: [] }],
+		prompts: ["best crm?", "cheapest crm?"],
+	});
 	return created.json.project.id as string;
 }
 
 test("the whole flow: create a project, run it, read the report", async () => {
 	const { call, runs } = setup();
-	const created = await call("POST", "/api/projects", { name: "Pipedrive", aliases: [], domains: ["pipedrive.com"], competitors: [{ name: "HubSpot", aliases: [], domains: [] }], prompts: ["best crm?"] });
+	const created = await call("POST", "/api/projects", {
+		name: "Pipedrive",
+		aliases: [],
+		domains: ["pipedrive.com"],
+		competitors: [{ name: "HubSpot", aliases: [], domains: [] }],
+		prompts: ["best crm?"],
+	});
 	expect(created.status).toBe(201);
 	const id = created.json.project.id as string;
 
@@ -80,7 +113,10 @@ test("requests without the right token, host or origin are refused before any wo
 	expect((await call("POST", "/api/projects", body, { origin: "https://evil.example" })).status).toBe(403);
 	expect((await call("GET", "/api/state", undefined, { host: "evil.example" })).status).toBe(403);
 	expect(store.projects.list()).toEqual([]);
-	expect((await call("POST", "/api/projects", body, { host: `localhost:${PORT}`, origin: `http://localhost:${PORT}` })).status).toBe(201);
+	expect(
+		(await call("POST", "/api/projects", body, { host: `localhost:${PORT}`, origin: `http://localhost:${PORT}` }))
+			.status,
+	).toBe(201);
 });
 
 test("the page itself is refused for a foreign host", async () => {
@@ -94,7 +130,10 @@ test("invalid bodies get a 400 that names the problem", async () => {
 	expect(missing.status).toBe(400);
 	expect(missing.json.error).toMatch(/name/i);
 	expect((await call("POST", "/api/projects", "not json")).status).toBe(400);
-	expect((await call("POST", "/api/projects", { name: "   ", aliases: [], domains: [], competitors: [], prompts: [] })).status).toBe(400);
+	expect(
+		(await call("POST", "/api/projects", { name: "   ", aliases: [], domains: [], competitors: [], prompts: [] }))
+			.status,
+	).toBe(400);
 	const id = await project(call);
 	expect((await call("POST", `/api/projects/${id}/prompts`, { texts: "nope" })).status).toBe(400);
 });
@@ -130,7 +169,13 @@ test("a second run for the same project is a 409", async () => {
 
 test("a run with no prompts is a 400 that says what to do", async () => {
 	const { call } = setup();
-	const created = await call("POST", "/api/projects", { name: "Empty", aliases: [], domains: [], competitors: [], prompts: [] });
+	const created = await call("POST", "/api/projects", {
+		name: "Empty",
+		aliases: [],
+		domains: [],
+		competitors: [],
+		prompts: [],
+	});
 	const response = await call("POST", `/api/projects/${created.json.project.id}/runs`);
 	expect(response.status).toBe(400);
 	expect(response.json.error).toMatch(/prompt/i);
@@ -139,9 +184,15 @@ test("a run with no prompts is a 400 that says what to do", async () => {
 test("projects, competitors and prompts can be edited and removed", async () => {
 	const { call } = setup();
 	const id = await project(call);
-	const patched = await call("PATCH", `/api/projects/${id}`, { name: "Pipedrive CRM", aliases: ["PD"], domains: ["pipedrive.com"] });
+	const patched = await call("PATCH", `/api/projects/${id}`, {
+		name: "Pipedrive CRM",
+		aliases: ["PD"],
+		domains: ["pipedrive.com"],
+	});
 	expect(patched.json.project.name).toBe("Pipedrive CRM");
-	const competitors = await call("PUT", `/api/projects/${id}/competitors`, { competitors: [{ name: "Attio", aliases: [], domains: [] }] });
+	const competitors = await call("PUT", `/api/projects/${id}/competitors`, {
+		competitors: [{ name: "Attio", aliases: [], domains: [] }],
+	});
 	expect(competitors.json.competitors.map((c: { name: string }) => c.name)).toEqual(["Attio"]);
 	const prompts = await call("GET", `/api/projects/${id}/prompts`);
 	const promptId = prompts.json.prompts[0].id as string;
@@ -154,7 +205,11 @@ test("projects, competitors and prompts can be edited and removed", async () => 
 
 test("settings never return a full API key", async () => {
 	const { call, store } = setup();
-	const saved = await call("PUT", "/api/settings", { "openai.apiKey": "sk-abcdefghijklmnop1234", "openai.model": "gpt-x", schedule: "daily" });
+	const saved = await call("PUT", "/api/settings", {
+		"openai.apiKey": "sk-abcdefghijklmnop1234",
+		"openai.model": "gpt-x",
+		schedule: "daily",
+	});
 	expect(saved.status).toBe(200);
 	expect(store.settings.get("openai.apiKey")).toBe("sk-abcdefghijklmnop1234");
 	const read = await call("GET", "/api/settings");

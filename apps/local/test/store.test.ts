@@ -45,7 +45,11 @@ test("projects round-trip and update", () => {
 	expect(project.id.length).toBeGreaterThan(10);
 	expect(store.projects.get(project.id)).toEqual(project);
 	expect(store.projects.list()).toEqual([project]);
-	const updated = store.projects.update(project.id, { name: "Pipedrive CRM", aliases: [], domains: ["pipedrive.com", "pipedrive.io"] });
+	const updated = store.projects.update(project.id, {
+		name: "Pipedrive CRM",
+		aliases: [],
+		domains: ["pipedrive.com", "pipedrive.io"],
+	});
 	expect(updated?.name).toBe("Pipedrive CRM");
 	expect(updated?.domains).toEqual(["pipedrive.com", "pipedrive.io"]);
 	expect(store.projects.get("missing")).toBeNull();
@@ -59,9 +63,15 @@ test("a blank project name is rejected", () => {
 test("competitors are replaced as a set", () => {
 	const store = fresh();
 	const p = store.projects.create({ name: "A", aliases: [], domains: [] });
-	store.competitors.replace(p.id, [{ name: "HubSpot", aliases: [], domains: ["hubspot.com"] }, { name: "Attio", aliases: ["attio.com"], domains: [] }]);
+	store.competitors.replace(p.id, [
+		{ name: "HubSpot", aliases: [], domains: ["hubspot.com"] },
+		{ name: "Attio", aliases: ["attio.com"], domains: [] },
+	]);
 	expect(store.competitors.list(p.id).map((c) => c.name)).toEqual(["HubSpot", "Attio"]);
-	store.competitors.replace(p.id, [{ name: "Zoho", aliases: [], domains: [] }, { name: " ", aliases: [], domains: [] }]);
+	store.competitors.replace(p.id, [
+		{ name: "Zoho", aliases: [], domains: [] },
+		{ name: " ", aliases: [], domains: [] },
+	]);
 	expect(store.competitors.list(p.id).map((c) => c.name)).toEqual(["Zoho"]);
 });
 
@@ -135,7 +145,9 @@ test("an answer is saved with its mentions, citations and sources", () => {
 	expect(saved.brandRank).toBe(2);
 	expect(saved.brandCited).toBe(true);
 	expect(saved.mentions).toEqual(matched.mentions);
-	expect(saved.citations).toEqual([{ url: "https://pipedrive.com/pricing", domain: "pipedrive.com", title: "Pricing" }]);
+	expect(saved.citations).toEqual([
+		{ url: "https://pipedrive.com/pricing", domain: "pipedrive.com", title: "Pricing" },
+	]);
 	expect(saved.sources.length).toBe(2);
 	expect(saved.sources[1]).toEqual({ url: "https://hubspot.com/", domain: "hubspot.com" });
 	expect(store.answers.listByRun(run.id)).toEqual([saved]);
@@ -148,7 +160,12 @@ test("a failed answer stores its error and no mentions", () => {
 	const p = store.projects.create({ name: "A", aliases: [], domains: [] });
 	const [prompt] = store.prompts.add(p.id, ["q"]);
 	const run = store.runs.create(p.id, 1);
-	const item: RunItem = { prompt: "q", engine: "codex-cli", ok: false, error: new ProviderError("codex-cli", "cli_outdated", "Update Codex.") };
+	const item: RunItem = {
+		prompt: "q",
+		engine: "codex-cli",
+		ok: false,
+		error: new ProviderError("codex-cli", "cli_outdated", "Update Codex."),
+	};
 	const saved = store.answers.save(run.id, prompt?.id ?? "", item, null);
 	expect(saved.errorCode).toBe("cli_outdated");
 	expect(saved.errorMessage).toBe("Update Codex.");

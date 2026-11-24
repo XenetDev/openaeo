@@ -34,8 +34,14 @@ const ResultSchema = z.object({
 
 function classify(text: string): ProviderErrorCode {
 	if (/unknown option|unknown argument|unrecognized option/i.test(text)) return "cli_outdated";
-	if (/please run \/login|invalid api key|not logged in|authentication_error|oauth token (has )?expired/i.test(text)) return "not_logged_in";
-	if (/issue with the selected model|model[^.]{0,80}(not exist|not found|not available|not supported)|invalid model/i.test(text)) return "model_unavailable";
+	if (/please run \/login|invalid api key|not logged in|authentication_error|oauth token (has )?expired/i.test(text))
+		return "not_logged_in";
+	if (
+		/issue with the selected model|model[^.]{0,80}(not exist|not found|not available|not supported)|invalid model/i.test(
+			text,
+		)
+	)
+		return "model_unavailable";
 	if (/rate limit|usage limit|\b429\b|overloaded/i.test(text)) return "rate_limited";
 	return "failed";
 }
@@ -116,5 +122,14 @@ export function parseClaudeStream(stdout: string, durationMs: number): Answer {
 			}
 		: null;
 
-	return { engine: "claude-cli", model, text, citations: citationsFrom(text, sources), sources, searched, usage, durationMs };
+	return {
+		engine: "claude-cli",
+		model,
+		text,
+		citations: citationsFrom(text, sources),
+		sources,
+		searched,
+		usage,
+		durationMs,
+	};
 }

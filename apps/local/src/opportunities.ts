@@ -9,7 +9,8 @@ export type Opportunities = {
 };
 
 const SEVERITY_ORDER = ["high", "medium", "low"];
-const sitesOf = (domains: string[]) => domains.map((d) => toDomain(/^https?:\/\//i.test(d) ? d : `https://${d}`)).filter((d): d is string => d !== null);
+const sitesOf = (domains: string[]) =>
+	domains.map((d) => toDomain(/^https?:\/\//i.test(d) ? d : `https://${d}`)).filter((d): d is string => d !== null);
 
 export function buildOpportunities(store: Store, projectId: string): Opportunities {
 	const project = store.projects.get(projectId);
@@ -48,7 +49,9 @@ export function buildOpportunities(store: Store, projectId: string): Opportuniti
 
 	return {
 		runId: run.id,
-		missed: [...missed.entries()].map(([question, entry]) => ({ question, engines: [...entry.engines].sort(), named: [...entry.named] })).sort((a, b) => b.engines.length - a.engines.length || a.question.localeCompare(b.question)),
+		missed: [...missed.entries()]
+			.map(([question, entry]) => ({ question, engines: [...entry.engines].sort(), named: [...entry.named] }))
+			.sort((a, b) => b.engines.length - a.engines.length || a.question.localeCompare(b.question)),
 		sites: [...cited.entries()]
 			.map(([domain, entry]) => ({ domain, citations: entry.citations, questions: entry.questions.size }))
 			.sort((a, b) => b.citations - a.citations || a.domain.localeCompare(b.domain))
@@ -59,9 +62,10 @@ export function buildOpportunities(store: Store, projectId: string): Opportuniti
 
 function auditFixes(store: Store, projectId: string): Opportunities["fixes"] {
 	const audit = store.audits.latest(projectId, { ownOnly: true });
-	if (!audit || audit.status !== "done") return [];
+	if (audit?.status !== "done") return [];
 	const groups = new Map<string, { severity: string; pages: number }>();
-	for (const finding of store.audits.findings(audit.id)) groups.set(finding.title, { severity: finding.severity, pages: (groups.get(finding.title)?.pages ?? 0) + 1 });
+	for (const finding of store.audits.findings(audit.id))
+		groups.set(finding.title, { severity: finding.severity, pages: (groups.get(finding.title)?.pages ?? 0) + 1 });
 	return [...groups.entries()]
 		.map(([title, info]) => ({ title, ...info }))
 		.sort((a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity) || b.pages - a.pages);

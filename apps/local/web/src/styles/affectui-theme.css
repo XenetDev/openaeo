@@ -13,106 +13,157 @@
  */
 
 :root {
-  /* Type */
-  /* --aui-font:           "Inter", "InterVariable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; */  /* Font family of every component */
-  /* --aui-font-mono:      ui-monospace, "SF Mono", Menlo, Consolas, monospace; */  /* Code, keys, IDs and numbers set in mono */
-
-  /* Shape */
-  /* --aui-radius:         7px; */  /* Controls: fields, buttons, selects – small and large sizes follow it · classic: 10px */
-  /* --aui-radius-sm:      5px; */  /* Small parts: chips, tags, keys, menu rows · classic: 7px */
-  /* --aui-radius-lg:      10px; */  /* Cards, panels, menus and dialogs · classic: 16px */
-
-  /* Text */
-  /* --aui-ink:            rgba(0, 0, 0, 0.88); */  /* Text, labels and titles · classic: #171717 */
-  /* --aui-muted:          rgba(0, 0, 0, 0.45); */  /* Hints, icons and second lines · classic: #8f8f8f */
-  /* --aui-placeholder:    rgba(0, 0, 0, 0.3); */  /* Placeholders and the faintest text · classic: #b5b5b5 */
-
-  /* Surfaces */
-  /* --aui-surface:        #ffffff; */  /* Fields and cards */
-  /* --aui-subtle:         rgba(0, 0, 0, 0.03); */  /* Gray layers behind cards, hover washes, chip fills · classic: #f0f0f0 */
-  /* --aui-overlay:        #ffffff; */  /* Menus, popovers and dialogs */
-
-  /* Borders */
-  /* --aui-border:         rgba(0, 0, 0, 0.08); */  /* Hairline edges at rest · classic: #e6e6e8 */
-  /* --aui-border-strong:  rgba(0, 0, 0, 0.13); */  /* Edges on hover and focus, unchecked boxes · classic: #d4d4d8 */
-
-  /* Actions */
-  /* --aui-primary:        rgba(0, 0, 0, 0.88); */  /* Primary buttons, checked boxes and switches, the send button · classic: #171717 */
-  /* --aui-on-primary:     #ffffff; */  /* Text and icons on the primary fill */
-  /* --aui-focus:          rgba(0, 96, 226, 0.7); */  /* Keyboard focus ring – keep it at 3:1 contrast or more */
-
-  /* Status */
-  /* --aui-danger:         #c4320a; */  /* Errors, failed runs, destructive actions */
-  /* --aui-danger-soft:    rgba(240, 68, 56, 0.1); */  /* Background of error badges and notices */
-  /* --aui-warning:        #b25e00; */  /* Needs attention, waiting for you, limits close */
-  /* --aui-warning-soft:   rgba(242, 138, 46, 0.12); */  /* Background of warning badges and notices */
-  /* --aui-success:        #1e8a4f; */  /* Done, connected, copied */
-  /* --aui-success-soft:   rgba(95, 200, 138, 0.14); */  /* Background of success badges and notices */
-  /* --aui-info:           #0070d6; */  /* Running, live, informational */
-  /* --aui-info-soft:      rgba(1, 144, 254, 0.1); */  /* Background of info badges and notices */
-
-  /* Palette */
-  /* --aui-blue:           #0190fe; */  /* Info, running, links in charts */
-  /* --aui-green:          #5fc88a; */  /* Success, done */
-  /* --aui-amber:          #e8b000; */  /* Waiting, queued */
-  /* --aui-orange:         #f28a2e; */  /* Warning, needs you */
-  /* --aui-red:            #f04438; */  /* Danger, failed */
-  /* --aui-pink:           #ee3e9e; */  /* Category color */
-  /* --aui-purple:         #a651f0; */  /* Category color */
-  /* --aui-teal:           #13b3a0; */  /* Category color */
-  /* --aui-cyan:           #14b3f0; */  /* Category color */
-
-  /* Depth */
-  /* --aui-shadow-card:    0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 1px 1px -1px rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.05); */  /* Edge and lift of cards and fields · classic: 0 0 0 1px #ececec, 0 1px 2px rgba(0, 0, 0, 0.04) */
-  /* --aui-shadow-popover: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 8px 24px -6px rgba(0, 0, 0, 0.14), 0 2px 6px -2px rgba(0, 0, 0, 0.06); */  /* Menus, popovers and dialogs above the page · classic: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 18px 40px -12px rgba(0, 0, 0, 0.18), 0 4px 12px -4px rgba(0, 0, 0, 0.06) */
-
-  /* Motion */
-  /* --aui-ease:           cubic-bezier(0.22, 1, 0.36, 1); */  /* Easing of enter, glide and morph animations */
+	/* Type */
+	/* --aui-font:           "Inter", "InterVariable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; */
+	/* Font family of every component */
+	/* --aui-font-mono:      ui-monospace, "SF Mono", Menlo, Consolas, monospace; */
+	/* Code, keys, IDs and numbers set in mono */
+	/* Shape */
+	/* --aui-radius:         7px; */
+	/* Controls: fields, buttons, selects – small and large sizes follow it · classic: 10px */
+	/* --aui-radius-sm:      5px; */
+	/* Small parts: chips, tags, keys, menu rows · classic: 7px */
+	/* --aui-radius-lg:      10px; */
+	/* Cards, panels, menus and dialogs · classic: 16px */
+	/* Text */
+	/* --aui-ink:            rgba(0, 0, 0, 0.88); */
+	/* Text, labels and titles · classic: #171717 */
+	/* --aui-muted:          rgba(0, 0, 0, 0.45); */
+	/* Hints, icons and second lines · classic: #8f8f8f */
+	/* --aui-placeholder:    rgba(0, 0, 0, 0.3); */
+	/* Placeholders and the faintest text · classic: #b5b5b5 */
+	/* Surfaces */
+	/* --aui-surface:        #ffffff; */
+	/* Fields and cards */
+	/* --aui-subtle:         rgba(0, 0, 0, 0.03); */
+	/* Gray layers behind cards, hover washes, chip fills · classic: #f0f0f0 */
+	/* --aui-overlay:        #ffffff; */
+	/* Menus, popovers and dialogs */
+	/* Borders */
+	/* --aui-border:         rgba(0, 0, 0, 0.08); */
+	/* Hairline edges at rest · classic: #e6e6e8 */
+	/* --aui-border-strong:  rgba(0, 0, 0, 0.13); */
+	/* Edges on hover and focus, unchecked boxes · classic: #d4d4d8 */
+	/* Actions */
+	/* --aui-primary:        rgba(0, 0, 0, 0.88); */
+	/* Primary buttons, checked boxes and switches, the send button · classic: #171717 */
+	/* --aui-on-primary:     #ffffff; */
+	/* Text and icons on the primary fill */
+	/* --aui-focus:          rgba(0, 96, 226, 0.7); */
+	/* Keyboard focus ring – keep it at 3:1 contrast or more */
+	/* Status */
+	/* --aui-danger:         #c4320a; */
+	/* Errors, failed runs, destructive actions */
+	/* --aui-danger-soft:    rgba(240, 68, 56, 0.1); */
+	/* Background of error badges and notices */
+	/* --aui-warning:        #b25e00; */
+	/* Needs attention, waiting for you, limits close */
+	/* --aui-warning-soft:   rgba(242, 138, 46, 0.12); */
+	/* Background of warning badges and notices */
+	/* --aui-success:        #1e8a4f; */
+	/* Done, connected, copied */
+	/* --aui-success-soft:   rgba(95, 200, 138, 0.14); */
+	/* Background of success badges and notices */
+	/* --aui-info:           #0070d6; */
+	/* Running, live, informational */
+	/* --aui-info-soft:      rgba(1, 144, 254, 0.1); */
+	/* Background of info badges and notices */
+	/* Palette */
+	/* --aui-blue:           #0190fe; */
+	/* Info, running, links in charts */
+	/* --aui-green:          #5fc88a; */
+	/* Success, done */
+	/* --aui-amber:          #e8b000; */
+	/* Waiting, queued */
+	/* --aui-orange:         #f28a2e; */
+	/* Warning, needs you */
+	/* --aui-red:            #f04438; */
+	/* Danger, failed */
+	/* --aui-pink:           #ee3e9e; */
+	/* Category color */
+	/* --aui-purple:         #a651f0; */
+	/* Category color */
+	/* --aui-teal:           #13b3a0; */
+	/* Category color */
+	/* --aui-cyan:           #14b3f0; */
+	/* Category color */
+	/* Depth */
+	/* --aui-shadow-card:    0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 1px 1px -1px rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.05); */
+	/* Edge and lift of cards and fields · classic: 0 0 0 1px #ececec, 0 1px 2px rgba(0, 0, 0, 0.04) */
+	/* --aui-shadow-popover: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 8px 24px -6px rgba(0, 0, 0, 0.14), 0 2px 6px -2px rgba(0, 0, 0, 0.06); */
+	/* Menus, popovers and dialogs above the page · classic: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 18px 40px -12px rgba(0, 0, 0, 0.18), 0 4px 12px -4px rgba(0, 0, 0, 0.06) */
+	/* Motion */
+	/* --aui-ease:           cubic-bezier(0.22, 1, 0.36, 1); */
+	/* Easing of enter, glide and morph animations */
 }
 
 /* Dark mode – use the selector your app switches with (.dark, [data-theme="dark"] …) */
 .dark {
-  /* Text */
-  /* --aui-ink:            rgba(255, 255, 255, 0.9); */  /* Text, labels and titles · classic: #ededed */
-  /* --aui-muted:          rgba(255, 255, 255, 0.46); */  /* Hints, icons and second lines · classic: #8b8b92 */
-  /* --aui-placeholder:    rgba(255, 255, 255, 0.3); */  /* Placeholders and the faintest text · classic: #5c5c63 */
-
-  /* Surfaces */
-  /* --aui-surface:        #1c1c1e; */  /* Fields and cards · classic: #19191b */
-  /* --aui-subtle:         rgba(255, 255, 255, 0.04); */  /* Gray layers behind cards, hover washes, chip fills · classic: #111113 */
-  /* --aui-overlay:        #1f1f22; */  /* Menus, popovers and dialogs · classic: #19191b */
-
-  /* Borders */
-  /* --aui-border:         rgba(255, 255, 255, 0.14); */  /* Hairline edges at rest · classic: #2a2a2e */
-  /* --aui-border-strong:  rgba(255, 255, 255, 0.2); */  /* Edges on hover and focus, unchecked boxes · classic: #3a3a40 */
-
-  /* Actions */
-  /* --aui-primary:        rgba(255, 255, 255, 0.9); */  /* Primary buttons, checked boxes and switches, the send button · classic: #ededed */
-  /* --aui-on-primary:     #161618; */  /* Text and icons on the primary fill */
-  /* --aui-focus:          rgba(77, 141, 255, 0.8); */  /* Keyboard focus ring – keep it at 3:1 contrast or more */
-
-  /* Status */
-  /* --aui-danger:         #ff8a7a; */  /* Errors, failed runs, destructive actions */
-  /* --aui-danger-soft:    rgba(255, 107, 95, 0.14); */  /* Background of error badges and notices */
-  /* --aui-warning:        #ffb35c; */  /* Needs attention, waiting for you, limits close */
-  /* --aui-warning-soft:   rgba(242, 161, 92, 0.14); */  /* Background of warning badges and notices */
-  /* --aui-success:        #7dcf9f; */  /* Done, connected, copied */
-  /* --aui-success-soft:   rgba(125, 207, 159, 0.14); */  /* Background of success badges and notices */
-  /* --aui-info:           #4fb0fe; */  /* Running, live, informational */
-  /* --aui-info-soft:      rgba(79, 176, 254, 0.14); */  /* Background of info badges and notices */
-
-  /* Palette */
-  /* --aui-blue:           #4fb0fe; */  /* Info, running, links in charts */
-  /* --aui-green:          #7dcf9f; */  /* Success, done */
-  /* --aui-amber:          #e6c24d; */  /* Waiting, queued */
-  /* --aui-orange:         #f2a15c; */  /* Warning, needs you */
-  /* --aui-red:            #ff6b5f; */  /* Danger, failed */
-  /* --aui-pink:           #f06db5; */  /* Category color */
-  /* --aui-purple:         #b98af0; */  /* Category color */
-  /* --aui-teal:           #4fc3b4; */  /* Category color */
-  /* --aui-cyan:           #5cc6ee; */  /* Category color */
-
-  /* Depth */
-  /* --aui-shadow-card:    0 0 0 0.5px rgba(255, 255, 255, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.4); */  /* Edge and lift of cards and fields · classic: 0 0 0 1px #2a2a2e, 0 1px 2px rgba(0, 0, 0, 0.2) */
-  /* --aui-shadow-popover: 0 0 0 0.5px rgba(255, 255, 255, 0.12), 0 12px 32px -8px rgba(0, 0, 0, 0.6); */  /* Menus, popovers and dialogs above the page · classic: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 18px 40px -12px rgba(0, 0, 0, 0.6) */
+	/* Text */
+	/* --aui-ink:            rgba(255, 255, 255, 0.9); */
+	/* Text, labels and titles · classic: #ededed */
+	/* --aui-muted:          rgba(255, 255, 255, 0.46); */
+	/* Hints, icons and second lines · classic: #8b8b92 */
+	/* --aui-placeholder:    rgba(255, 255, 255, 0.3); */
+	/* Placeholders and the faintest text · classic: #5c5c63 */
+	/* Surfaces */
+	/* --aui-surface:        #1c1c1e; */
+	/* Fields and cards · classic: #19191b */
+	/* --aui-subtle:         rgba(255, 255, 255, 0.04); */
+	/* Gray layers behind cards, hover washes, chip fills · classic: #111113 */
+	/* --aui-overlay:        #1f1f22; */
+	/* Menus, popovers and dialogs · classic: #19191b */
+	/* Borders */
+	/* --aui-border:         rgba(255, 255, 255, 0.14); */
+	/* Hairline edges at rest · classic: #2a2a2e */
+	/* --aui-border-strong:  rgba(255, 255, 255, 0.2); */
+	/* Edges on hover and focus, unchecked boxes · classic: #3a3a40 */
+	/* Actions */
+	/* --aui-primary:        rgba(255, 255, 255, 0.9); */
+	/* Primary buttons, checked boxes and switches, the send button · classic: #ededed */
+	/* --aui-on-primary:     #161618; */
+	/* Text and icons on the primary fill */
+	/* --aui-focus:          rgba(77, 141, 255, 0.8); */
+	/* Keyboard focus ring – keep it at 3:1 contrast or more */
+	/* Status */
+	/* --aui-danger:         #ff8a7a; */
+	/* Errors, failed runs, destructive actions */
+	/* --aui-danger-soft:    rgba(255, 107, 95, 0.14); */
+	/* Background of error badges and notices */
+	/* --aui-warning:        #ffb35c; */
+	/* Needs attention, waiting for you, limits close */
+	/* --aui-warning-soft:   rgba(242, 161, 92, 0.14); */
+	/* Background of warning badges and notices */
+	/* --aui-success:        #7dcf9f; */
+	/* Done, connected, copied */
+	/* --aui-success-soft:   rgba(125, 207, 159, 0.14); */
+	/* Background of success badges and notices */
+	/* --aui-info:           #4fb0fe; */
+	/* Running, live, informational */
+	/* --aui-info-soft:      rgba(79, 176, 254, 0.14); */
+	/* Background of info badges and notices */
+	/* Palette */
+	/* --aui-blue:           #4fb0fe; */
+	/* Info, running, links in charts */
+	/* --aui-green:          #7dcf9f; */
+	/* Success, done */
+	/* --aui-amber:          #e6c24d; */
+	/* Waiting, queued */
+	/* --aui-orange:         #f2a15c; */
+	/* Warning, needs you */
+	/* --aui-red:            #ff6b5f; */
+	/* Danger, failed */
+	/* --aui-pink:           #f06db5; */
+	/* Category color */
+	/* --aui-purple:         #b98af0; */
+	/* Category color */
+	/* --aui-teal:           #4fc3b4; */
+	/* Category color */
+	/* --aui-cyan:           #5cc6ee; */
+	/* Category color */
+	/* Depth */
+	/* --aui-shadow-card:    0 0 0 0.5px rgba(255, 255, 255, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.4); */
+	/* Edge and lift of cards and fields · classic: 0 0 0 1px #2a2a2e, 0 1px 2px rgba(0, 0, 0, 0.2) */
+	/* --aui-shadow-popover: 0 0 0 0.5px rgba(255, 255, 255, 0.12), 0 12px 32px -8px rgba(0, 0, 0, 0.6); */
+	/* Menus, popovers and dialogs above the page · classic: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 18px 40px -12px rgba(0, 0, 0, 0.6) */
 }

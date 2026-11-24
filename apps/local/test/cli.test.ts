@@ -15,7 +15,12 @@ test("no arguments starts the dashboard and opens the browser", () => {
 
 test("run, status, version and help are parsed", () => {
 	expect(parseArgs(["run"])).toEqual({ command: "run", open: true, json: false });
-	expect(parseArgs(["run", "--project", "Pipedrive", "--json"])).toEqual({ command: "run", open: true, json: true, project: "Pipedrive" });
+	expect(parseArgs(["run", "--project", "Pipedrive", "--json"])).toEqual({
+		command: "run",
+		open: true,
+		json: true,
+		project: "Pipedrive",
+	});
 	expect(parseArgs(["status"]).command).toBe("status");
 	expect(parseArgs(["--version"]).command).toBe("version");
 	expect(parseArgs(["-v"]).command).toBe("version");
@@ -24,8 +29,14 @@ test("run, status, version and help are parsed", () => {
 });
 
 test("unknown commands and flags are errors that name the problem", () => {
-	expect(parseArgs(["frobnicate"])).toEqual({ command: "error", message: 'Unknown command "frobnicate". Run `openaeo --help`.' });
-	expect(parseArgs(["run", "--wat"])).toEqual({ command: "error", message: 'Unknown option "--wat". Run `openaeo --help`.' });
+	expect(parseArgs(["frobnicate"])).toEqual({
+		command: "error",
+		message: 'Unknown command "frobnicate". Run `openaeo --help`.',
+	});
+	expect(parseArgs(["run", "--wat"])).toEqual({
+		command: "error",
+		message: 'Unknown option "--wat". Run `openaeo --help`.',
+	});
 	expect(parseArgs(["run", "--project"]).command).toBe("error");
 	expect(parseArgs(["--port", "abc"]).command).toBe("error");
 	expect(parseArgs(["--port", "70000"]).command).toBe("error");
@@ -71,7 +82,9 @@ test("run needs an existing project", async () => {
 	expect(await runOnce({ store, runs, out: (l) => lines.push(l), json: false })).toBe(1);
 	expect(lines.join("\n")).toMatch(/no project/i);
 	const seeded = setup(() => "x");
-	expect(await runOnce({ store: seeded.store, runs: seeded.runs, out: seeded.out, json: false, project: "Nope" })).toBe(1);
+	expect(await runOnce({ store: seeded.store, runs: seeded.runs, out: seeded.out, json: false, project: "Nope" })).toBe(
+		1,
+	);
 	expect(seeded.lines.join("\n")).toContain('"Nope"');
 });
 

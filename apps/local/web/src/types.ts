@@ -1,11 +1,35 @@
-export type PageId = "overview" | "prompts" | "answers" | "sources" | "competitors" | "opportunities" | "audit" | "runs" | "ask" | "settings";
+export type PageId =
+	| "overview"
+	| "prompts"
+	| "answers"
+	| "sources"
+	| "competitors"
+	| "opportunities"
+	| "audit"
+	| "runs"
+	| "ask"
+	| "settings";
 
 export type EngineInfo = { id: string; label: string; available: boolean; reason: string | null; enabled: boolean };
 export type EntityView = { name: string; aliases: string[]; domains: string[] };
 export type ProjectView = EntityView & { id: string };
 export type PromptView = { id: string; text: string; active: boolean };
-export type RunView = { id: string; status: "running" | "done" | "interrupted"; startedAt: number; finishedAt: number | null; total: number; completed: number };
-export type MetricsView = { answers: number; mentionRate: number; averageRank: number | null; rankScore: number; shareOfVoice: number; citationRate: number };
+export type RunView = {
+	id: string;
+	status: "running" | "done" | "interrupted";
+	startedAt: number;
+	finishedAt: number | null;
+	total: number;
+	completed: number;
+};
+export type MetricsView = {
+	answers: number;
+	mentionRate: number;
+	averageRank: number | null;
+	rankScore: number;
+	shareOfVoice: number;
+	citationRate: number;
+};
 export type SourceView = { url: string; domain: string; title?: string };
 
 export type ReportView = {
@@ -55,7 +79,14 @@ export type AuditView = {
 	skipped: number;
 	own?: boolean;
 };
-export type FindingView = { checkId: string; severity: "high" | "medium" | "low"; url: string; title: string; evidence: string; fix: string };
+export type FindingView = {
+	checkId: string;
+	severity: "high" | "medium" | "low";
+	url: string;
+	title: string;
+	evidence: string;
+	fix: string;
+};
 export type ArtefactsView = { robotsTxt?: string; llmsTxt?: string; organizationJsonLd?: string };
 
 export type OpportunitiesView = {

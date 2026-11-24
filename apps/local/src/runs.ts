@@ -16,7 +16,13 @@ export class RunError extends Error {
 
 export type RunEvent = { runId: string; run: Run };
 
-export type RunServiceDeps = { store: Store; providers: () => Provider[]; concurrency?: number; retries?: number; sentiment?: boolean };
+export type RunServiceDeps = {
+	store: Store;
+	providers: () => Provider[];
+	concurrency?: number;
+	retries?: number;
+	sentiment?: boolean;
+};
 
 export function createRunService(deps: RunServiceDeps) {
 	const { store } = deps;
@@ -78,12 +84,16 @@ export function createRunService(deps: RunServiceDeps) {
 	return {
 		start(projectId: string): Run {
 			if (!store.projects.get(projectId)) throw new RunError("not_found", "That project does not exist.");
-			if (store.runs.active(projectId)) throw new RunError("already_running", "A run is already in progress for this project.");
+			if (store.runs.active(projectId))
+				throw new RunError("already_running", "A run is already in progress for this project.");
 			const prompts = store.prompts.list(projectId).filter((p) => p.active);
 			if (prompts.length === 0) throw new RunError("no_prompts", "Add at least one active prompt before running.");
 			const providers = deps.providers();
 			if (providers.length === 0) {
-				throw new RunError("no_engines", "No AI engine is available. Install and log in to Claude Code or Codex, or add an API key in Settings.");
+				throw new RunError(
+					"no_engines",
+					"No AI engine is available. Install and log in to Claude Code or Codex, or add an API key in Settings.",
+				);
 			}
 			const created = store.runs.create(projectId, prompts.length * providers.length);
 			const controller = new AbortController();

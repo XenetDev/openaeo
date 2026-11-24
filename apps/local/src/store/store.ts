@@ -1,5 +1,15 @@
 import type { Database } from "bun:sqlite";
-import type { AuditPage, AuditResult, EngineId, Finding, MatchResult, Mention, ProviderErrorCode, RunItem, Source } from "@openaeo/engine";
+import type {
+	AuditPage,
+	AuditResult,
+	EngineId,
+	Finding,
+	MatchResult,
+	Mention,
+	ProviderErrorCode,
+	RunItem,
+	Source,
+} from "@openaeo/engine";
 
 export type EntityInput = { name: string; aliases: string[]; domains: string[] };
 export type Project = EntityInput & { id: string; createdAt: number };
@@ -53,14 +63,40 @@ export type StoredAudit = {
 	own: boolean;
 };
 
-type AuditRow = { id: string; project_id: string; origin: string; status: AuditStatus; started_at: number; finished_at: number | null; score: number | null; pages: string; skipped: number; own: number };
-type FindingRow = { check_id: string; severity: Finding["severity"]; url: string; title: string; evidence: string; fix: string };
+type AuditRow = {
+	id: string;
+	project_id: string;
+	origin: string;
+	status: AuditStatus;
+	started_at: number;
+	finished_at: number | null;
+	score: number | null;
+	pages: string;
+	skipped: number;
+	own: number;
+};
+type FindingRow = {
+	check_id: string;
+	severity: Finding["severity"];
+	url: string;
+	title: string;
+	evidence: string;
+	fix: string;
+};
 
 type EntityRow = { id: string; name: string; aliases: string; domains: string };
 type ProjectRow = EntityRow & { created_at: number };
 type CompetitorRow = EntityRow & { project_id: string };
 type PromptRow = { id: string; project_id: string; text: string; active: number; created_at: number };
-type RunRow = { id: string; project_id: string; status: RunStatus; started_at: number; finished_at: number | null; total: number; completed: number };
+type RunRow = {
+	id: string;
+	project_id: string;
+	status: RunStatus;
+	started_at: number;
+	finished_at: number | null;
+	total: number;
+	completed: number;
+};
 type AnswerRow = {
 	id: string;
 	run_id: string;
@@ -97,9 +133,27 @@ function pidAlive(pid: number): boolean {
 const clean = (values: string[]) => [...new Set(values.map((v) => v.trim()).filter(Boolean))];
 const list = (json: string): string[] => JSON.parse(json) as string[];
 
-const toProject = (r: ProjectRow): Project => ({ id: r.id, name: r.name, aliases: list(r.aliases), domains: list(r.domains), createdAt: r.created_at });
-const toCompetitor = (r: CompetitorRow): Competitor => ({ id: r.id, projectId: r.project_id, name: r.name, aliases: list(r.aliases), domains: list(r.domains) });
-const toPrompt = (r: PromptRow): Prompt => ({ id: r.id, projectId: r.project_id, text: r.text, active: r.active === 1, createdAt: r.created_at });
+const toProject = (r: ProjectRow): Project => ({
+	id: r.id,
+	name: r.name,
+	aliases: list(r.aliases),
+	domains: list(r.domains),
+	createdAt: r.created_at,
+});
+const toCompetitor = (r: CompetitorRow): Competitor => ({
+	id: r.id,
+	projectId: r.project_id,
+	name: r.name,
+	aliases: list(r.aliases),
+	domains: list(r.domains),
+});
+const toPrompt = (r: PromptRow): Prompt => ({
+	id: r.id,
+	projectId: r.project_id,
+	text: r.text,
+	active: r.active === 1,
+	createdAt: r.created_at,
+});
 const toRun = (r: RunRow): Run => ({
 	id: r.id,
 	projectId: r.project_id,
@@ -148,7 +202,8 @@ const toAudit = (r: AuditRow): StoredAudit => ({
 
 export function createStore(db: Database) {
 	const projects = {
-		list: (): Project[] => db.query<ProjectRow, []>("SELECT * FROM project ORDER BY created_at, rowid").all().map(toProject),
+		list: (): Project[] =>
+			db.query<ProjectRow, []>("SELECT * FROM project ORDER BY created_at, rowid").all().map(toProject),
 		get(id: string): Project | null {
 			const row = db.query<ProjectRow, [string]>("SELECT * FROM project WHERE id = ?").get(id);
 			return row ? toProject(row) : null;
@@ -156,7 +211,13 @@ export function createStore(db: Database) {
 		create(input: EntityInput): Project {
 			const name = input.name.trim();
 			if (!name) throw new Error("A project needs a name.");
-			const project: Project = { id: crypto.randomUUID(), name, aliases: clean(input.aliases), domains: clean(input.domains), createdAt: Date.now() };
+			const project: Project = {
+				id: crypto.randomUUID(),
+				name,
+				aliases: clean(input.aliases),
+				domains: clean(input.domains),
+				createdAt: Date.now(),
+			};
 			db.query("INSERT INTO project (id, name, aliases, domains, created_at) VALUES (?, ?, ?, ?, ?)").run(
 				project.id,
 				project.name,
@@ -184,7 +245,10 @@ export function createStore(db: Database) {
 
 	const competitors = {
 		list: (projectId: string): Competitor[] =>
-			db.query<CompetitorRow, [string]>("SELECT * FROM competitor WHERE project_id = ? ORDER BY position").all(projectId).map(toCompetitor),
+			db
+				.query<CompetitorRow, [string]>("SELECT * FROM competitor WHERE project_id = ? ORDER BY position")
+				.all(projectId)
+				.map(toCompetitor),
 		replace(projectId: string, inputs: EntityInput[]): Competitor[] {
 			db.transaction(() => {
 				db.query("DELETE FROM competitor WHERE project_id = ?").run(projectId);
@@ -194,7 +258,9 @@ export function createStore(db: Database) {
 					const name = input.name.trim();
 					if (!name || seen.has(name.toLowerCase())) continue;
 					seen.add(name.toLowerCase());
-					db.query("INSERT INTO competitor (id, project_id, name, aliases, domains, position) VALUES (?, ?, ?, ?, ?, ?)").run(
+					db.query(
+						"INSERT INTO competitor (id, project_id, name, aliases, domains, position) VALUES (?, ?, ?, ?, ?, ?)",
+					).run(
 						crypto.randomUUID(),
 						projectId,
 						name,
@@ -211,7 +277,10 @@ export function createStore(db: Database) {
 
 	const prompts = {
 		list: (projectId: string): Prompt[] =>
-			db.query<PromptRow, [string]>("SELECT * FROM prompt WHERE project_id = ? ORDER BY created_at, rowid").all(projectId).map(toPrompt),
+			db
+				.query<PromptRow, [string]>("SELECT * FROM prompt WHERE project_id = ? ORDER BY created_at, rowid")
+				.all(projectId)
+				.map(toPrompt),
 		get(id: string): Prompt | null {
 			const row = db.query<PromptRow, [string]>("SELECT * FROM prompt WHERE id = ?").get(id);
 			return row ? toPrompt(row) : null;
@@ -224,7 +293,9 @@ export function createStore(db: Database) {
 					if (!text) continue;
 					const prompt: Prompt = { id: crypto.randomUUID(), projectId, text, active: true, createdAt: Date.now() };
 					const result = db
-						.query("INSERT OR IGNORE INTO prompt (id, project_id, text, text_key, active, created_at) VALUES (?, ?, ?, ?, 1, ?)")
+						.query(
+							"INSERT OR IGNORE INTO prompt (id, project_id, text, text_key, active, created_at) VALUES (?, ?, ?, ?, 1, ?)",
+						)
 						.run(prompt.id, projectId, text, text.toLowerCase(), prompt.createdAt);
 					if (result.changes > 0) added.push(prompt);
 				}
@@ -246,14 +317,23 @@ export function createStore(db: Database) {
 		},
 		create(projectId: string, total: number): Run {
 			const id = crypto.randomUUID();
-			db.query("INSERT INTO run (id, project_id, status, started_at, total, owner_pid) VALUES (?, ?, 'running', ?, ?, ?)").run(id, projectId, Date.now(), total, process.pid);
+			db.query(
+				"INSERT INTO run (id, project_id, status, started_at, total, owner_pid) VALUES (?, ?, 'running', ?, ?, ?)",
+			).run(id, projectId, Date.now(), total, process.pid);
 			return runs.get(id) as Run;
 		},
 		list: (projectId: string, limit: number): Run[] =>
-			db.query<RunRow, [string, number]>("SELECT * FROM run WHERE project_id = ? ORDER BY started_at DESC, rowid DESC LIMIT ?").all(projectId, limit).map(toRun),
+			db
+				.query<RunRow, [string, number]>(
+					"SELECT * FROM run WHERE project_id = ? ORDER BY started_at DESC, rowid DESC LIMIT ?",
+				)
+				.all(projectId, limit)
+				.map(toRun),
 		latest: (projectId: string): Run | null => runs.list(projectId, 1)[0] ?? null,
 		active(projectId: string): Run | null {
-			const row = db.query<RunRow, [string]>("SELECT * FROM run WHERE project_id = ? AND status = 'running' LIMIT 1").get(projectId);
+			const row = db
+				.query<RunRow, [string]>("SELECT * FROM run WHERE project_id = ? AND status = 'running' LIMIT 1")
+				.get(projectId);
 			return row ? toRun(row) : null;
 		},
 		increment(id: string): void {
@@ -263,13 +343,20 @@ export function createStore(db: Database) {
 			db.query("UPDATE run SET status = ?, finished_at = ? WHERE id = ?").run(status, Date.now(), id);
 			return runs.get(id);
 		},
-		interruptOwn: (): number => db.query("UPDATE run SET status = 'interrupted', finished_at = ? WHERE status = 'running' AND owner_pid = ?").run(Date.now(), process.pid).changes,
+		interruptOwn: (): number =>
+			db
+				.query("UPDATE run SET status = 'interrupted', finished_at = ? WHERE status = 'running' AND owner_pid = ?")
+				.run(Date.now(), process.pid).changes,
 		interruptStale(isAlive: (pid: number) => boolean = pidAlive): number {
-			const running = db.query<{ id: string; owner_pid: number | null }, []>("SELECT id, owner_pid FROM run WHERE status = 'running'").all();
+			const running = db
+				.query<{ id: string; owner_pid: number | null }, []>("SELECT id, owner_pid FROM run WHERE status = 'running'")
+				.all();
 			let count = 0;
 			for (const row of running) {
 				if (row.owner_pid !== null && isAlive(row.owner_pid)) continue;
-				count += db.query("UPDATE run SET status = 'interrupted', finished_at = ? WHERE id = ? AND status = 'running'").run(Date.now(), row.id).changes;
+				count += db
+					.query("UPDATE run SET status = 'interrupted', finished_at = ? WHERE id = ? AND status = 'running'")
+					.run(Date.now(), row.id).changes;
 			}
 			return count;
 		},
@@ -314,10 +401,15 @@ export function createStore(db: Database) {
 			db.query("UPDATE answer SET sentiment = ? WHERE id = ?").run(sentiment, id);
 		},
 		listByRun: (runId: string): StoredAnswer[] =>
-			db.query<AnswerRow, [string]>("SELECT * FROM answer WHERE run_id = ? ORDER BY created_at, rowid").all(runId).map(toAnswer),
+			db
+				.query<AnswerRow, [string]>("SELECT * FROM answer WHERE run_id = ? ORDER BY created_at, rowid")
+				.all(runId)
+				.map(toAnswer),
 		listByProject: (projectId: string, sinceMs: number): StoredAnswer[] =>
 			db
-				.query<AnswerRow, [string, number]>("SELECT * FROM answer WHERE project_id = ? AND created_at >= ? ORDER BY created_at, rowid")
+				.query<AnswerRow, [string, number]>(
+					"SELECT * FROM answer WHERE project_id = ? AND created_at >= ? ORDER BY created_at, rowid",
+				)
 				.all(projectId, sinceMs)
 				.map(toAnswer),
 	};
@@ -327,17 +419,26 @@ export function createStore(db: Database) {
 			return db.query<{ value: string }, [string]>("SELECT value FROM setting WHERE key = ?").get(key)?.value ?? null;
 		},
 		set(key: string, value: string): void {
-			db.query("INSERT INTO setting (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(key, value);
+			db.query(
+				"INSERT INTO setting (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+			).run(key, value);
 		},
 		remove(key: string): void {
 			db.query("DELETE FROM setting WHERE key = ?").run(key);
 		},
 		all: (): Record<string, string> =>
-			Object.fromEntries(db.query<{ key: string; value: string }, []>("SELECT key, value FROM setting").all().map((r) => [r.key, r.value])),
+			Object.fromEntries(
+				db
+					.query<{ key: string; value: string }, []>("SELECT key, value FROM setting")
+					.all()
+					.map((r) => [r.key, r.value]),
+			),
 	};
 
 	const interruptOwnIn = (table: "run" | "audit") =>
-		db.query(`UPDATE ${table} SET status = 'interrupted', finished_at = ? WHERE status = 'running' AND owner_pid = ?`).run(Date.now(), process.pid).changes;
+		db
+			.query(`UPDATE ${table} SET status = 'interrupted', finished_at = ? WHERE status = 'running' AND owner_pid = ?`)
+			.run(Date.now(), process.pid).changes;
 
 	const audits = {
 		interruptOwn: (): number => interruptOwnIn("audit"),
@@ -347,29 +448,30 @@ export function createStore(db: Database) {
 		},
 		create(projectId: string, origin: string, own = true): StoredAudit {
 			const id = crypto.randomUUID();
-			db.query("INSERT INTO audit (id, project_id, origin, status, started_at, owner_pid, own) VALUES (?, ?, ?, 'running', ?, ?, ?)").run(
-				id,
-				projectId,
-				origin,
-				Date.now(),
-				process.pid,
-				own ? 1 : 0,
-			);
+			db.query(
+				"INSERT INTO audit (id, project_id, origin, status, started_at, owner_pid, own) VALUES (?, ?, ?, 'running', ?, ?, ?)",
+			).run(id, projectId, origin, Date.now(), process.pid, own ? 1 : 0);
 			return audits.get(id) as StoredAudit;
 		},
 		latest(projectId: string, o: { ownOnly?: boolean } = {}): StoredAudit | null {
 			const row = db
-				.query<AuditRow, [string]>(`SELECT * FROM audit WHERE project_id = ? ${o.ownOnly ? "AND own = 1" : ""} ORDER BY started_at DESC, rowid DESC LIMIT 1`)
+				.query<AuditRow, [string]>(
+					`SELECT * FROM audit WHERE project_id = ? ${o.ownOnly ? "AND own = 1" : ""} ORDER BY started_at DESC, rowid DESC LIMIT 1`,
+				)
 				.get(projectId);
 			return row ? toAudit(row) : null;
 		},
 		active(projectId: string): StoredAudit | null {
-			const row = db.query<AuditRow, [string]>("SELECT * FROM audit WHERE project_id = ? AND status = 'running' LIMIT 1").get(projectId);
+			const row = db
+				.query<AuditRow, [string]>("SELECT * FROM audit WHERE project_id = ? AND status = 'running' LIMIT 1")
+				.get(projectId);
 			return row ? toAudit(row) : null;
 		},
 		finish(id: string, status: AuditStatus, result: AuditResult | null): StoredAudit | null {
 			db.transaction(() => {
-				db.query("UPDATE audit SET origin = COALESCE(?, origin), status = ?, finished_at = ?, score = ?, pages = ?, skipped = ? WHERE id = ?").run(
+				db.query(
+					"UPDATE audit SET origin = COALESCE(?, origin), status = ?, finished_at = ?, score = ?, pages = ?, skipped = ? WHERE id = ?",
+				).run(
 					result?.origin ?? null,
 					status,
 					Date.now(),
@@ -380,7 +482,9 @@ export function createStore(db: Database) {
 				);
 				let position = 0;
 				for (const finding of result?.findings ?? []) {
-					db.query("INSERT INTO finding (id, audit_id, position, check_id, severity, url, title, evidence, fix) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
+					db.query(
+						"INSERT INTO finding (id, audit_id, position, check_id, severity, url, title, evidence, fix) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+					).run(
 						crypto.randomUUID(),
 						id,
 						position,
@@ -398,15 +502,28 @@ export function createStore(db: Database) {
 		},
 		findings: (auditId: string): Finding[] =>
 			db
-				.query<FindingRow, [string]>("SELECT check_id, severity, url, title, evidence, fix FROM finding WHERE audit_id = ? ORDER BY position")
+				.query<FindingRow, [string]>(
+					"SELECT check_id, severity, url, title, evidence, fix FROM finding WHERE audit_id = ? ORDER BY position",
+				)
 				.all(auditId)
-				.map((r) => ({ checkId: r.check_id, severity: r.severity, url: r.url, title: r.title, evidence: r.evidence, fix: r.fix })),
+				.map((r) => ({
+					checkId: r.check_id,
+					severity: r.severity,
+					url: r.url,
+					title: r.title,
+					evidence: r.evidence,
+					fix: r.fix,
+				})),
 		interruptStale(isAlive: (pid: number) => boolean = pidAlive): number {
-			const running = db.query<{ id: string; owner_pid: number | null }, []>("SELECT id, owner_pid FROM audit WHERE status = 'running'").all();
+			const running = db
+				.query<{ id: string; owner_pid: number | null }, []>("SELECT id, owner_pid FROM audit WHERE status = 'running'")
+				.all();
 			let count = 0;
 			for (const row of running) {
 				if (row.owner_pid !== null && isAlive(row.owner_pid)) continue;
-				count += db.query("UPDATE audit SET status = 'interrupted', finished_at = ? WHERE id = ? AND status = 'running'").run(Date.now(), row.id).changes;
+				count += db
+					.query("UPDATE audit SET status = 'interrupted', finished_at = ? WHERE id = ? AND status = 'running'")
+					.run(Date.now(), row.id).changes;
 			}
 			return count;
 		},

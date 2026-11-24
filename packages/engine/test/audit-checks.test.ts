@@ -6,13 +6,20 @@ import { parseRobots, robotsAllows } from "../src/audit/robots";
 
 const NOW = Date.parse("2026-11-24T00:00:00Z");
 const words = (n: number, word = "word") => Array.from({ length: n }, () => word).join(" ");
-const fetched = (text: string, status = 200, contentType = "text/plain"): Fetched => ({ url: "https://acme.com/x", status, contentType, text, redirects: [] });
+const fetched = (text: string, status = 200, contentType = "text/plain"): Fetched => ({
+	url: "https://acme.com/x",
+	status,
+	contentType,
+	text,
+	redirects: [],
+});
 
 const GOOD_HEAD = `<title>Best CRM for agencies | Acme</title><meta name="description" content="A guide to choosing a CRM."><meta name="author" content="Dana Lee">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Acme"},{"@type":"Article","headline":"Best CRM","dateModified":"2026-10-01","author":{"@type":"Person","name":"Dana Lee"}},{"@type":"FAQPage","mainEntity":[]}]}</script>`;
 const GOOD_BODY = `<h1>What is the best CRM for agencies?</h1><p>${words(40, "answer")}</p><h2>How much does a CRM cost?</h2><p>${words(120)}</p><h2>Which CRM is easiest?</h2><p>${words(200)} <a href="https://g2.com/crm">G2</a></p>`;
 
-const page = (body: string, head = GOOD_HEAD, url = "https://acme.com/blog/best-crm") => parsePage(url, `<!doctype html><html><head>${head}</head><body>${body}</body></html>`);
+const page = (body: string, head = GOOD_HEAD, url = "https://acme.com/blog/best-crm") =>
+	parsePage(url, `<!doctype html><html><head>${head}</head><body>${body}</body></html>`);
 const ids = (findings: Finding[]) => findings.map((f) => f.checkId).sort();
 
 test("a well-built page has no findings", () => {
@@ -33,7 +40,9 @@ test("the page model reads headings, text, schema, author and dates", () => {
 });
 
 test("script, style and hidden template text do not count as content", () => {
-	const model = page(`<script>${words(500, "js")}</script><style>${words(500, "css")}</style><noscript>${words(200, "ns")}</noscript><div id="root"></div>`);
+	const model = page(
+		`<script>${words(500, "js")}</script><style>${words(500, "css")}</style><noscript>${words(200, "ns")}</noscript><div id="root"></div>`,
+	);
 	expect(model.words).toBeLessThan(10);
 });
 
@@ -46,17 +55,35 @@ test("an empty JavaScript shell is one high finding and nothing else", () => {
 
 test("each content check fires on a page that lacks it", () => {
 	const only = (body: string, head = GOOD_HEAD, url?: string) => ids(checkPage(page(body, head, url), NOW));
-	expect(only(GOOD_BODY, GOOD_HEAD.replace(/<script[\s\S]*<\/script>/, ""))).toEqual(["faq-without-schema", "no-date", "no-structured-data"]);
-	expect(only(GOOD_BODY, GOOD_HEAD.replace('{"@type":"FAQPage","mainEntity":[]}', '{"@type":"WebPage"}'))).toEqual(["faq-without-schema"]);
+	expect(only(GOOD_BODY, GOOD_HEAD.replace(/<script[\s\S]*<\/script>/, ""))).toEqual([
+		"faq-without-schema",
+		"no-date",
+		"no-structured-data",
+	]);
+	expect(only(GOOD_BODY, GOOD_HEAD.replace('{"@type":"FAQPage","mainEntity":[]}', '{"@type":"WebPage"}'))).toEqual([
+		"faq-without-schema",
+	]);
 	expect(only(GOOD_BODY.replace(/<p>(answer ?)+<\/p>/, `<p>${words(300)}</p>`))).toEqual(["no-direct-answer"]);
 	expect(only(GOOD_BODY.replace(/<p>(answer ?)+<\/p>/, "<p>Short.</p>"))).toEqual(["no-direct-answer"]);
 	expect(only(GOOD_BODY.replace(/<h1>.*?<\/h1>/, ""))).toEqual(["no-h1"]);
-	expect(only(GOOD_BODY.replace(/\?/g, "").replace(/What is|How much does|Which/g, "About"))).toEqual(["no-question-headings"]);
-	expect(only(GOOD_BODY, GOOD_HEAD.replace('<meta name="author" content="Dana Lee">', "").replace(',"author":{"@type":"Person","name":"Dana Lee"}', ""))).toEqual(["no-author"]);
+	expect(only(GOOD_BODY.replace(/\?/g, "").replace(/What is|How much does|Which/g, "About"))).toEqual([
+		"no-question-headings",
+	]);
+	expect(
+		only(
+			GOOD_BODY,
+			GOOD_HEAD.replace('<meta name="author" content="Dana Lee">', "").replace(
+				',"author":{"@type":"Person","name":"Dana Lee"}',
+				"",
+			),
+		),
+	).toEqual(["no-author"]);
 	expect(only(GOOD_BODY, GOOD_HEAD.replace(',"dateModified":"2026-10-01"', ""))).toEqual(["no-date"]);
 	expect(only(GOOD_BODY, GOOD_HEAD.replace("2026-10-01", "2024-01-15"))).toEqual(["stale-content"]);
 	expect(only(GOOD_BODY.replace(/<a href="https:\/\/g2.com\/crm">G2<\/a>/, ""))).toEqual(["no-outbound-citations"]);
-	expect(only(GOOD_BODY, GOOD_HEAD.replace(/<meta name="description"[^>]*>/, ""))).toEqual(["missing-title-or-description"]);
+	expect(only(GOOD_BODY, GOOD_HEAD.replace(/<meta name="description"[^>]*>/, ""))).toEqual([
+		"missing-title-or-description",
+	]);
 	expect(only(GOOD_BODY, GOOD_HEAD.replace(/<title>.*?<\/title>/, ""))).toEqual(["missing-title-or-description"]);
 });
 
@@ -80,7 +107,9 @@ test("short pages are not asked for question headings or citations", () => {
 });
 
 test("malformed html does not throw", () => {
-	expect(() => checkPage(parsePage("https://acme.com/x", "<html><body><h1>Unclosed <p>text <div><<<>>> &&& </body>"), NOW)).not.toThrow();
+	expect(() =>
+		checkPage(parsePage("https://acme.com/x", "<html><body><h1>Unclosed <p>text <div><<<>>> &&& </body>"), NOW),
+	).not.toThrow();
 	expect(() => checkPage(parsePage("https://acme.com/x", ""), NOW)).not.toThrow();
 	expect(() => parsePage("not a url", "<p>x</p>")).not.toThrow();
 });
@@ -144,7 +173,11 @@ test("blocked AI crawlers are reported by purpose", () => {
 });
 
 test("a site that blocks everyone reports every AI crawler", () => {
-	const findings = checkSite({ origin: "https://acme.com", robots: fetched("User-agent: *\nDisallow: /"), llms: fetched("# x") });
+	const findings = checkSite({
+		origin: "https://acme.com",
+		robots: fetched("User-agent: *\nDisallow: /"),
+		llms: fetched("# x"),
+	});
 	expect(findings.length).toBe(AI_CRAWLERS.length);
 });
 
@@ -155,9 +188,17 @@ test("missing robots.txt and llms.txt are low findings; an html page served for 
 		["llms-txt-missing", "low"],
 	]);
 	const soft404 = fetched("<!doctype html><html><body>Not found</body></html>", 200, "text/html");
-	expect(ids(checkSite({ origin: "https://acme.com", robots: soft404, llms: soft404 }))).toEqual(["llms-txt-missing", "robots-missing"]);
-	expect(ids(checkSite({ origin: "https://acme.com", robots: fetched("", 404), llms: fetched("", 404) }))).toEqual(["llms-txt-missing", "robots-missing"]);
-	expect(checkSite({ origin: "https://acme.com", robots: fetched("User-agent: *\nAllow: /"), llms: fetched("# Acme") })).toEqual([]);
+	expect(ids(checkSite({ origin: "https://acme.com", robots: soft404, llms: soft404 }))).toEqual([
+		"llms-txt-missing",
+		"robots-missing",
+	]);
+	expect(ids(checkSite({ origin: "https://acme.com", robots: fetched("", 404), llms: fetched("", 404) }))).toEqual([
+		"llms-txt-missing",
+		"robots-missing",
+	]);
+	expect(
+		checkSite({ origin: "https://acme.com", robots: fetched("User-agent: *\nAllow: /"), llms: fetched("# Acme") }),
+	).toEqual([]);
 });
 
 test("author, date and citation checks apply to articles, not to ordinary pages", () => {
@@ -169,20 +210,33 @@ test("author, date and citation checks apply to articles, not to ordinary pages"
 	expect(about).not.toContain("no-outbound-citations");
 	const post = ids(checkPage(page(body, head, "https://acme.com/blog/our-story"), NOW));
 	expect(post).toEqual(expect.arrayContaining(["no-author", "no-date", "no-outbound-citations"]));
-	const typed = ids(checkPage(page(body, `${head}<script type="application/ld+json">{"@type":"BlogPosting","headline":"x"}</script>`, "https://acme.com/our-story"), NOW));
+	const typed = ids(
+		checkPage(
+			page(
+				body,
+				`${head}<script type="application/ld+json">{"@type":"BlogPosting","headline":"x"}</script>`,
+				"https://acme.com/our-story",
+			),
+			NOW,
+		),
+	);
 	expect(typed).toEqual(expect.arrayContaining(["no-author", "no-date"]));
 });
 
 test("the home page is not asked for an answer paragraph or question headings", () => {
-	const head = '<title>Acme</title><meta name="description" content="CRM."><script type="application/ld+json">{"@type":"Organization","name":"Acme"}</script>';
+	const head =
+		'<title>Acme</title><meta name="description" content="CRM."><script type="application/ld+json">{"@type":"Organization","name":"Acme"}</script>';
 	const body = `<h1>The CRM for agencies</h1><p>Short tagline.</p><h2>Features</h2><p>${words(400)}</p>`;
 	expect(checkPage(page(body, head, "https://acme.com/"), NOW)).toEqual([]);
 });
 
 test("a direct answer is expected on articles and question pages, not on product pages", () => {
-	const head = '<title>Calendar</title><meta name="description" content="d"><script type="application/ld+json">{"@type":"WebPage"}</script>';
+	const head =
+		'<title>Calendar</title><meta name="description" content="d"><script type="application/ld+json">{"@type":"WebPage"}</script>';
 	const product = `<h1>Notion Calendar</h1><p>Short tagline.</p><h2>Features</h2><p>${words(400)}</p>`;
-	expect(ids(checkPage(page(product, head, "https://acme.com/product/calendar"), NOW))).not.toContain("no-direct-answer");
+	expect(ids(checkPage(page(product, head, "https://acme.com/product/calendar"), NOW))).not.toContain(
+		"no-direct-answer",
+	);
 	const question = product.replace("Notion Calendar", "What is Notion Calendar?");
 	expect(ids(checkPage(page(question, head, "https://acme.com/product/calendar"), NOW))).toContain("no-direct-answer");
 	expect(ids(checkPage(page(product, head, "https://acme.com/blog/calendar"), NOW))).toContain("no-direct-answer");

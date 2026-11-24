@@ -13,15 +13,15 @@ codex mcp add openaeo -- openaeo mcp
 
 ## Tools
 
-| Tool | What it does |
-| --- | --- |
-| `list_projects` | Brands tracked on this computer |
-| `get_report` | Visibility score, per-engine split, competitors, cited sites |
-| `list_answers` | What each AI engine answered in the latest run |
-| `get_audit` | Latest website audit and its findings |
-| `get_fix_brief` | Instructions for fixing the audit findings |
-| `run_prompts` | Start a run (uses your AI subscriptions) |
-| `run_audit` | Audit a site, including a local address |
+| Tool            | What it does                                                 |
+| --------------- | ------------------------------------------------------------ |
+| `list_projects` | Brands tracked on this computer                              |
+| `get_report`    | Visibility score, per-engine split, competitors, cited sites |
+| `list_answers`  | What each AI engine answered in the latest run               |
+| `get_audit`     | Latest website audit and its findings                        |
+| `get_fix_brief` | Instructions for fixing the audit findings                   |
+| `run_prompts`   | Start a run (uses your AI subscriptions)                     |
+| `run_audit`     | Audit a site, including a local address                      |
 
 ## Skills
 

@@ -1061,3 +1061,19 @@ body,
 	color: var(--muted);
 	vertical-align: 1px;
 }
+
+.oa-tag-filter {
+	display: inline-flex;
+}
+
+.oa-tag-filter .ui-selc[data-size="sm"] {
+	--h: 24px;
+	--radius: var(--aui-radius, 6px);
+	font-size: 12px;
+	line-height: 16px;
+}
+
+.oa-tag-filter [role="combobox"] {
+	font-size: 12px;
+	line-height: 16px;
+}

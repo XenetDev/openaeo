@@ -1,6 +1,6 @@
 import type { CompetitorIdea, EngineView, NewProject } from "@api";
 import { useRef, useState } from "react";
-import { AppShell, type ShellNavItem } from "@/components/app-shell";
+import { AppShell, type ShellGroup, type ShellNavItem } from "@/components/app-shell";
 import { Mark } from "@/components/mark";
 import { OnboardingBrandScreen } from "@/components/onboarding-brand";
 import { brandFrom, OnboardingWebsiteScreen } from "@/components/onboarding-website";
@@ -13,6 +13,7 @@ import { Page, ShareList } from "./shared";
 type Props = {
 	engines: EngineView[];
 	nav: ShellNavItem[];
+	groups: ShellGroup[];
 	busy: boolean;
 	onCreate: (project: NewProject) => void;
 	onCancel?: () => void;
@@ -26,12 +27,14 @@ export function SetupPreview({
 	competitors,
 	engines,
 	nav,
+	groups,
 }: {
 	brand: string;
 	domains: string[];
 	competitors: string[];
 	engines: EngineView[];
 	nav: ShellNavItem[];
+	groups: ShellGroup[];
 }) {
 	const name = brand || "Your brand";
 	return (
@@ -42,7 +45,7 @@ export function SetupPreview({
 				workspaceMeta="Local"
 				user={{ name: "This computer" }}
 				nav={nav}
-				groups={[]}
+				groups={groups}
 				sideCards={false}
 			>
 				<Page brand={name} title="Overview">
@@ -105,7 +108,16 @@ export function SetupPreview({
 	);
 }
 
-export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindCompetitors, onSaveKey }: Props) {
+export function OnboardingFlow({
+	engines,
+	nav,
+	groups,
+	busy,
+	onCreate,
+	onCancel,
+	onFindCompetitors,
+	onSaveKey,
+}: Props) {
 	const [step, setStep] = useState(1);
 	const [domains, setDomains] = useState<string[]>([]);
 	const [names, setNames] = useState<string[]>([]);
@@ -149,6 +161,7 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 						competitors={[]}
 						engines={engines}
 						nav={nav}
+						groups={groups}
 					/>
 				)}
 				onContinue={(next) => {
@@ -178,6 +191,7 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 						competitors={[]}
 						engines={engines}
 						nav={nav}
+						groups={groups}
 					/>
 				)}
 				onContinue={(next) => {
@@ -194,7 +208,9 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 				step={3}
 				defaultValue={location}
 				onBack={() => setStep(2)}
-				preview={<SetupPreview brand={brand} domains={domains} competitors={[]} engines={engines} nav={nav} />}
+				preview={
+					<SetupPreview brand={brand} domains={domains} competitors={[]} engines={engines} nav={nav} groups={groups} />
+				}
 				onContinue={(next) => {
 					setLocation(next);
 					touched.current = false;
@@ -213,7 +229,16 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 				engines={engines}
 				onBack={() => setStep(4)}
 				onSaveKey={onSaveKey}
-				preview={<SetupPreview brand={brand} domains={domains} competitors={rivals} engines={engines} nav={nav} />}
+				preview={
+					<SetupPreview
+						brand={brand}
+						domains={domains}
+						competitors={rivals}
+						engines={engines}
+						nav={nav}
+						groups={groups}
+					/>
+				}
 				onContinue={() =>
 					!busy &&
 					onCreate({
@@ -267,6 +292,7 @@ export function OnboardingFlow({ engines, nav, busy, onCreate, onCancel, onFindC
 						competitors={s.pending ? [...s.names, s.pending] : s.names}
 						engines={engines}
 						nav={nav}
+						groups={groups}
 					/>
 				);
 			}}

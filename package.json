@@ -1,0 +1,10 @@
+{
+	"name": "openaeo",
+	"private": true,
+	"license": "MIT",
+	"workspaces": ["packages/*", "apps/*"],
+	"scripts": {
+		"test": "bun run --filter '*' test",
+		"typecheck": "bun run --filter '*' typecheck"
+	}
+}

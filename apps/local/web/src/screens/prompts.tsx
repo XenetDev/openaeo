@@ -9,6 +9,7 @@ import { EmptyState, Icon } from "@/components/app-shell";
 import { DropdownMenu } from "@/components/ui/dropdown-menu-clean";
 import { IconButton } from "@/components/ui/icon-button-clean";
 import { SuggestMark } from "./command-icons";
+import { Page } from "./shared";
 import { Spinner } from "@/components/ui/spinner-clean";
 
 export type PromptStat = {
@@ -57,6 +58,7 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 	}, [suggesting, arrived]);
 
 	return (
+		<Page brand={brand} title="Prompts">
 			<PromptExplorerScreen
 				workspace={brand}
 				prompts={keywords}
@@ -145,5 +147,6 @@ export function PromptsScreen({ brand, prompts, stats, suggestions, suggesting, 
 </>
 				}
 			/>
+		</Page>
 	);
 }

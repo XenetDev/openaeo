@@ -498,7 +498,7 @@ body,
 	gap: 14px;
 	padding: 36px 16px 28px;
 	text-align: center;
-	background: radial-gradient(60% 120% at 50% 0%, color-mix(in srgb, var(--aui-blue, #0190fe) 10%, transparent) 0%, transparent 70%);
+	background: radial-gradient(58% 170px at 50% 124px, color-mix(in srgb, var(--aui-blue, #0190fe) 12%, transparent) 0%, transparent 72%);
 	border-radius: calc(var(--aui-radius-lg, 10px) + 2px);
 }
 
@@ -506,6 +506,7 @@ body,
 	flex: 1;
 	justify-content: center;
 	padding-bottom: 96px;
+	background: radial-gradient(56% 300px at 50% 44%, color-mix(in srgb, var(--aui-blue, #0190fe) 12%, transparent) 0%, transparent 72%);
 }
 
 .oa-audit-hero h2 {
@@ -790,9 +791,19 @@ body,
 	flex: 1;
 	flex-direction: column;
 	border-radius: calc(var(--aui-radius-lg, 10px) + 2px);
-	background: radial-gradient(60% 70% at 50% 0%, color-mix(in srgb, var(--aui-blue, #0190fe) 10%, transparent) 0%, transparent 70%);
+	background: radial-gradient(56% 300px at 50% 46%, color-mix(in srgb, var(--aui-blue, #0190fe) 12%, transparent) 0%, transparent 72%);
 }
 
 .oa-ask-dock > .oa-pill {
 	width: 100%;
+}
+
+.ui-as-rev__content > .ui-pex {
+	height: auto;
+	padding: 0;
+	overflow: visible;
+}
+
+.ui-as-rev__content > .ui-pex > .oa-prompt-hero {
+	padding-top: 28px;
 }

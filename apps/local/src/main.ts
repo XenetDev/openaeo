@@ -9,6 +9,7 @@ import { suggestCompetitors } from "./competitor-ideas";
 import { createSiteDescriber } from "./describe-site";
 import { embedded } from "./embedded";
 import { buildProviders, detectEngines } from "./engines";
+import { createInstallPing } from "./install-ping";
 import { dataDir, dbPath } from "./paths";
 import { createRunService } from "./runs";
 import { createScheduler } from "./scheduler";
@@ -126,6 +127,14 @@ if (!server) {
 }
 
 createScheduler({ store, runs }).start();
+void createInstallPing({
+	store,
+	version: pkg.version,
+	os: process.platform,
+	arch: process.arch,
+	env: process.env,
+	note: out,
+})();
 const url = `http://127.0.0.1:${server.port}`;
 out(`OpenAEO is running at ${url}`);
 out("Press Ctrl+C to stop.");

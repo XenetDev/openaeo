@@ -76,6 +76,21 @@ See [plugins/openaeo](plugins/openaeo/README.md) for the tools and ready-made sk
 
 Everything is stored in `~/.openaeo` on your computer. Your questions go to the AI engines you connect, and the audit reads your public website. API keys stay on your computer.
 
+## Install count
+
+To know how many people use OpenAEO, the app can send one small message a day while the dashboard is open: a random id made on your computer, the app's version, and whether you are on macOS or Linux, on Intel or ARM. That is all. It never sends your brands, websites, questions, answers, keys or anything you type, and the id is not linked to you.
+
+It is switched off in this version, because the address it would send to is not set yet. When it is switched on, the app says so the first time it runs.
+
+Turn it off for good with either of these:
+
+```sh
+export OPENAEO_TELEMETRY=off
+export DO_NOT_TRACK=1
+```
+
+The code is in [`apps/local/src/install-ping.ts`](apps/local/src/install-ping.ts).
+
 ## Repository layout
 
 ```

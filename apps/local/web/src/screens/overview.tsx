@@ -10,15 +10,16 @@ import {
 import type { ReactNode } from "react";
 import { ChartCard } from "@/components/analytics";
 import { EmptyState, Icon } from "@/components/app-shell";
-import { Badge, type BadgeTone } from "@/components/ui/badge-clean";
+import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { ChangeSummary, type MetricChange } from "@/components/ui/change-summary-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
 import { TrendChart } from "@/components/ui/trend-chart-clean";
 import { words } from "../wording";
+import { BrandChecks } from "./brand-checks";
 import { HighMark, LowMark, MediumMark } from "./command-icons";
-import { day, EngineLogo, engineLabel, Page, percent, ShareList, when } from "./shared";
+import { day, engineLabel, Page, percent, ShareList, when } from "./shared";
 
 type Props = {
 	project: ProjectView;
@@ -30,13 +31,6 @@ type Props = {
 	onNavigate: (page: PageId) => void;
 	plan: PlanView | null;
 	filter?: ReactNode;
-};
-
-const KNOWS: Record<string, { label: string; tone: BadgeTone }> = {
-	yes: { label: "Knows you", tone: "success" },
-	partly: { label: "Unsure about you", tone: "warning" },
-	no: { label: "Does not know you", tone: "danger" },
-	unclear: { label: "Not analysed", tone: "neutral" },
 };
 
 const moved = (
@@ -395,50 +389,7 @@ export function OverviewScreen({
 				</Card>
 			) : null}
 
-			{report.brand.length > 0 ? (
-				<Card>
-					<CardHeader
-						title={`What AI says when asked about ${project.name}`}
-						description="Each engine was asked what your company is and does. This is separate from your tracked questions."
-					/>
-					<CardContent>
-						<div className="oa-brand">
-							{report.brand.map((check) => (
-								<article key={check.engine}>
-									<header>
-										<EngineLogo engine={check.engine} label={engineLabel(engines, check.engine)} size={16} />
-										<b>{engineLabel(engines, check.engine)}</b>
-										<Badge tone={KNOWS[check.knows ?? "unclear"].tone}>{KNOWS[check.knows ?? "unclear"].label}</Badge>
-									</header>
-									{check.summary ? <p>{check.summary}</p> : null}
-									<section>
-										<small>Where it got this</small>
-										<span className="oa-inline">
-											<Badge tone={check.ownSiteUsed ? "success" : "warning"}>
-												{check.ownSiteUsed ? "Your site was used" : "Your site was not used"}
-											</Badge>
-											{check.sources.slice(0, 6).map((domain) => (
-												<Badge key={domain}>{domain}</Badge>
-											))}
-											{check.sources.length === 0 ? <Badge>Its own memory</Badge> : null}
-										</span>
-									</section>
-									{check.concerns.length > 0 ? (
-										<section>
-											<small>Doubts it raised</small>
-											<ul>
-												{check.concerns.map((concern) => (
-													<li key={concern}>{concern}</li>
-												))}
-											</ul>
-										</section>
-									) : null}
-								</article>
-							))}
-						</div>
-					</CardContent>
-				</Card>
-			) : null}
+			{report.brand.length > 0 ? <BrandChecks brand={project.name} checks={report.brand} engines={engines} /> : null}
 
 			<div className="ui-as-rev__row ui-as-rev__row--3">
 				<Card>

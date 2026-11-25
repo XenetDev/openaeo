@@ -28,6 +28,9 @@ export type ProjectData = {
 };
 
 const STORED_PROJECT = "openaeo.project";
+const STORED_BRAND = "openaeo.brand";
+
+export const rememberedBrand = (): string | null => window.localStorage.getItem(STORED_BRAND);
 const POLL_MS = 2000;
 
 export const messageOf = (error: unknown) =>
@@ -48,6 +51,12 @@ export function useWorkspace() {
 	const project = projects?.find((p) => p.id === projectId) ?? projects?.[0] ?? null;
 	const currentId = project?.id ?? null;
 	current.current = currentId;
+	const brand = project?.name ?? null;
+
+	useEffect(() => {
+		if (brand) window.localStorage.setItem(STORED_BRAND, brand);
+		else if (projects) window.localStorage.removeItem(STORED_BRAND);
+	}, [brand, projects]);
 
 	const loadState = useCallback(async () => {
 		const [state, stored] = await Promise.all([api.state(), api.settings()]);

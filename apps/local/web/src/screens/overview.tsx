@@ -167,29 +167,7 @@ export function OverviewScreen({
 			</>
 		);
 
-	if (loading) {
-		return (
-			<Page brand={project.name} title="Overview" actions={actions}>
-				<div className="ui-as-rev__stats oa-stats-5">
-					{["Visibility score", "Mentioned in", "Your site cited in", "Average position", "Sentiment"].map((label) => (
-						<StatCard
-							key={label}
-							className="ui-as-rev__stat oa-stat"
-							label={label}
-							value=""
-							change={0}
-							loading
-							chart={<span />}
-						/>
-					))}
-				</div>
-				<div className="ui-as-rev__row ui-as-rev__row--main">
-					<ChartCard tall loading title="Visibility over time" />
-					<ChartCard loading title="By engine" />
-				</div>
-			</Page>
-		);
-	}
+	if (loading) return <OverviewSkeleton brand={project.name} actions={actions} />;
 
 	const notices = (
 		<>
@@ -516,6 +494,30 @@ export function OverviewScreen({
 						</CardContent>
 					</Card>
 				)}
+			</div>
+		</Page>
+	);
+}
+
+export function OverviewSkeleton({ brand, actions }: { brand: string; actions?: ReactNode }) {
+	return (
+		<Page brand={brand} title="Overview" actions={actions}>
+			<div className="ui-as-rev__stats oa-stats-5">
+				{["Visibility score", "Mentioned in", "Your site cited in", "Average position", "Sentiment"].map((label) => (
+					<StatCard
+						key={label}
+						className="ui-as-rev__stat oa-stat"
+						label={label}
+						value=""
+						change={0}
+						loading
+						chart={<span />}
+					/>
+				))}
+			</div>
+			<div className="ui-as-rev__row ui-as-rev__row--main">
+				<ChartCard tall loading title="Visibility over time" />
+				<ChartCard loading title="By engine" />
 			</div>
 		</Page>
 	);

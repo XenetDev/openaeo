@@ -6,6 +6,7 @@ import { AnswersScreen } from "../screens/answers";
 import { AskScreen } from "../screens/ask";
 import { AuditScreen } from "../screens/audit";
 import { CompetitorsScreen, SourcesScreen } from "../screens/lists";
+import { LoadingScreen } from "../screens/loading";
 import { OpportunitiesScreen } from "../screens/opportunities";
 import { OverviewScreen } from "../screens/overview";
 import { PlanScreen } from "../screens/plan";
@@ -277,6 +278,6 @@ export function Screen({ page, context }: { page: PageId; context: ScreenContext
 				onCancel={context.cancelRun}
 			/>
 		);
-	if (!data) return <div className="ui-as-page" />;
+	if (!data) return <LoadingScreen brand={project.name} page={page} />;
 	return SCREENS[page]({ ...context, data });
 }

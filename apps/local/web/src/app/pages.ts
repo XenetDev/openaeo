@@ -30,6 +30,7 @@ export const PAGES: { id: PageId; label: string; icon: ShellNavItem["icon"]; sec
 	{ id: "settings", label: "Settings", icon: Settings01Icon, section: "hidden" },
 ];
 
+export const pageLabel = (id: PageId): string => PAGES.find((page) => page.id === id)?.label ?? "";
 export const NEW_BRAND = "Track another brand";
 export const NEW_BRAND_KEY = "brand:new";
 export const pageKey = (id: PageId) => `page:${id}`;

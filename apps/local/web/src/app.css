@@ -1445,3 +1445,18 @@ body,
 		--h: 32px;
 	}
 }
+
+.oa-boot {
+	display: grid;
+	place-items: center;
+	height: 100%;
+	min-height: 100dvh;
+	color: var(--text);
+	animation: oa-boot-in 200ms ease 400ms both;
+}
+
+@keyframes oa-boot-in {
+	from {
+		opacity: 0;
+	}
+}

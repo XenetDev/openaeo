@@ -12,6 +12,7 @@ import type {
 } from "@openaeo/engine";
 import type { BrandCheck } from "../brand-check";
 import { cleanLocation } from "../location";
+import { cleanTags } from "../tags";
 import type {
 	AuditStatus,
 	Competitor,
@@ -144,18 +145,6 @@ const toPrompt = (r: PromptRow): Prompt => ({
 	tags: JSON.parse(r.tags) as string[],
 	createdAt: r.created_at,
 });
-const MAX_TAGS = 10;
-const MAX_TAG_LENGTH = 40;
-
-export function cleanTags(tags: string[]): string[] {
-	const seen = new Map<string, string>();
-	for (const raw of tags) {
-		const tag = raw.replace(/\s+/g, " ").trim().slice(0, MAX_TAG_LENGTH);
-		if (tag && !seen.has(tag.toLowerCase())) seen.set(tag.toLowerCase(), tag);
-	}
-	return [...seen.values()].slice(0, MAX_TAGS);
-}
-
 const toRun = (r: RunRow): Run => ({
 	id: r.id,
 	projectId: r.project_id,

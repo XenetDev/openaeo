@@ -14,6 +14,7 @@ type Words = {
 	schedule: string;
 	firstRun: string;
 	settingsSub: string;
+	engineNote: string;
 };
 
 const LOCAL: Words = {
@@ -32,6 +33,8 @@ const LOCAL: Words = {
 	firstRun:
 		"This runs on your own engines and takes a few minutes. You can open the dashboard at any time; it keeps going.",
 	settingsSub: "Engines, your agent connection and the brand you track.",
+	engineNote:
+		"Each engine is asked through its own tool with web search on. Results can differ from the consumer apps.",
 };
 
 const CLOUD: Words = {
@@ -48,6 +51,7 @@ const CLOUD: Words = {
 	schedule: "Scheduled runs are not available on OpenAEO Cloud yet.",
 	firstRun: "This takes a few minutes. You can open the dashboard at any time; it keeps going.",
 	settingsSub: "Your brand, account, workspace and billing.",
+	engineNote: "Each engine is asked through its API with web search on. Results can differ from the consumer apps.",
 };
 
 export const words: Words = runtime.cloud ? CLOUD : LOCAL;

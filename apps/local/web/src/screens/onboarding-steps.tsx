@@ -198,6 +198,7 @@ export function FirstRunStep({
 	brand,
 	tasks,
 	finished,
+	answered,
 	preview,
 	onOpen,
 }: {
@@ -206,6 +207,7 @@ export function FirstRunStep({
 	brand: string;
 	tasks: SetupTask[];
 	finished: boolean;
+	answered: boolean;
 	preview: ReactNode;
 	onOpen: () => void;
 }) {
@@ -213,7 +215,13 @@ export function FirstRunStep({
 		<OnboardingFrame {...frame} preview={preview}>
 			<Steps step={step} steps={frame.steps} />
 			<h1 className="ui-obw-title">{finished ? `${brand} is ready` : `Setting up ${brand}`}</h1>
-			<p className="ui-obw-sub">{finished ? "Your dashboard is filled in with the first answers." : words.firstRun}</p>
+			<p className="ui-obw-sub">
+				{finished
+					? answered
+						? "Your dashboard is filled in with the first answers."
+						: "Your website has been checked. Run your questions when you are ready."
+					: words.firstRun}
+			</p>
 
 			<div className="oa-ob-list" aria-live="polite">
 				{tasks.map((task) => (

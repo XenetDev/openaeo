@@ -60,6 +60,7 @@ export function FirstRun({ setup, project, data, engines, onOpen }: Props) {
 			step={SETUP_STEPS}
 			brand={project.name}
 			finished={finished}
+			answered={runState === "done"}
 			preview={
 				<SetupPreview
 					brand={project.name}

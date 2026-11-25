@@ -380,7 +380,7 @@ export function OverviewScreen({
 							</div>
 						) : null}
 						<p className="oa-quiet" style={{ marginTop: 12 }}>
-							Each engine is asked through its own tool with web search on. Results can differ from the consumer apps.
+							{words.engineNote}
 						</p>
 					</CardContent>
 				</Card>

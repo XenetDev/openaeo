@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { Select } from "@/components/ui/select-clean";
 import { type TraceSpan, TraceWaterfall } from "@/components/ui/trace-waterfall-clean";
 import { api } from "../api";
+import { runtime } from "../runtime";
 import { words } from "../wording";
 import { runTree } from "./run-tree";
 import { EngineLogo, engineLabel, Facts, Page, percent, span, when } from "./shared";
@@ -209,26 +210,28 @@ export function RunsScreen({
 								</CardContent>
 							</Card>
 						) : null}
-						<Card>
-							<CardHeader title="Schedule" description={words.schedule} />
-							<CardContent>
-								<Select
-									aria-label="Run schedule"
-									options={SCHEDULES}
-									value={schedule}
-									onChange={(value, option) => onSchedule(value, String(option.label))}
-								/>
-								<p className="oa-quiet" style={{ marginTop: 10 }}>
-									{next
-										? next <= Date.now()
-											? "The next run starts within a minute."
-											: `Next run: ${when(next)}.`
-										: period
-											? "The schedule starts after your first run."
-											: "Nothing runs on its own."}
-								</p>
-							</CardContent>
-						</Card>
+						{runtime.cloud ? null : (
+							<Card>
+								<CardHeader title="Schedule" description={words.schedule} />
+								<CardContent>
+									<Select
+										aria-label="Run schedule"
+										options={SCHEDULES}
+										value={schedule}
+										onChange={(value, option) => onSchedule(value, String(option.label))}
+									/>
+									<p className="oa-quiet" style={{ marginTop: 10 }}>
+										{next
+											? next <= Date.now()
+												? "The next run starts within a minute."
+												: `Next run: ${when(next)}.`
+											: period
+												? "The schedule starts after your first run."
+												: "Nothing runs on its own."}
+									</p>
+								</CardContent>
+							</Card>
+						)}
 					</aside>
 				</div>
 			)}

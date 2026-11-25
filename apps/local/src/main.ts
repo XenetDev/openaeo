@@ -92,6 +92,7 @@ if (args.command === "mcp") {
 		version: pkg.version,
 		describeSite: createSiteDescriber(get),
 		competitorIdeas: async (context) => suggestCompetitors(await firstProvider(), context),
+		suggest: async (context) => suggestPrompts(await firstProvider(), context),
 	}).connect(new StdioServerTransport());
 	await new Promise<void>((resolve) => process.stdin.on("close", resolve));
 	release();

@@ -1,13 +1,36 @@
 import { z } from "zod";
 import { promptStats } from "../report";
-import { PromptTextSchema } from "../server/schemas";
-import { count, fail, isReply, type McpContext, oneLine, percent, projectArg, sameText, say } from "./shared";
+import { PromptTagsSchema, PromptTextSchema } from "../server/schemas";
+import { projectSuggestContext, type SuggestContext } from "../suggest";
+import { cleanTags } from "../tags";
+import {
+	ANSWER_NOTICE,
+	count,
+	fail,
+	findQuestion,
+	isReply,
+	type McpContext,
+	type McpLimits,
+	noQuestion,
+	oneLine,
+	percent,
+	projectArg,
+	questionArg,
+	sameText,
+	say,
+} from "./shared";
 
-export type McpLimits = {
-	questions?: (projectId: string, adding: number) => Promise<string | null>;
+export type QuestionDeps = {
+	limits?: McpLimits;
+	suggest?: (context: SuggestContext) => Promise<{ prompts: string[]; fallback: boolean }>;
+	describeSite?: (domain: string) => Promise<string | null>;
 };
 
-export function registerQuestionTools({ server, store, resolve }: McpContext, limits: McpLimits = {}): void {
+const whichQuestion = questionArg.describe("The question's exact text, or its id from list_questions.");
+
+export function registerQuestionTools({ server, store, resolve }: McpContext, deps: QuestionDeps = {}): void {
+	const { limits = {}, suggest, describeSite } = deps;
+
 	server.registerTool(
 		"list_questions",
 		{
@@ -39,7 +62,7 @@ export function registerQuestionTools({ server, store, resolve }: McpContext, li
 					"",
 					...blocks,
 					"",
-					"Use add_questions to track more, or set_question_active to pause or resume one.",
+					"Use add_questions to track more, set_question_active to pause or resume one, set_question_tags to group them, or remove_question to drop one.",
 				].join("\n"),
 			);
 		},
@@ -98,12 +121,7 @@ export function registerQuestionTools({ server, store, resolve }: McpContext, li
 				"Pause or resume one tracked question of a brand. A paused question is skipped in future runs and keeps its history; resuming it asks it again from the next run.",
 			inputSchema: {
 				...projectArg,
-				question: z
-					.string()
-					.trim()
-					.min(1)
-					.max(2000)
-					.describe("The question's exact text, or its id from list_questions."),
+				question: whichQuestion,
 				active: z.boolean().describe("true to resume the question, false to pause it."),
 			},
 			annotations: { readOnlyHint: false },
@@ -111,13 +129,8 @@ export function registerQuestionTools({ server, store, resolve }: McpContext, li
 		async ({ project, question, active }) => {
 			const found = await resolve(project);
 			if (isReply(found)) return found;
-			const prompts = await store.prompts.list(found.id);
-			const target =
-				prompts.find((p) => p.id === question) ?? prompts.find((p) => sameText(p.text) === sameText(question));
-			if (!target)
-				return fail(
-					`There is no question "${oneLine(question)}" for ${found.name}. Use list_questions to see the tracked questions and their ids.`,
-				);
+			const target = findQuestion(await store.prompts.list(found.id), question);
+			if (!target) return noQuestion(question, found);
 			await store.prompts.setActive(target.id, active);
 			return say(
 				`${active ? "Resumed" : "Paused"} "${oneLine(target.text)}" for ${found.name}. ${
@@ -126,4 +139,93 @@ export function registerQuestionTools({ server, store, resolve }: McpContext, li
 			);
 		},
 	);
+
+	server.registerTool(
+		"set_question_tags",
+		{
+			description:
+				"Set the tags of one tracked question, replacing the tags it has. Tags group questions so reports, sources and answers can be narrowed to one group. Pass an empty list to clear them.",
+			inputSchema: {
+				...projectArg,
+				question: whichQuestion,
+				tags: PromptTagsSchema.describe("The tags the question should have, at most 10 of up to 40 characters each."),
+			},
+			annotations: { readOnlyHint: false },
+		},
+		async ({ project, question, tags }) => {
+			const found = await resolve(project);
+			if (isReply(found)) return found;
+			const target = findQuestion(await store.prompts.list(found.id), question);
+			if (!target) return noQuestion(question, found);
+			const cleaned = cleanTags(tags);
+			await store.prompts.setTags(target.id, cleaned);
+			return say(
+				cleaned.length > 0
+					? `"${oneLine(target.text)}" is now tagged: ${cleaned.join(", ")}.`
+					: `"${oneLine(target.text)}" now has no tags.`,
+			);
+		},
+	);
+
+	server.registerTool(
+		"remove_question",
+		{
+			description:
+				"Stop tracking one question of a brand and delete it from the list. Its past answers stay in old runs, shown as a deleted question, but its history is no longer charted. To skip a question and keep its history, use set_question_active instead. Confirm with the user first.",
+			inputSchema: { ...projectArg, question: whichQuestion },
+			annotations: { readOnlyHint: false, destructiveHint: true },
+		},
+		async ({ project, question }) => {
+			const found = await resolve(project);
+			if (isReply(found)) return found;
+			const target = findQuestion(await store.prompts.list(found.id), question);
+			if (!target) return noQuestion(question, found);
+			await store.prompts.remove(target.id);
+			return say(
+				`Removed "${oneLine(target.text)}" from the questions of ${found.name}. Its past answers stay in old runs; it is not asked again.`,
+			);
+		},
+	);
+
+	if (suggest)
+		server.registerTool(
+			"suggest_questions",
+			{
+				description:
+					"Ask the user's AI engine (one request, up to a couple of minutes, spends a little of their AI usage) for questions buyers might ask about what a brand sells. Returns ideas only and saves nothing: show them to the user, then call add_questions with the ones they confirm.",
+				inputSchema: projectArg,
+				annotations: { readOnlyHint: false, openWorldHint: true },
+			},
+			async ({ project }) => {
+				const found = await resolve(project);
+				if (isReply(found)) return found;
+				const site = found.domains[0];
+				const about = site && describeSite ? await describeSite(site).catch(() => null) : null;
+				const context = await projectSuggestContext(store, found, about);
+				let ideas: { prompts: string[]; fallback: boolean };
+				try {
+					ideas = await suggest(context);
+				} catch {
+					return fail("The AI engine could not suggest questions. Try again, or add questions with add_questions.");
+				}
+				const known = new Set((context.existing ?? []).map(sameText));
+				const fresh = ideas.prompts.filter((text) => text.trim() && !known.has(sameText(text)));
+				if (fresh.length === 0)
+					return say(
+						`Nothing new came back for ${found.name}: every idea is already tracked, or no AI engine is ready. Add questions with add_questions.`,
+					);
+				return say(
+					[
+						`${count(fresh.length, "suggested question")} for ${found.name}. Nothing has been saved.`,
+						...(ideas.fallback
+							? ["No AI engine was ready, so these are generic starting points, not written for this brand."]
+							: []),
+						"Show these to the user, and once they confirm which to track, call add_questions with those. Each tracked question adds to what a run costs.",
+						"",
+						ANSWER_NOTICE,
+						...fresh.map((text) => `> ${oneLine(text)}`),
+					].join("\n"),
+				);
+			},
+		);
 }

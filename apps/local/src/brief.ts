@@ -14,10 +14,11 @@ const oneLine = (text: string) =>
 		.trim()
 		.slice(0, 300);
 
+export const flaggedSteps = (steps: PlanStepView[]): PlanStepView[] =>
+	steps.filter((step) => !step.done && step.id !== "website").sort((a, b) => ORDER[a.severity] - ORDER[b.severity]);
+
 export function planBrief(name: string, steps: PlanStepView[]): string {
-	const open = steps
-		.filter((step) => !step.done && step.id !== "website")
-		.sort((a, b) => ORDER[a.severity] - ORDER[b.severity]);
+	const open = flaggedSteps(steps);
 	if (open.length === 0) return "";
 	const lines = [
 		`## What AI engines said about ${oneLine(name)}`,

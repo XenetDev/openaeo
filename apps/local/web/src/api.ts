@@ -58,6 +58,16 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 	return data;
 }
 
+async function download(path: string, fallback: string): Promise<{ name: string; blob: Blob }> {
+	const response = await send(path);
+	if (!response.ok) {
+		const data = (await response.json().catch(() => null)) as { error?: string } | null;
+		throw new ApiError(data?.error ?? "The export could not be created.", response.status);
+	}
+	const name = /filename="([^"]+)"/.exec(response.headers.get("content-disposition") ?? "")?.[1] ?? fallback;
+	return { name, blob: await response.blob() };
+}
+
 export const api = {
 	state: () => call<StateResponse>("GET", "/api/state"),
 	project: (id: string) => call<ProjectDetail>("GET", `/api/projects/${id}`),
@@ -72,12 +82,8 @@ export const api = {
 	setPromptActive: (id: string, active: boolean) =>
 		call<{ prompt: PromptView }>("PATCH", `/api/prompts/${id}`, { active }),
 	setPromptTags: (id: string, tags: string[]) => call<{ prompt: PromptView }>("PATCH", `/api/prompts/${id}`, { tags }),
-	exportAnswers: async (id: string) => {
-		const response = await send(`/api/projects/${id}/export/answers.csv`);
-		if (!response.ok) throw new ApiError("The export could not be created.");
-		const name = /filename="([^"]+)"/.exec(response.headers.get("content-disposition") ?? "")?.[1] ?? "answers.csv";
-		return { name, blob: await response.blob() };
-	},
+	exportAnswers: (id: string) => download(`/api/projects/${id}/export/answers.csv`, "answers.csv"),
+	exportQuestions: (id: string) => download(`/api/projects/${id}/export/questions.csv`, "questions.csv"),
 	suggest: (id: string) => call<Suggestions>("POST", `/api/projects/${id}/suggestions`),
 	promptStats: (id: string) => call<{ stats: PromptStatView[] }>("GET", `/api/projects/${id}/prompt-stats`),
 	removePrompt: (id: string) => call<Ok>("DELETE", `/api/prompts/${id}`),

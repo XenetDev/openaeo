@@ -1,5 +1,5 @@
 import type { Ok, OpportunitiesView, PlanView, Progress, ReportView, RunDetail, RunView } from "../../api-types";
-import { answersCsv } from "../../export";
+import { answersCsv, questionsCsv } from "../../export";
 import { buildOpportunities } from "../../opportunities";
 import { buildPlan, setStepDone } from "../../plan";
 import { buildReport } from "../../report";
@@ -10,6 +10,21 @@ import { type Route, route } from "../router";
 import { PlanStepSchema } from "../schemas";
 
 const STATUS: Record<string, number> = { already_running: 409, no_prompts: 400, no_engines: 400, not_found: 404 };
+
+const slug = (name: string) =>
+	name
+		.replace(/[^a-z0-9]+/gi, "-")
+		.replace(/^-|-$/g, "")
+		.toLowerCase() || "openaeo";
+
+const csv = (name: string, body: string) =>
+	new Response(body, {
+		headers: {
+			"content-type": "text/csv; charset=utf-8",
+			"content-disposition": `attachment; filename="${name}"`,
+			"cache-control": "no-store",
+		},
+	});
 
 export function runRoutes({ store, runs }: ApiDeps): Route[] {
 	const requireRun = async (id: string) => {
@@ -53,18 +68,11 @@ export function runRoutes({ store, runs }: ApiDeps): Route[] {
 			const project = await requireProject(store, params.id as string);
 			const runId = new URL(request.url).searchParams.get("run") ?? undefined;
 			if (runId && (await store.runs.get(runId))?.projectId !== project.id) throw notFound("That run");
-			const name =
-				project.name
-					.replace(/[^a-z0-9]+/gi, "-")
-					.replace(/^-|-$/g, "")
-					.toLowerCase() || "openaeo";
-			return new Response(await answersCsv(store, project.id, runId), {
-				headers: {
-					"content-type": "text/csv; charset=utf-8",
-					"content-disposition": `attachment; filename="${name}-answers.csv"`,
-					"cache-control": "no-store",
-				},
-			});
+			return csv(`${slug(project.name)}-answers.csv`, await answersCsv(store, project.id, runId));
+		}),
+		route("GET", "/api/projects/:id/export/questions.csv", async ({ params }) => {
+			const project = await requireProject(store, params.id as string);
+			return csv(`${slug(project.name)}-questions.csv`, await questionsCsv(store, project.id));
 		}),
 		route("GET", "/api/projects/:id/plan", async ({ params }) => {
 			const id = params.id as string;

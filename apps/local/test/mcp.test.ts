@@ -47,9 +47,11 @@ test("the server lists its tools with descriptions", async () => {
 	expect(tools.map((t) => t.name).sort()).toEqual([
 		"get_audit",
 		"get_fix_brief",
+		"get_plan",
 		"get_report",
 		"list_answers",
 		"list_projects",
+		"mark_plan_step",
 		"run_audit",
 		"run_prompts",
 	]);
@@ -167,4 +169,33 @@ test("a host can replace the wording that only fits a local install", async () =
 	const report = await client.callTool({ name: "get_report", arguments: {} });
 	expect(report.isError).toBe(true);
 	expect((report.content as { text: string }[])[0]?.text).toBe("Set up a brand in the hosted dashboard first.");
+});
+
+test("get_plan lists the steps and mark_plan_step ticks one off and back on", async () => {
+	const { call, runs, store, project } = await setup();
+	expect((await call("get_plan")).text).toContain("no plan");
+	await call("run_prompts");
+	await runs.wait(store.runs.latest(project?.id ?? "")?.id ?? "");
+	await call("run_audit");
+	const plan = await call("get_plan");
+	expect(plan.isError).toBe(false);
+	expect(plan.text).toMatch(/0 of \d+ steps done/);
+	expect(plan.text).toContain("[ ] website");
+
+	const marked = await call("mark_plan_step", { step: "website" });
+	expect(marked.isError).toBe(false);
+	expect((await call("get_plan")).text).toContain("[x] website");
+
+	await call("mark_plan_step", { step: "website", done: false });
+	expect((await call("get_plan")).text).toContain("[ ] website");
+});
+
+test("mark_plan_step refuses a step that is not in the plan", async () => {
+	const { call, runs, store, project } = await setup();
+	await call("run_prompts");
+	await runs.wait(store.runs.latest(project?.id ?? "")?.id ?? "");
+	await call("run_audit");
+	const out = await call("mark_plan_step", { step: "nonsense" });
+	expect(out.isError).toBe(true);
+	expect(out.text).toContain("website");
 });

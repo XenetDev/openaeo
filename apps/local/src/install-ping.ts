@@ -1,6 +1,6 @@
 import type { SqliteStore } from "./store/store";
 
-export const PING_URL = "";
+export const PING_URL = "https://openaeo.io/api/telemetry/install";
 
 const DAY = 24 * 60 * 60 * 1000;
 const OFF = new Set(["off", "0", "false", "no"]);

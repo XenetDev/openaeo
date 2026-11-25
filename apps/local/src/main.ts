@@ -41,7 +41,7 @@ store.runs.interruptStale();
 store.audits.interruptStale();
 const get = createSafeFetch({
 	allowLoopback: true,
-	userAgent: `OpenAEO-Audit/${pkg.version} (+https://github.com/jdships/openaeo)`,
+	userAgent: `OpenAEO-Audit/${pkg.version} (+https://github.com/xenetdev/openaeo)`,
 });
 const audits = createAuditService({ store, get });
 const engineDeps = { store, which: (bin: string) => Bun.which(bin) };

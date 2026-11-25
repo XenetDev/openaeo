@@ -2,7 +2,7 @@
 set -eu
 
 main() {
-	base="${OPENAEO_BASE_URL:-https://github.com/jdships/openaeo/releases/latest/download}"
+	base="${OPENAEO_BASE_URL:-https://github.com/xenetdev/openaeo/releases/latest/download}"
 	dir="${OPENAEO_INSTALL_DIR:-$HOME/.local/bin}"
 
 	os="$(uname -s)"

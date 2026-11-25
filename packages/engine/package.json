@@ -5,7 +5,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/jdships/openaeo.git",
+		"url": "git+https://github.com/xenetdev/openaeo.git",
 		"directory": "packages/engine"
 	},
 	"type": "module",

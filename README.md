@@ -9,7 +9,7 @@ OpenAEO asks Claude, ChatGPT and other AI engines the questions your buyers ask,
 macOS and Linux:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/jdships/openaeo/main/deploy/installer/install.sh | sh
+curl -fsSL https://openaeo.io/install | sh
 ```
 
 Then run:
@@ -80,7 +80,7 @@ Everything is stored in `~/.openaeo` on your computer. Your questions go to the 
 
 To know how many people use OpenAEO, the app can send one small message a day while the dashboard is open: a random id made on your computer, the app's version, and whether you are on macOS or Linux, on Intel or ARM. That is all. It never sends your brands, websites, questions, answers, keys or anything you type, and the id is not linked to you.
 
-It is switched off in this version, because the address it would send to is not set yet. When it is switched on, the app says so the first time it runs.
+The message goes to `https://openaeo.io/api/telemetry/install`, and the app says so the first time it runs.
 
 Turn it off for good with either of these:
 

@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { DropdownMenu } from "@/components/ui/dropdown-menu-clean";
 import { ThinkingState } from "@/components/ui/thinking-state-clean";
 import { toast } from "@/components/ui/toaster-clean";
+import { words } from "../wording";
 import { toAnswerMarkup } from "./answer-markup";
 import { EngineLogo, engineLabel, Page } from "./shared";
 
@@ -156,7 +157,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 				<EmptyState
 					icon={AiChat02Icon}
 					title="No AI engine is ready"
-					text="Aeo uses your own Claude Code or Codex. Install and sign in to one, then check Settings."
+					text={words.askNoEngine}
 					action={
 						<Button
 							variant="secondary"
@@ -178,12 +179,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 							icon: s.icon,
 							onSelect: () => onAsk(s.question, picked.current),
 						}))}
-						note={
-							<p className="oa-quiet oa-ask-note">
-								Written by your own Claude or Codex from your runs and site audit, not from the web. Chats are not
-								saved.
-							</p>
-						}
+						note={<p className="oa-quiet oa-ask-note">{words.askSource} Chats are not saved.</p>}
 					/>
 				</div>
 			) : (
@@ -263,8 +259,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 					<div className="oa-ask-dock">
 						{composer}
 						<p className="oa-quiet oa-ask-note">
-							Written by {engineLabel(engines, last?.engine ?? picked.current)} on your own subscription, from your
-							OpenAEO data only.
+							{words.askBy(engineLabel(engines, last?.engine ?? picked.current))} from your OpenAEO data only.
 						</p>
 					</div>
 				</div>

@@ -11,6 +11,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { type ReactNode, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { runtime } from "../runtime";
 import { AgentMark, AuditMark, BrandMark, BriefMark, RunMark, SuggestMark } from "../screens/command-icons";
 import { saveTheme, storedTheme, type Theme } from "../theme";
 import { brandKey, isPage, NAV, NAV_GROUPS, NEW_BRAND, NEW_BRAND_KEY, pageKey } from "./pages";
@@ -54,13 +55,17 @@ const COMMANDS = [
 				logo: <BriefMark />,
 				keywords: "agent fix findings",
 			},
-			{
-				id: "agent",
-				label: "Connect your AI agent",
-				hint: "Claude Code or Codex",
-				logo: <AgentMark />,
-				keywords: "mcp connect",
-			},
+			...(runtime.cloud
+				? []
+				: [
+						{
+							id: "agent",
+							label: "Connect your AI agent",
+							hint: "Claude Code or Codex",
+							logo: <AgentMark />,
+							keywords: "mcp connect",
+						},
+					]),
 		],
 	},
 	{
@@ -103,8 +108,8 @@ export function Shell({ projects, project, page, children, onPage, onBrand, onNe
 		<AppShell
 			active={page ? pageKey(page) : ""}
 			workspace={project?.name ?? "OpenAEO"}
-			workspaceMeta="Local"
-			user={{ name: "This computer" }}
+			workspaceMeta={runtime.account.plan}
+			user={{ name: runtime.account.name }}
 			nav={project ? NAV : []}
 			groups={
 				projects.length > 0
@@ -146,10 +151,16 @@ export function Shell({ projects, project, page, children, onPage, onBrand, onNe
 				},
 				...(project
 					? [
-							{ label: "Connect your AI agent", icon: Plug01Icon, onSelect: () => onPage("settings") },
+							...(runtime.cloud
+								? []
+								: [{ label: "Connect your AI agent", icon: Plug01Icon, onSelect: () => onPage("settings") }]),
 							{ label: "Settings", icon: Settings01Icon, onSelect: () => onPage("settings") },
 						]
 					: []),
+				...runtime.account.links.map((link) => ({
+					label: link.label,
+					onSelect: () => window.location.assign(link.href),
+				})),
 			]}
 			commands={project ? COMMANDS : []}
 			typedCommand={{

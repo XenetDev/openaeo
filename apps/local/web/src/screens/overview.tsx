@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { ChangeSummary, type MetricChange } from "@/components/ui/change-summary-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
 import { TrendChart } from "@/components/ui/trend-chart-clean";
+import { words } from "../wording";
 import { HighMark, LowMark, MediumMark } from "./command-icons";
 import { day, EngineLogo, engineLabel, Page, percent, ShareList, when } from "./shared";
 
@@ -196,7 +197,7 @@ export function OverviewScreen({
 				<Card>
 					<CardHeader
 						title="No AI engine can run yet"
-						description="OpenAEO uses the AI tools signed in on this computer."
+						description={words.noEngine}
 						action={<Badge tone="danger">Needs you</Badge>}
 					/>
 					<CardContent>

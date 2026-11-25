@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
 import { TextField } from "@/components/ui/text-field-clean";
+import { words } from "../wording";
 import { EngineLogo } from "./shared";
 
 type Frame = { product: string; email: string; steps: number; logo: ReactNode };
@@ -45,10 +46,7 @@ export function EnginesStep({
 		<OnboardingFrame {...frame} onBack={onBack} preview={preview}>
 			<Steps step={step} steps={frame.steps} />
 			<h1 className="ui-obw-title">Which AI engines should we ask?</h1>
-			<p className="ui-obw-sub">
-				OpenAEO asks each one your buyers' questions. Use the subscriptions on this computer, or add API keys. Keys stay
-				on this computer.
-			</p>
+			<p className="ui-obw-sub">{words.enginesIntro}</p>
 
 			<div className="oa-ob-list">
 				{subscriptions.map((e) => (
@@ -67,7 +65,7 @@ export function EnginesStep({
 						<span className="oa-grow">
 							<b>{e.label}</b>
 							{e.available ? (
-								<small>API key saved</small>
+								<small>{words.engineReady}</small>
 							) : (
 								<form
 									className="oa-ob-key"

@@ -40,6 +40,14 @@ export type Report = {
 	brand: BrandCheckView[];
 };
 
+export type CitedSite = {
+	domain: string;
+	citations: number;
+	isBrand: boolean;
+	engines: EngineId[];
+	questions: number;
+};
+
 const ok = (answers: StoredAnswer[]) => answers.filter((a) => a.errorCode === null);
 
 const toMatch = (a: StoredAnswer): MatchResult => ({
@@ -73,6 +81,56 @@ function brandSites(project: Project): string[] {
 		.filter((d): d is string => d !== null);
 }
 
+export function citedSites(answers: StoredAnswer[], sites: string[]): CitedSite[] {
+	const found = new Map<string, { citations: number; engines: Set<EngineId>; questions: Set<string> }>();
+	for (const answer of answers) {
+		for (const citation of answer.citations) {
+			const entry = found.get(citation.domain) ?? { citations: 0, engines: new Set(), questions: new Set() };
+			entry.citations += 1;
+			entry.engines.add(answer.engine);
+			entry.questions.add(answer.promptId);
+			found.set(citation.domain, entry);
+		}
+	}
+	return [...found.entries()]
+		.map(([domain, entry]) => ({
+			domain,
+			citations: entry.citations,
+			isBrand: sites.some((site) => sameSite(domain, site)),
+			engines: [...entry.engines].sort(),
+			questions: entry.questions.size,
+		}))
+		.sort((a, b) => b.citations - a.citations || a.domain.localeCompare(b.domain));
+}
+
+async function taggedPrompts(store: Store, projectId: string, tag: string | undefined): Promise<Set<string> | null> {
+	const wanted = tag?.trim().toLowerCase();
+	if (!wanted) return null;
+	return new Set(
+		(await store.prompts.list(projectId))
+			.filter((prompt) => prompt.tags.some((candidate) => candidate.toLowerCase() === wanted))
+			.map((prompt) => prompt.id),
+	);
+}
+
+async function settled(store: Store, projectId: string, run: Run | null): Promise<Run | null> {
+	if (run?.status !== "running") return run;
+	return (await store.runs.list(projectId, 30)).find((r) => r.status !== "running") ?? run;
+}
+
+export async function buildSources(
+	store: Store,
+	projectId: string,
+	opts: { tag?: string } = {},
+): Promise<{ run: Run | null; sites: CitedSite[] }> {
+	const project = await store.projects.get(projectId);
+	const run = await settled(store, projectId, (await store.runs.latest(projectId)) ?? null);
+	if (!project || !run) return { run: null, sites: [] };
+	const tagged = await taggedPrompts(store, projectId, opts.tag);
+	const answers = ok(await store.answers.listByRun(run.id)).filter((a) => !tagged || tagged.has(a.promptId));
+	return { run, sites: citedSites(answers, brandSites(project)) };
+}
+
 export async function buildReport(
 	store: Store,
 	projectId: string,
@@ -80,23 +138,12 @@ export async function buildReport(
 ): Promise<Report> {
 	const project = await store.projects.get(projectId);
 	const run = (opts.runId ? await store.runs.get(opts.runId) : await store.runs.latest(projectId)) ?? null;
-	const wanted = opts.tag?.trim().toLowerCase();
-	const tagged = wanted
-		? new Set(
-				(await store.prompts.list(projectId))
-					.filter((prompt) => prompt.tags.some((tag) => tag.toLowerCase() === wanted))
-					.map((prompt) => prompt.id),
-			)
-		: null;
+	const tagged = await taggedPrompts(store, projectId, opts.tag);
 	const answersOf = async (runId: string) => {
 		const all = await store.answers.listByRun(runId);
 		return tagged ? all.filter((answer) => tagged.has(answer.promptId)) : all;
 	};
-	const finished =
-		run?.status === "running" && !opts.runId
-			? (await store.runs.list(projectId, 30)).find((r) => r.status !== "running")
-			: undefined;
-	const source = finished ?? run;
+	const source = opts.runId ? run : await settled(store, projectId, run);
 	const answers = source && source.projectId === projectId ? await answersOf(source.id) : [];
 	const good = ok(answers);
 
@@ -119,15 +166,9 @@ export async function buildReport(
 		})
 		.sort((a, b) => b.mentionRate - a.mentionRate);
 
-	const sites = project ? brandSites(project) : [];
-	const counts = new Map<string, number>();
-	for (const answer of good) {
-		for (const citation of answer.citations) counts.set(citation.domain, (counts.get(citation.domain) ?? 0) + 1);
-	}
-	const topDomains = [...counts.entries()]
-		.map(([domain, citations]) => ({ domain, citations, isBrand: sites.some((site) => sameSite(domain, site)) }))
-		.sort((a, b) => b.citations - a.citations || a.domain.localeCompare(b.domain))
-		.slice(0, 25);
+	const topDomains = citedSites(good, project ? brandSites(project) : [])
+		.slice(0, 25)
+		.map(({ domain, citations, isBrand }) => ({ domain, citations, isBrand }));
 
 	const trend = await Promise.all(
 		(await store.runs.list(projectId, opts.trendRuns ?? 30))

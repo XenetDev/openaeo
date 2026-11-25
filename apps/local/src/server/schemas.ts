@@ -6,7 +6,12 @@ export const MAX_ENTITY_TEXT = 200;
 export const MAX_COMPETITORS = 50;
 export const PromptTextSchema = z.string().max(2000);
 
-const names = z.array(z.string().max(MAX_ENTITY_TEXT)).max(50).default([]);
+export const SCHEDULES = ["off", "daily", "weekly"] as const;
+export const NamesSchema = z.array(z.string().max(MAX_ENTITY_TEXT)).max(50);
+export const LocationSchema = z.string().trim().max(MAX_LOCATION);
+export const PromptTagsSchema = z.array(z.string().max(200)).max(50);
+
+const names = NamesSchema.default([]);
 
 export const EntitySchema = z.object({
 	name: z.string().trim().min(1, "name is required").max(MAX_ENTITY_TEXT),
@@ -14,7 +19,7 @@ export const EntitySchema = z.object({
 	domains: names,
 });
 
-const location = z.string().trim().max(MAX_LOCATION).optional();
+const location = LocationSchema.optional();
 
 export const ProjectSchema = EntitySchema.extend({ location });
 
@@ -41,7 +46,7 @@ export const CompetitorIdeasSchema = z.object({
 });
 export const PlanStepSchema = z.object({ done: z.boolean() });
 export const PatchPromptSchema = z
-	.object({ active: z.boolean().optional(), tags: z.array(z.string().max(200)).max(50).optional() })
+	.object({ active: z.boolean().optional(), tags: PromptTagsSchema.optional() })
 	.refine((input) => input.active !== undefined || input.tags !== undefined, "Send active or tags.");
 
 const toggle = z.enum(["true", "false"]);
@@ -59,7 +64,7 @@ export const SettingsSchema = z
 		),
 		"claude.model": model,
 		"codex.model": model,
-		schedule: z.enum(["off", "daily", "weekly"]),
+		schedule: z.enum(SCHEDULES),
 		...Object.fromEntries(ENGINE_IDS.map((id) => [`engine.${id}.enabled`, toggle])),
 	} as Record<string, z.ZodType<string>>)
 	.partial()

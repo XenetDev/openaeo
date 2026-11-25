@@ -1,7 +1,7 @@
 import type { AskReply, CompetitorIdea, Suggestions } from "../../api-types";
 import { askContext, buildAskPrompt, splitActions } from "../../ask";
 import { projectCompetitorContext } from "../../competitor-ideas";
-import { fallbackPrompts } from "../../suggest";
+import { fallbackPrompts, projectSuggestContext } from "../../suggest";
 import type { ApiDeps } from "../api";
 import { HttpError, json, read, requireProject } from "../http";
 import { type Route, route } from "../router";
@@ -37,14 +37,11 @@ export function assistRoutes(deps: ApiDeps): Route[] {
 		}),
 		route("POST", "/api/projects/:id/suggestions", async ({ params }) => {
 			const project = await requireProject(store, params.id as string);
-			const context = {
-				brand: project.name,
-				domains: project.domains,
-				competitors: (await store.competitors.list(project.id)).map((c) => c.name),
-				existing: (await store.prompts.list(project.id)).map((p) => p.text),
-				about: deps.suggest ? await describe(project.domains[0]) : null,
-				location: project.location,
-			};
+			const context = await projectSuggestContext(
+				store,
+				project,
+				deps.suggest ? await describe(project.domains[0]) : null,
+			);
 			return json<Suggestions>(
 				deps.suggest ? await deps.suggest(context) : { prompts: fallbackPrompts(context), fallback: true },
 			);

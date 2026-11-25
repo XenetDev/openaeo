@@ -301,6 +301,12 @@ test("a question can be tagged, and the report and export follow the tag", async
 	expect(csv.text.split("\r\n")[0]).toContain("run_started,engine");
 	expect(csv.text).toContain("Pricing; Top");
 	expect((await call("GET", "/api/projects/missing/export/answers.csv")).status).toBe(404);
+
+	const questions = await call("GET", `/api/projects/${id}/export/questions.csv`);
+	expect(questions.status).toBe(200);
+	expect(questions.headers.get("content-disposition")).toContain("-questions.csv");
+	expect(questions.text.split("\r\n")[0]).toContain("question,tags,tracked");
+	expect((await call("GET", "/api/projects/missing/export/questions.csv")).status).toBe(404);
 });
 
 test("progress reports the latest run and audit without building a report", async () => {

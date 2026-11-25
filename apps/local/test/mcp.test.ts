@@ -142,3 +142,29 @@ test("a named project is found regardless of case", async () => {
 	const { call } = await setup();
 	expect((await call("list_answers", { project: "pipedrive" })).isError).toBe(false);
 });
+
+test("a host can replace the wording that only fits a local install", async () => {
+	const store = freshStore();
+	const runs = createRunService({ store, providers: () => [] });
+	const audits = createAuditService({
+		store,
+		get: async (url) => ({ url, status: 404, contentType: "", text: "", redirects: [] }),
+	});
+	const server = createMcpServer({
+		store,
+		runs,
+		audits,
+		version: "0.0.0",
+		words: { noProject: "Set up a brand in the hosted dashboard first.", runPrompts: "Start a run on the host." },
+	});
+	const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+	const client = new Client({ name: "test", version: "1" });
+	await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
+
+	const { tools } = await client.listTools();
+	expect(tools.find((t) => t.name === "run_prompts")?.description).toBe("Start a run on the host.");
+	expect(tools.find((t) => t.name === "list_projects")?.description).toContain("on this computer");
+	const report = await client.callTool({ name: "get_report", arguments: {} });
+	expect(report.isError).toBe(true);
+	expect((report.content as { text: string }[])[0]?.text).toBe("Set up a brand in the hosted dashboard first.");
+});

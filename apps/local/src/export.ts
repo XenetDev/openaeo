@@ -1,3 +1,4 @@
+import { promptStats } from "./report";
 import type { Store } from "./store/types";
 
 type Cell = string | number | null;
@@ -14,6 +15,10 @@ function cell(value: Cell): string {
 export function toCsv(rows: Cell[][]): string {
 	return rows.map((row) => `${row.map(cell).join(",")}\r\n`).join("");
 }
+
+export const CSV_BOM = "\uFEFF";
+const file = (rows: Cell[][]) => `${CSV_BOM}${toCsv(rows)}`;
+const percent = (rate: number | null) => (rate === null ? null : Math.round(rate * 100));
 
 const HEADER = [
 	"run_started",
@@ -33,7 +38,7 @@ const HEADER = [
 
 export async function answersCsv(store: Store, projectId: string, runId?: string): Promise<string> {
 	const run = (runId ? await store.runs.get(runId) : await store.runs.latest(projectId)) ?? null;
-	if (!run || run.projectId !== projectId) return toCsv([HEADER]);
+	if (!run || run.projectId !== projectId) return file([HEADER]);
 	const prompts = new Map((await store.prompts.list(projectId)).map((prompt) => [prompt.id, prompt]));
 	const started = new Date(run.startedAt).toISOString();
 	const rows = (await store.answers.listByRun(run.id)).map((answer): Cell[] => {
@@ -58,5 +63,34 @@ export async function answersCsv(store: Store, projectId: string, runId?: string
 			answer.text,
 		];
 	});
-	return toCsv([HEADER, ...rows]);
+	return file([HEADER, ...rows]);
+}
+
+const QUESTIONS_HEADER = [
+	"question",
+	"tags",
+	"tracked",
+	"mentioned_percent",
+	"previous_percent",
+	"best_position",
+	"runs",
+	"last_run",
+];
+
+export async function questionsCsv(store: Store, projectId: string): Promise<string> {
+	const tags = new Map((await store.prompts.list(projectId)).map((prompt) => [prompt.id, prompt.tags]));
+	const rows = (await promptStats(store, projectId)).map((stat): Cell[] => {
+		const last = stat.history.at(-1);
+		return [
+			stat.text,
+			(tags.get(stat.promptId) ?? []).join("; "),
+			stat.active ? "yes" : "no",
+			percent(stat.latest),
+			percent(stat.previous),
+			stat.bestRank,
+			stat.history.length,
+			last ? new Date(last.startedAt).toISOString() : null,
+		];
+	});
+	return file([QUESTIONS_HEADER, ...rows]);
 }

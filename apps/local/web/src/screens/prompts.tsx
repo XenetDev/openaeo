@@ -3,6 +3,7 @@ import {
 	Add01Icon,
 	BubbleChatIcon,
 	Delete02Icon,
+	Download01Icon,
 	MoreHorizontalIcon,
 	PauseIcon,
 	PlayIcon,
@@ -36,6 +37,7 @@ type Props = {
 	tag: string;
 	filter: ReactNode;
 	onSuggest: () => void;
+	onExport: () => void;
 	onDismissSuggestions: () => void;
 	onOpen: (text: string) => void;
 };
@@ -63,6 +65,7 @@ export function PromptsScreen({
 	tag,
 	filter,
 	onSuggest,
+	onExport,
 	onDismissSuggestions,
 	onOpen,
 }: Props) {
@@ -132,6 +135,11 @@ export function PromptsScreen({
 				actions={
 					<span className="oa-inline">
 						{filter}
+						{stats.length > 0 ? (
+							<Button variant="ghost" size="sm" onClick={onExport} icon={<Icon icon={Download01Icon} size={14} />}>
+								Export CSV
+							</Button>
+						) : null}
 						<Button
 							variant="ghost"
 							size="sm"

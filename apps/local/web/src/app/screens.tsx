@@ -35,6 +35,18 @@ const EMPTY_REPORT: ReportView = {
 	brand: [],
 };
 
+type CsvFile = { name: string; blob: Blob };
+
+const exportCsv = (workspace: Workspace, load: () => Promise<CsvFile>, done: string) =>
+	void workspace.guard(async () => {
+		const file = await load();
+		const url = URL.createObjectURL(file.blob);
+		const link = Object.assign(document.createElement("a"), { href: url, download: file.name });
+		link.click();
+		URL.revokeObjectURL(url);
+		toast.success(done, { description: file.name });
+	});
+
 export type ScreenContext = {
 	workspace: Workspace;
 	project: ProjectView;
@@ -106,6 +118,7 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 			}
 			onDismissSuggestions={suggestions.dismiss}
 			onSuggest={() => suggestions.suggest(project.id)}
+			onExport={() => exportCsv(workspace, () => api.exportQuestions(project.id), "Questions exported")}
 			onOpen={(text) => {
 				setAnswerFilter(text);
 				navigate("answers");
@@ -125,16 +138,7 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 			onFilter={setAnswerFilter}
 			onRunAgain={startRun}
 			onNavigate={navigate}
-			onExport={() =>
-				void workspace.guard(async () => {
-					const file = await api.exportAnswers(project.id);
-					const url = URL.createObjectURL(file.blob);
-					const link = Object.assign(document.createElement("a"), { href: url, download: file.name });
-					link.click();
-					URL.revokeObjectURL(url);
-					toast.success("Answers exported", { description: file.name });
-				})
-			}
+			onExport={() => exportCsv(workspace, () => api.exportAnswers(project.id), "Answers exported")}
 		/>
 	),
 	sources: ({ workspace, project, data }) => (

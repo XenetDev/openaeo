@@ -60,21 +60,36 @@ const quoted = (text: string, max: number) =>
 		.map((line) => `> ${line}`)
 		.join("\n");
 
+export type McpWords = {
+	noProject: string;
+	noProjectYet: string;
+	listProjects: string;
+	runPrompts: string;
+};
+
+const LOCAL_WORDS: McpWords = {
+	noProject: "There is no project yet. Ask the user to run `openaeo` and set up their brand in the dashboard first.",
+	noProjectYet: "There is no project yet. The user sets one up by running `openaeo` and filling in the dashboard.",
+	listProjects:
+		"List the brands OpenAEO is tracking on this computer, with their websites, question counts and latest run and audit.",
+	runPrompts:
+		"Start a run that asks every AI engine all of a brand's active questions. This uses the user's AI subscriptions and takes about half a minute per question. Returns immediately; read results with get_report.",
+};
+
 export function createMcpServer(deps: {
 	store: Store;
 	runs: RunService;
 	audits: AuditService;
 	version: string;
+	words?: Partial<McpWords>;
 }): McpServer {
 	const { store } = deps;
+	const words = { ...LOCAL_WORDS, ...deps.words };
 	const server = new McpServer({ name: "openaeo", version: deps.version });
 
 	async function resolve(name: string | undefined): Promise<Project | Reply> {
 		const projects = await store.projects.list();
-		if (projects.length === 0)
-			return fail(
-				"There is no project yet. Ask the user to run `openaeo` and set up their brand in the dashboard first.",
-			);
+		if (projects.length === 0) return fail(words.noProject);
 		if (!name) return projects[0] as Project;
 		const found = projects.find((p) => p.name.toLowerCase() === name.trim().toLowerCase());
 		return found ?? fail(`There is no project named "${name}". Projects: ${projects.map((p) => p.name).join(", ")}.`);
@@ -84,14 +99,12 @@ export function createMcpServer(deps: {
 	server.registerTool(
 		"list_projects",
 		{
-			description:
-				"List the brands OpenAEO is tracking on this computer, with their websites, question counts and latest run and audit.",
+			description: words.listProjects,
 			annotations: { readOnlyHint: true },
 		},
 		async () => {
 			const projects = await store.projects.list();
-			if (projects.length === 0)
-				return say("There is no project yet. The user sets one up by running `openaeo` and filling in the dashboard.");
+			if (projects.length === 0) return say(words.noProjectYet);
 			const blocks = await Promise.all(
 				projects.map(async (p) => {
 					const active = (await store.prompts.list(p.id)).filter((q) => q.active).length;
@@ -223,8 +236,7 @@ export function createMcpServer(deps: {
 	server.registerTool(
 		"run_prompts",
 		{
-			description:
-				"Start a run that asks every AI engine all of a brand's active questions. This uses the user's AI subscriptions and takes about half a minute per question. Returns immediately; read results with get_report.",
+			description: words.runPrompts,
 			inputSchema: projectArg,
 			annotations: { readOnlyHint: false, openWorldHint: true },
 		},

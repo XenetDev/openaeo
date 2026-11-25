@@ -22,7 +22,7 @@ export type SafeFetchOptions = {
 	userAgent?: string;
 };
 
-export const DEFAULT_USER_AGENT = "OpenAEO-Audit/0 (+https://github.com/jdships/openaeo)";
+export const DEFAULT_USER_AGENT = "OpenAEO-Audit/0 (+https://github.com/xenetdev/openaeo)";
 
 const LOOPBACK_NAMES = /(^|\.)localhost$/i;
 const BLOCKED_NAMES = /(^|\.)(local|internal)$/i;

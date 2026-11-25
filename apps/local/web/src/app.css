@@ -1460,3 +1460,7 @@ body,
 		opacity: 0;
 	}
 }
+
+.ui-obw :is(input, textarea):focus-visible {
+	outline: 0;
+}

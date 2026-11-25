@@ -1,6 +1,6 @@
 # OpenAEO for AI agents
 
-OpenAEO exposes its data to your own AI agent over MCP, so the agent can read your AI visibility reports and audit findings and fix problems in your site's code.
+OpenAEO exposes its data to your own AI agent over MCP, so the agent can read your AI visibility reports and audit findings, manage the competitors and questions you track, and fix problems in your site's code.
 
 ## Connect
 
@@ -13,15 +13,24 @@ codex mcp add openaeo -- openaeo mcp
 
 ## Tools
 
-| Tool            | What it does                                                 |
-| --------------- | ------------------------------------------------------------ |
-| `list_projects` | Brands tracked on this computer                              |
-| `get_report`    | Visibility score, per-engine split, competitors, cited sites |
-| `list_answers`  | What each AI engine answered in the latest run               |
-| `get_audit`     | Latest website audit and its findings                        |
-| `get_fix_brief` | Instructions for fixing the audit findings                   |
-| `run_prompts`   | Start a run (uses your AI subscriptions)                     |
-| `run_audit`     | Audit a site, including a local address                      |
+| Tool                  | What it does                                                 |
+| --------------------- | ------------------------------------------------------------ |
+| `list_projects`       | Brands tracked on this computer                              |
+| `get_report`          | Visibility score, per-engine split, competitors, cited sites |
+| `list_answers`        | What each AI engine answered in the latest run               |
+| `get_audit`           | Latest website audit and its findings                        |
+| `get_fix_brief`       | Instructions for fixing the audit findings                   |
+| `get_plan`            | The plan for getting recommended, step by step               |
+| `mark_plan_step`      | Mark a step of the plan done or not done                     |
+| `list_competitors`    | Tracked competitors, their websites and share of answers     |
+| `find_competitors`    | Ask your AI engine for likely competitors (saves nothing)    |
+| `add_competitors`     | Track more competitors, counted from the next run            |
+| `remove_competitor`   | Stop tracking a competitor                                   |
+| `list_questions`      | Tracked questions, active or paused, with mention rates      |
+| `add_questions`       | Track more questions, asked in the next run                  |
+| `set_question_active` | Pause or resume a question                                   |
+| `run_prompts`         | Start a run (uses your AI subscriptions)                     |
+| `run_audit`           | Audit a site, including a local address                      |
 
 ## Skills
 

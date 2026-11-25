@@ -2,10 +2,14 @@ import { z } from "zod";
 import { API_ENGINES, ENGINE_IDS } from "../engine-catalog";
 import { MAX_LOCATION } from "../location";
 
-const names = z.array(z.string().max(200)).max(50).default([]);
+export const MAX_ENTITY_TEXT = 200;
+export const MAX_COMPETITORS = 50;
+export const PromptTextSchema = z.string().max(2000);
+
+const names = z.array(z.string().max(MAX_ENTITY_TEXT)).max(50).default([]);
 
 export const EntitySchema = z.object({
-	name: z.string().trim().min(1, "name is required").max(200),
+	name: z.string().trim().min(1, "name is required").max(MAX_ENTITY_TEXT),
 	aliases: names,
 	domains: names,
 });
@@ -15,12 +19,12 @@ const location = z.string().trim().max(MAX_LOCATION).optional();
 export const ProjectSchema = EntitySchema.extend({ location });
 
 export const CreateProjectSchema = ProjectSchema.extend({
-	competitors: z.array(EntitySchema).max(50).default([]),
-	prompts: z.array(z.string().max(2000)).max(200).default([]),
+	competitors: z.array(EntitySchema).max(MAX_COMPETITORS).default([]),
+	prompts: z.array(PromptTextSchema).max(200).default([]),
 });
 
-export const CompetitorsSchema = z.object({ competitors: z.array(EntitySchema).max(50) });
-export const AddPromptsSchema = z.object({ texts: z.array(z.string().max(2000)).min(1).max(200) });
+export const CompetitorsSchema = z.object({ competitors: z.array(EntitySchema).max(MAX_COMPETITORS) });
+export const AddPromptsSchema = z.object({ texts: z.array(PromptTextSchema).min(1).max(200) });
 export const StartAuditSchema = z.object({ url: z.string().trim().max(2000).optional() });
 export const AskSchema = z.object({
 	question: z.string().trim().min(1, "Type a question first").max(2000),

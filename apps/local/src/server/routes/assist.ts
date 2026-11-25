@@ -1,5 +1,6 @@
 import type { AskReply, CompetitorIdea, Suggestions } from "../../api-types";
 import { askContext, buildAskPrompt, splitActions } from "../../ask";
+import { projectCompetitorContext } from "../../competitor-ideas";
 import { fallbackPrompts } from "../../suggest";
 import type { ApiDeps } from "../api";
 import { HttpError, json, read, requireProject } from "../http";
@@ -29,22 +30,9 @@ export function assistRoutes(deps: ApiDeps): Route[] {
 		route("POST", "/api/projects/:id/competitor-ideas", async ({ params }) => {
 			const project = await requireProject(store, params.id as string);
 			if (!deps.competitorIdeas) return json<{ competitors: CompetitorIdea[] }>({ competitors: [] });
-			const run = (await store.runs.list(project.id, 10)).find((r) => r.status !== "running");
-			const answers = run
-				? (await store.answers.listByRun(run.id))
-						.filter((answer) => answer.errorCode === null)
-						.map((answer) => answer.text)
-				: [];
-			const known = (await store.competitors.list(project.id)).flatMap((c) => [c.name, ...c.aliases]);
-			const competitors = await deps.competitorIdeas({
-				brand: project.name,
-				domains: project.domains,
-				about: await describe(project.domains[0]),
-				questions: (await store.prompts.list(project.id)).map((p) => p.text),
-				answers,
-				existing: [...project.aliases, ...known],
-				location: project.location,
-			});
+			const competitors = await deps.competitorIdeas(
+				await projectCompetitorContext(store, project, await describe(project.domains[0])),
+			);
 			return json<{ competitors: CompetitorIdea[] }>({ competitors });
 		}),
 		route("POST", "/api/projects/:id/suggestions", async ({ params }) => {

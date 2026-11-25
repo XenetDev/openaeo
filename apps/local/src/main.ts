@@ -45,6 +45,7 @@ const get = createSafeFetch({
 });
 const audits = createAuditService({ store, get });
 const engineDeps = { store, which: (bin: string) => Bun.which(bin) };
+const firstProvider = async () => (await buildProviders(engineDeps))[0] ?? null;
 const runs = createRunService({
 	store,
 	providers: () => buildProviders(engineDeps),
@@ -84,7 +85,14 @@ if (args.command === "status") {
 if (args.command === "mcp") {
 	const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
 	const { createMcpServer } = await import("./mcp");
-	await createMcpServer({ store, runs, audits, version: pkg.version }).connect(new StdioServerTransport());
+	await createMcpServer({
+		store,
+		runs,
+		audits,
+		version: pkg.version,
+		describeSite: createSiteDescriber(get),
+		competitorIdeas: async (context) => suggestCompetitors(await firstProvider(), context),
+	}).connect(new StdioServerTransport());
 	await new Promise<void>((resolve) => process.stdin.on("close", resolve));
 	release();
 	process.exit(0);
@@ -100,7 +108,6 @@ if (args.command === "run") {
 
 const token = randomBytes(24).toString("hex");
 const assets = Object.keys(embedded).length > 0 ? embeddedAssets(embedded) : diskAssets();
-const firstProvider = async () => (await buildProviders(engineDeps))[0] ?? null;
 const first = args.port ?? 4747;
 const server = listen({
 	first,

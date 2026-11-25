@@ -5,7 +5,9 @@ import type { Report } from "./report";
 const percent = (value: number) => `${Math.round(value * 100)}%`;
 const pad = (value: string, width: number) => value.padEnd(width);
 
-export function formatReport(name: string, report: Report): string {
+export const engineLabel = (engine: string): string => ENGINE_LABELS[engine as keyof typeof ENGINE_LABELS] ?? engine;
+
+export function formatReport(name: string, report: Report, label: (engine: string) => string = engineLabel): string {
 	const m = report.overall.metrics;
 	const tone = report.overall.sentiment;
 	const lines = [
@@ -24,7 +26,7 @@ export function formatReport(name: string, report: Report): string {
 		`${pad("Engine", 20)}${pad("Visibility", 12)}${pad("Mentioned", 11)}${pad("Cited", 8)}Errors`,
 		...report.engines.map(
 			(e) =>
-				`${pad(ENGINE_LABELS[e.engine] ?? e.engine, 20)}${pad(String(e.visibility), 12)}${pad(percent(e.metrics.mentionRate), 11)}${pad(percent(e.metrics.citationRate), 8)}${e.errors}`,
+				`${pad(label(e.engine), 20)}${pad(String(e.visibility), 12)}${pad(percent(e.metrics.mentionRate), 11)}${pad(percent(e.metrics.citationRate), 8)}${e.errors}`,
 		),
 		"",
 		`${pad("Who gets mentioned", 26)}${pad("Share of answers", 18)}Average position`,

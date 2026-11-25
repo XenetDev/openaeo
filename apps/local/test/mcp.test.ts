@@ -9,7 +9,9 @@ import { fakeProvider, freshStore, seed } from "./helpers";
 
 const words = (n: number) => Array.from({ length: n }, () => "word").join(" ");
 
-async function setup(opts: { seedProject?: boolean; providerDelay?: number } = {}) {
+async function setup(
+	opts: { seedProject?: boolean; providerDelay?: number; engineLabel?: (engine: string) => string } = {},
+) {
 	const store = freshStore();
 	const project = opts.seedProject === false ? null : seed(store, ["best crm?"]);
 	const provider = fakeProvider(
@@ -29,7 +31,7 @@ async function setup(opts: { seedProject?: boolean; providerDelay?: number } = {
 		return { url, status: 200, contentType: url.endsWith(".txt") ? "text/plain" : "text/html", text, redirects: [] };
 	};
 	const audits = createAuditService({ store, get });
-	const server = createMcpServer({ store, runs, audits, version: "0.0.0" });
+	const server = createMcpServer({ store, runs, audits, version: "0.0.0", engineLabel: opts.engineLabel });
 	const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
 	const client = new Client({ name: "test", version: "1" });
 	await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
@@ -204,4 +206,12 @@ test("mark_plan_step refuses a step that is not in the plan", async () => {
 	const out = await call("mark_plan_step", { step: "nonsense" });
 	expect(out.isError).toBe(true);
 	expect(out.text).toContain("website");
+});
+
+test("a host can name the engines its own way in reports and answers", async () => {
+	const { call, runs, store, project } = await setup({ engineLabel: (engine) => `Host ${engine}` });
+	await call("run_prompts");
+	await runs.wait(store.runs.latest(project?.id ?? "")?.id ?? "");
+	expect((await call("get_report")).text).toContain("Host claude-cli");
+	expect((await call("list_answers")).text).toContain("[Host claude-cli]");
 });

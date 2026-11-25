@@ -118,12 +118,12 @@ test("the printed report includes sentiment once answers are labelled", async ()
 	const store = freshStore();
 	const project = seed(store, ["q1", "q2"]);
 	const runs = createRunService({ store, providers: () => [fakeProvider("claude-cli", () => "Pipedrive").provider] });
-	const run = await runs.wait(runs.start(project.id).id);
-	expect(formatReport("Pipedrive", buildReport(store, project.id))).not.toContain("Sentiment");
+	const run = await runs.wait((await runs.start(project.id)).id);
+	expect(formatReport("Pipedrive", await buildReport(store, project.id))).not.toContain("Sentiment");
 	const [first, second] = store.answers.listByRun(run.id);
 	store.answers.setSentiment(first?.id as string, "positive");
 	store.answers.setSentiment(second?.id as string, "negative");
-	expect(formatReport("Pipedrive", buildReport(store, project.id))).toContain(
+	expect(formatReport("Pipedrive", await buildReport(store, project.id))).toContain(
 		"Sentiment         50 / 100 (1 positive, 0 neutral, 1 negative)",
 	);
 });

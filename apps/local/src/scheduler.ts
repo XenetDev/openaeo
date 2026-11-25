@@ -16,15 +16,15 @@ export function createScheduler(deps: {
 	const log = deps.log ?? logError;
 	let timer: ReturnType<typeof setInterval> | null = null;
 
-	function tick(): string[] {
-		const period = PERIODS[deps.store.settings.get("schedule") ?? "off"];
+	async function tick(): Promise<string[]> {
+		const period = PERIODS[(await deps.store.settings.get("schedule")) ?? "off"];
 		if (!period) return [];
 		const started: string[] = [];
-		for (const project of deps.store.projects.list()) {
+		for (const project of await deps.store.projects.list()) {
 			try {
-				const latest = deps.store.runs.latest(project.id);
+				const latest = await deps.store.runs.latest(project.id);
 				if (!latest || latest.status === "running" || now() - latest.startedAt < period) continue;
-				started.push(deps.runs.start(project.id).id);
+				started.push((await deps.runs.start(project.id)).id);
 			} catch (error) {
 				if (!(error instanceof RunError)) log(`scheduled run for ${project.id}`, error);
 			}
@@ -35,7 +35,9 @@ export function createScheduler(deps: {
 	return {
 		tick,
 		start() {
-			timer ??= setInterval(tick, deps.intervalMs ?? 60_000);
+			timer ??= setInterval(() => {
+				tick().catch((error) => log("scheduled runs", error));
+			}, deps.intervalMs ?? 60_000);
 		},
 		stop() {
 			if (timer) clearInterval(timer);

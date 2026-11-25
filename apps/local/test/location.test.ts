@@ -40,7 +40,7 @@ test("a run asks each question from the brand's location and still files the ans
 	store.projects.update(project.id, { ...project, location: "Berlin, Germany" });
 	const claude = fakeProvider("claude-cli", () => "Pipedrive.");
 	const runs = createRunService({ store, providers: () => [claude.provider] });
-	const run = await runs.wait(runs.start(project.id).id);
+	const run = await runs.wait((await runs.start(project.id)).id);
 	expect(claude.calls).toEqual(["best crm?\n\nI am in Berlin, Germany."]);
 	const [prompt] = store.prompts.list(project.id);
 	expect(store.answers.listByRun(run.id).map((a) => a.promptId)).toEqual([prompt?.id as string]);
@@ -66,7 +66,7 @@ test("the brand check, question ideas, competitor search and assistant are told 
 	expect(buildCompetitorPrompt({ ...context, location: "Lagos, Nigeria" })).toContain("buyers in Lagos, Nigeria");
 	expect(buildCompetitorPrompt(context)).not.toContain("buyers in");
 
-	expect(askContext(store, project).facts).toContain("Location of the brand's buyers: Lagos, Nigeria");
+	expect((await askContext(store, project)).facts).toContain("Location of the brand's buyers: Lagos, Nigeria");
 });
 
 test("the location can be set when a brand is created and changed later", async () => {

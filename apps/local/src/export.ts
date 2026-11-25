@@ -31,12 +31,12 @@ const HEADER = [
 	"answer",
 ];
 
-export function answersCsv(store: Store, projectId: string, runId?: string): string {
-	const run = (runId ? store.runs.get(runId) : store.runs.latest(projectId)) ?? null;
+export async function answersCsv(store: Store, projectId: string, runId?: string): Promise<string> {
+	const run = (runId ? await store.runs.get(runId) : await store.runs.latest(projectId)) ?? null;
 	if (!run || run.projectId !== projectId) return toCsv([HEADER]);
-	const prompts = new Map(store.prompts.list(projectId).map((prompt) => [prompt.id, prompt]));
+	const prompts = new Map((await store.prompts.list(projectId)).map((prompt) => [prompt.id, prompt]));
 	const started = new Date(run.startedAt).toISOString();
-	const rows = store.answers.listByRun(run.id).map((answer): Cell[] => {
+	const rows = (await store.answers.listByRun(run.id)).map((answer): Cell[] => {
 		const prompt = prompts.get(answer.promptId);
 		const failed = answer.errorCode !== null;
 		return [

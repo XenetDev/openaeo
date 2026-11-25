@@ -6,44 +6,46 @@ import { type Route, route } from "../router";
 import { CompetitorsSchema, CreateProjectSchema, ProjectSchema } from "../schemas";
 
 export function projectRoutes({ store, runs, audits, engines }: HandlerDeps): Route[] {
-	const detail = (id: string): ProjectDetail => ({
-		project: requireProject(store, id),
-		competitors: store.competitors.list(id),
-		prompts: store.prompts.list(id),
+	const detail = async (id: string): Promise<ProjectDetail> => ({
+		project: await requireProject(store, id),
+		competitors: await store.competitors.list(id),
+		prompts: await store.prompts.list(id),
 	});
 
 	return [
-		route("GET", "/api/state", () => json<StateResponse>({ projects: store.projects.list(), engines: engines() })),
+		route("GET", "/api/state", async () =>
+			json<StateResponse>({ projects: await store.projects.list(), engines: await engines() }),
+		),
 		route("POST", "/api/projects", async ({ request }) => {
 			const input = await read(request, CreateProjectSchema);
-			const created = store.projects.create(input);
-			store.competitors.replace(created.id, input.competitors);
-			store.prompts.add(created.id, input.prompts);
-			return json(detail(created.id), 201);
+			const created = await store.projects.create(input);
+			await store.competitors.replace(created.id, input.competitors);
+			await store.prompts.add(created.id, input.prompts);
+			return json(await detail(created.id), 201);
 		}),
-		route("GET", "/api/projects/:id", ({ params }) => json(detail(params.id as string))),
+		route("GET", "/api/projects/:id", async ({ params }) => json(await detail(params.id as string))),
 		route("PATCH", "/api/projects/:id", async ({ request, params }) => {
 			const id = params.id as string;
-			const updated = store.projects.update(id, await read(request, ProjectSchema));
+			const updated = await store.projects.update(id, await read(request, ProjectSchema));
 			if (!updated) throw notFound("That project");
 			return json<{ project: ProjectView }>({ project: updated });
 		}),
-		route("DELETE", "/api/projects/:id", ({ params }) => {
+		route("DELETE", "/api/projects/:id", async ({ params }) => {
 			const id = params.id as string;
-			requireProject(store, id);
-			const run = store.runs.active(id);
+			await requireProject(store, id);
+			const run = await store.runs.active(id);
 			if (run) runs.cancel(run.id);
-			const audit = store.audits.active(id);
+			const audit = await store.audits.active(id);
 			if (audit) audits?.cancel(audit.id);
-			forgetPlan(store, id);
-			store.projects.remove(id);
+			await forgetPlan(store, id);
+			await store.projects.remove(id);
 			return json<Ok>({ ok: true });
 		}),
 		route("PUT", "/api/projects/:id/competitors", async ({ request, params }) => {
 			const id = params.id as string;
-			requireProject(store, id);
+			await requireProject(store, id);
 			const input = await read(request, CompetitorsSchema);
-			return json({ competitors: store.competitors.replace(id, input.competitors) });
+			return json({ competitors: await store.competitors.replace(id, input.competitors) });
 		}),
 	];
 }

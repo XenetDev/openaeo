@@ -42,9 +42,9 @@ export function planBrief(name: string, steps: PlanStepView[]): string {
 	return lines.join("\n");
 }
 
-export function buildBrief(store: Store, audit: StoredAudit): string {
-	const site = buildFixBrief(resultOf(audit, store.audits.findings(audit.id)));
-	const project = audit.own ? store.projects.get(audit.projectId) : null;
-	const flagged = project ? planBrief(project.name, buildPlan(store, project.id).steps) : "";
+export async function buildBrief(store: Store, audit: StoredAudit): Promise<string> {
+	const site = buildFixBrief(resultOf(audit, await store.audits.findings(audit.id)));
+	const project = audit.own ? await store.projects.get(audit.projectId) : null;
+	const flagged = project ? planBrief(project.name, (await buildPlan(store, project.id)).steps) : "";
 	return flagged ? `${site}\n\n${flagged}` : site;
 }

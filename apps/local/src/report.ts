@@ -73,32 +73,31 @@ function brandSites(project: Project): string[] {
 		.filter((d): d is string => d !== null);
 }
 
-export function buildReport(
+export async function buildReport(
 	store: Store,
 	projectId: string,
 	opts: { runId?: string; trendRuns?: number; tag?: string } = {},
-): Report {
-	const project = store.projects.get(projectId);
-	const run = (opts.runId ? store.runs.get(opts.runId) : store.runs.latest(projectId)) ?? null;
+): Promise<Report> {
+	const project = await store.projects.get(projectId);
+	const run = (opts.runId ? await store.runs.get(opts.runId) : await store.runs.latest(projectId)) ?? null;
 	const wanted = opts.tag?.trim().toLowerCase();
 	const tagged = wanted
 		? new Set(
-				store.prompts
-					.list(projectId)
+				(await store.prompts.list(projectId))
 					.filter((prompt) => prompt.tags.some((tag) => tag.toLowerCase() === wanted))
 					.map((prompt) => prompt.id),
 			)
 		: null;
-	const answersOf = (runId: string) => {
-		const all = store.answers.listByRun(runId);
+	const answersOf = async (runId: string) => {
+		const all = await store.answers.listByRun(runId);
 		return tagged ? all.filter((answer) => tagged.has(answer.promptId)) : all;
 	};
 	const finished =
 		run?.status === "running" && !opts.runId
-			? store.runs.list(projectId, 30).find((r) => r.status !== "running")
+			? (await store.runs.list(projectId, 30)).find((r) => r.status !== "running")
 			: undefined;
 	const source = finished ?? run;
-	const answers = source && source.projectId === projectId ? answersOf(source.id) : [];
+	const answers = source && source.projectId === projectId ? await answersOf(source.id) : [];
 	const good = ok(answers);
 
 	const engineIds = [...new Set(answers.map((a) => a.engine))];
@@ -107,7 +106,7 @@ export function buildReport(
 		return { engine, ...summarise(mine), errors: mine.length - ok(mine).length };
 	});
 
-	const names = project ? [project.name, ...store.competitors.list(projectId).map((c) => c.name)] : [];
+	const names = project ? [project.name, ...(await store.competitors.list(projectId)).map((c) => c.name)] : [];
 	const competitors = names
 		.map((name, index) => {
 			const ranks = good.flatMap((a) => a.mentions.filter((m) => m.entity === name).map((m) => m.rank));
@@ -130,22 +129,23 @@ export function buildReport(
 		.sort((a, b) => b.citations - a.citations || a.domain.localeCompare(b.domain))
 		.slice(0, 25);
 
-	const trend = store.runs
-		.list(projectId, opts.trendRuns ?? 30)
-		.filter((r) => r.status !== "running")
-		.reverse()
-		.map((r) => {
-			const summary = summarise(answersOf(r.id));
-			return {
-				runId: r.id,
-				startedAt: r.startedAt,
-				visibility: summary.visibility,
-				mentionRate: summary.metrics.mentionRate,
-				citationRate: summary.metrics.citationRate,
-				averageRank: summary.metrics.averageRank,
-				sentiment: summary.sentiment.score,
-			};
-		});
+	const trend = await Promise.all(
+		(await store.runs.list(projectId, opts.trendRuns ?? 30))
+			.filter((r) => r.status !== "running")
+			.reverse()
+			.map(async (r) => {
+				const summary = summarise(await answersOf(r.id));
+				return {
+					runId: r.id,
+					startedAt: r.startedAt,
+					visibility: summary.visibility,
+					mentionRate: summary.metrics.mentionRate,
+					citationRate: summary.metrics.citationRate,
+					averageRank: summary.metrics.averageRank,
+					sentiment: summary.sentiment.score,
+				};
+			}),
+	);
 
 	const problems: Report["problems"] = [];
 	for (const answer of answers) {
@@ -166,19 +166,18 @@ export function buildReport(
 		topDomains,
 		trend,
 		problems,
-		brand: source ? store.brandChecks.listByRun(source.id).map(({ text: _text, ...check }) => check) : [],
+		brand: source ? (await store.brandChecks.listByRun(source.id)).map(({ text: _text, ...check }) => check) : [],
 	};
 }
 
 export type PromptStat = PromptStatView;
 
-export function promptStats(store: Store, projectId: string, maxRuns = 12): PromptStat[] {
-	const runs = store.runs
-		.list(projectId, maxRuns)
-		.filter((r) => r.status !== "running")
-		.reverse();
-	const perRun = runs.map((run) => ({ run, answers: ok(store.answers.listByRun(run.id)) }));
-	return store.prompts.list(projectId).map((prompt) => {
+export async function promptStats(store: Store, projectId: string, maxRuns = 12): Promise<PromptStat[]> {
+	const runs = (await store.runs.list(projectId, maxRuns)).filter((r) => r.status !== "running").reverse();
+	const perRun = await Promise.all(
+		runs.map(async (run) => ({ run, answers: ok(await store.answers.listByRun(run.id)) })),
+	);
+	return (await store.prompts.list(projectId)).map((prompt) => {
 		const history: PromptStat["history"] = [];
 		let bestRank: number | null = null;
 		for (const { run, answers } of perRun) {

@@ -73,7 +73,7 @@ export type RunOnceDeps = {
 
 export async function runOnce(deps: RunOnceDeps): Promise<number> {
 	const { store, runs, out } = deps;
-	const projects = store.projects.list();
+	const projects = await store.projects.list();
 	const project = deps.project
 		? projects.find((p) => p.name.toLowerCase() === deps.project?.toLowerCase())
 		: projects[0];
@@ -87,18 +87,20 @@ export async function runOnce(deps: RunOnceDeps): Promise<number> {
 	}
 	let runId: string;
 	try {
-		runId = runs.start(project.id).id;
+		runId = (await runs.start(project.id)).id;
 	} catch (error) {
 		if (!(error instanceof RunError)) throw error;
 		out(error.message);
 		return 1;
 	}
 	if (!deps.json)
-		out(`Running ${store.prompts.list(project.id).filter((p) => p.active).length} prompts for ${project.name}…`);
+		out(
+			`Running ${(await store.prompts.list(project.id)).filter((p) => p.active).length} prompts for ${project.name}…`,
+		);
 	const finished = await runs.wait(runId);
-	const answers = store.answers.listByRun(runId);
+	const answers = await store.answers.listByRun(runId);
 	const failures = answers.filter((a) => a.errorCode !== null);
-	const report = buildReport(store, project.id, { runId });
+	const report = await buildReport(store, project.id, { runId });
 	if (deps.json) {
 		out(JSON.stringify(report, null, 2));
 	} else {
@@ -124,7 +126,7 @@ export type AuditOnceDeps = {
 
 export async function auditOnce(deps: AuditOnceDeps): Promise<number> {
 	const { store, out } = deps;
-	const projects = store.projects.list();
+	const projects = await store.projects.list();
 	const project = deps.project
 		? projects.find((p) => p.name.toLowerCase() === deps.project?.toLowerCase())
 		: projects[0];
@@ -135,7 +137,7 @@ export async function auditOnce(deps: AuditOnceDeps): Promise<number> {
 	let result: Pick<AuditResult, "origin" | "score" | "pages" | "findings">;
 	if (project) {
 		try {
-			const audit = await deps.audits.wait(deps.audits.start(project.id, deps.url).id);
+			const audit = await deps.audits.wait((await deps.audits.start(project.id, deps.url)).id);
 			if (audit.status !== "done") {
 				out("The audit was interrupted before it finished.");
 				return 1;
@@ -144,7 +146,7 @@ export async function auditOnce(deps: AuditOnceDeps): Promise<number> {
 				origin: audit.origin,
 				score: audit.score ?? 0,
 				pages: audit.pages,
-				findings: store.audits.findings(audit.id),
+				findings: await store.audits.findings(audit.id),
 			};
 		} catch (error) {
 			if (!(error instanceof AuditError)) throw error;

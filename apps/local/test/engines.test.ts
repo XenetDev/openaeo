@@ -4,8 +4,8 @@ import { freshStore } from "./helpers";
 
 const which = (found: string[]) => (bin: string) => (found.includes(bin) ? `/usr/bin/${bin}` : null);
 
-test("installed tools are available and enabled by default", () => {
-	const engines = detectEngines({ store: freshStore(), which: which(["claude", "codex"]) });
+test("installed tools are available and enabled by default", async () => {
+	const engines = await detectEngines({ store: freshStore(), which: which(["claude", "codex"]) });
 	expect(engines.map((e) => [e.id, e.label, e.available, e.enabled])).toEqual([
 		["claude-cli", "Claude", true, true],
 		["codex-cli", "ChatGPT (Codex)", true, true],
@@ -18,33 +18,38 @@ test("installed tools are available and enabled by default", () => {
 	expect(engines[0]?.reason).toBeNull();
 });
 
-test("a missing tool says what to install", () => {
-	const engines = detectEngines({ store: freshStore(), which: which(["codex"]) });
+test("a missing tool says what to install", async () => {
+	const engines = await detectEngines({ store: freshStore(), which: which(["codex"]) });
 	const claude = engines.find((e) => e.id === "claude-cli");
 	expect(claude?.available).toBe(false);
 	expect(claude?.reason).toMatch(/Claude Code/);
-	expect(buildProviders({ store: freshStore(), which: which(["codex"]) }).map((p) => p.id)).toEqual(["codex-cli"]);
+	expect((await buildProviders({ store: freshStore(), which: which(["codex"]) })).map((p) => p.id)).toEqual([
+		"codex-cli",
+	]);
 });
 
-test("a disabled engine is left out of runs but still listed", () => {
+test("a disabled engine is left out of runs but still listed", async () => {
 	const store = freshStore();
 	store.settings.set("engine.codex-cli.enabled", "false");
 	const deps = { store, which: which(["claude", "codex"]) };
-	expect(detectEngines(deps).find((e) => e.id === "codex-cli")).toMatchObject({ available: true, enabled: false });
-	expect(buildProviders(deps).map((p) => p.id)).toEqual(["claude-cli"]);
+	expect((await detectEngines(deps)).find((e) => e.id === "codex-cli")).toMatchObject({
+		available: true,
+		enabled: false,
+	});
+	expect((await buildProviders(deps)).map((p) => p.id)).toEqual(["claude-cli"]);
 });
 
-test("an API engine is ready as soon as it has a key, using a default model", () => {
+test("an API engine is ready as soon as it has a key, using a default model", async () => {
 	const store = freshStore();
 	const deps = { store, which: which([]) };
-	expect(detectEngines(deps).find((e) => e.id === "xai")).toMatchObject({ available: false });
-	expect(detectEngines(deps).find((e) => e.id === "xai")?.reason).toMatch(/xAI \(Grok\) API key/);
+	expect((await detectEngines(deps)).find((e) => e.id === "xai")).toMatchObject({ available: false });
+	expect((await detectEngines(deps)).find((e) => e.id === "xai")?.reason).toMatch(/xAI \(Grok\) API key/);
 	store.settings.set("xai.apiKey", "xai-1");
 	store.settings.set("openai.apiKey", "sk-1");
-	expect(detectEngines(deps).find((e) => e.id === "xai")).toMatchObject({ available: true, reason: null });
-	expect(buildProviders(deps).map((p) => p.id)).toEqual(["openai", "xai"]);
+	expect((await detectEngines(deps)).find((e) => e.id === "xai")).toMatchObject({ available: true, reason: null });
+	expect((await buildProviders(deps)).map((p) => p.id)).toEqual(["openai", "xai"]);
 });
 
-test("with nothing installed there are no providers", () => {
-	expect(buildProviders({ store: freshStore(), which: which([]) })).toEqual([]);
+test("with nothing installed there are no providers", async () => {
+	expect(await buildProviders({ store: freshStore(), which: which([]) })).toEqual([]);
 });

@@ -11,12 +11,12 @@ async function setup(schedule: string | null) {
 	const provider = fakeProvider("claude-cli", () => "Pipedrive");
 	const runs = createRunService({ store, providers: () => [provider.provider] });
 	if (schedule) store.settings.set("schedule", schedule);
-	const first = await runs.wait(runs.start(project.id).id);
+	const first = await runs.wait((await runs.start(project.id)).id);
 	let now = first.startedAt;
 	const scheduler = createScheduler({ store, runs, now: () => now });
 	const tick = async (advance: number) => {
 		now += advance;
-		const started = scheduler.tick();
+		const started = await scheduler.tick();
 		for (const id of started) await runs.wait(id);
 		return started.length;
 	};
@@ -53,7 +53,7 @@ test("a project that cannot run does not stop the others", async () => {
 	const { store, tick, runs, project } = await setup("daily");
 	const empty = store.projects.create({ name: "Empty", aliases: [], domains: [] });
 	store.prompts.add(empty.id, ["q"]);
-	await runs.wait(runs.start(empty.id).id);
+	await runs.wait((await runs.start(empty.id)).id);
 	for (const p of store.prompts.list(empty.id)) store.prompts.remove(p.id);
 	expect(await tick(25 * HOUR)).toBe(1);
 	expect(store.runs.list(project.id, 10).length).toBe(2);
@@ -65,12 +65,12 @@ test("a run already in progress is not doubled", async () => {
 	const slow = fakeProvider("claude-cli", () => "x", 80);
 	const runs = createRunService({ store, providers: () => [slow.provider] });
 	store.settings.set("schedule", "daily");
-	const first = await runs.wait(runs.start(project.id).id);
+	const first = await runs.wait((await runs.start(project.id)).id);
 	let now = first.startedAt + 25 * HOUR;
 	const scheduler = createScheduler({ store, runs, now: () => now });
-	const started = scheduler.tick();
+	const started = await scheduler.tick();
 	expect(started.length).toBe(1);
 	now += 25 * HOUR;
-	expect(scheduler.tick()).toEqual([]);
+	expect(await scheduler.tick()).toEqual([]);
 	await runs.wait(started[0] ?? "");
 });

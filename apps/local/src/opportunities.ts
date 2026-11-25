@@ -12,15 +12,15 @@ const SEVERITY_ORDER = ["high", "medium", "low"];
 const sitesOf = (domains: string[]) =>
 	domains.map((d) => toDomain(/^https?:\/\//i.test(d) ? d : `https://${d}`)).filter((d): d is string => d !== null);
 
-export function buildOpportunities(store: Store, projectId: string): Opportunities {
-	const project = store.projects.get(projectId);
-	const run = store.runs.list(projectId, 10).find((r) => r.status !== "running") ?? null;
-	const fixes = auditFixes(store, projectId);
+export async function buildOpportunities(store: Store, projectId: string): Promise<Opportunities> {
+	const project = await store.projects.get(projectId);
+	const run = (await store.runs.list(projectId, 10)).find((r) => r.status !== "running") ?? null;
+	const fixes = await auditFixes(store, projectId);
 	if (!project || !run) return { runId: null, missed: [], sites: [], fixes };
 
 	const names = new Set([project.name, ...project.aliases].map((n) => n.toLowerCase()));
-	const texts = new Map(store.prompts.list(projectId).map((p) => [p.id, p.text]));
-	const answers = store.answers.listByRun(run.id).filter((a) => a.errorCode === null);
+	const texts = new Map((await store.prompts.list(projectId)).map((p) => [p.id, p.text]));
+	const answers = (await store.answers.listByRun(run.id)).filter((a) => a.errorCode === null);
 
 	const missed = new Map<string, { engines: Set<string>; named: Set<string> }>();
 	for (const answer of answers) {
@@ -35,7 +35,10 @@ export function buildOpportunities(store: Store, projectId: string): Opportuniti
 		missed.set(question, entry);
 	}
 
-	const known = [...sitesOf(project.domains), ...store.competitors.list(projectId).flatMap((c) => sitesOf(c.domains))];
+	const known = [
+		...sitesOf(project.domains),
+		...(await store.competitors.list(projectId)).flatMap((c) => sitesOf(c.domains)),
+	];
 	const cited = new Map<string, { citations: number; questions: Set<string> }>();
 	for (const answer of answers) {
 		for (const citation of answer.citations) {
@@ -60,11 +63,11 @@ export function buildOpportunities(store: Store, projectId: string): Opportuniti
 	};
 }
 
-function auditFixes(store: Store, projectId: string): Opportunities["fixes"] {
-	const audit = store.audits.latest(projectId, { ownOnly: true });
+async function auditFixes(store: Store, projectId: string): Promise<Opportunities["fixes"]> {
+	const audit = await store.audits.latest(projectId, { ownOnly: true });
 	if (audit?.status !== "done") return [];
 	const groups = new Map<string, { severity: string; pages: number }>();
-	for (const finding of store.audits.findings(audit.id))
+	for (const finding of await store.audits.findings(audit.id))
 		groups.set(finding.title, { severity: finding.severity, pages: (groups.get(finding.title)?.pages ?? 0) + 1 });
 	return [...groups.entries()]
 		.map(([title, info]) => ({ title, ...info }))

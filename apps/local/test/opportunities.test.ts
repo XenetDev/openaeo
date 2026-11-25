@@ -15,7 +15,7 @@ async function world(reply: (prompt: string) => string) {
 		],
 	}));
 	const runs = createRunService({ store, providers: () => [engine.provider] });
-	await runs.wait(runs.start(project.id).id);
+	await runs.wait((await runs.start(project.id)).id);
 	return { store, project };
 }
 
@@ -23,18 +23,18 @@ test("a question where a competitor is named and the brand is not is a missed qu
 	const { store, project } = await world((prompt) =>
 		prompt.includes("best") ? "HubSpot is the best choice." : "Pipedrive is the cheapest, then HubSpot.",
 	);
-	const found = buildOpportunities(store, project.id);
+	const found = await buildOpportunities(store, project.id);
 	expect(found.missed).toEqual([{ question: "best crm?", engines: ["claude-cli"], named: ["HubSpot"] }]);
 });
 
 test("sites to get mentioned on leave out the brand's own site and competitors' sites", async () => {
 	const { store, project } = await world(() => "HubSpot is the best choice.");
-	const found = buildOpportunities(store, project.id);
+	const found = await buildOpportunities(store, project.id);
 	expect(found.sites).toEqual([{ domain: "g2.com", citations: 2, questions: 2 }]);
 });
 
-test("a brand with no finished run has nothing to report", () => {
+test("a brand with no finished run has nothing to report", async () => {
 	const store = freshStore();
 	const project = seed(store);
-	expect(buildOpportunities(store, project.id)).toEqual({ runId: null, missed: [], sites: [], fixes: [] });
+	expect(await buildOpportunities(store, project.id)).toEqual({ runId: null, missed: [], sites: [], fixes: [] });
 });

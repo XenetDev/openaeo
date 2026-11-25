@@ -105,10 +105,10 @@ test("a run stores the brand check and the report carries it", async () => {
 	const { store, seeded, runs } = brandWorld([
 		{ n: 1, knows: "yes", summary: "A CRM.", confusedWith: ["Pipefy"], concerns: ["Staff numbers conflict."] },
 	]);
-	const run = await runs.wait(runs.start(seeded.id).id);
+	const run = await runs.wait((await runs.start(seeded.id)).id);
 	expect(run.status).toBe("done");
 	expect(run.total).toBe(1);
-	expect(buildReport(store, seeded.id).brand).toEqual([
+	expect((await buildReport(store, seeded.id)).brand).toEqual([
 		{
 			engine: "claude-cli",
 			knows: "yes",
@@ -119,7 +119,7 @@ test("a run stores the brand check and the report carries it", async () => {
 			ownSiteUsed: false,
 		},
 	]);
-	expect(buildReport(store, seeded.id).overall.metrics.answers).toBe(1);
+	expect((await buildReport(store, seeded.id)).overall.metrics.answers).toBe(1);
 });
 
 test("the assistant is told what the engines know about the brand, as quoted data", async () => {
@@ -133,8 +133,8 @@ test("the assistant is told what the engines know about the brand, as quoted dat
 			concerns: ["Staff numbers conflict."],
 		},
 	]);
-	await runs.wait(runs.start(seeded.id).id);
-	const prompt = buildAskPrompt(askContext(store, store.projects.get(seeded.id) as typeof project), [], "why?");
+	await runs.wait((await runs.start(seeded.id)).id);
+	const prompt = buildAskPrompt(await askContext(store, store.projects.get(seeded.id) as typeof project), [], "why?");
 	const line = prompt.split("\n").find((l) => l.includes("Asked about the brand by name")) ?? "";
 	expect(line.startsWith("> ")).toBe(true);
 	expect(line).toContain("claude-cli is unsure");

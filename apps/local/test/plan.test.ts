@@ -24,8 +24,8 @@ test("a brand that is not named gets a plan built from its own results", async (
 	const { store, project, runs } = world([
 		{ n: 1, knows: "yes", summary: "A CRM.", confusedWith: ["Pipefy"], concerns: ["Staff numbers conflict."] },
 	]);
-	await runs.wait(runs.start(project.id).id);
-	const plan = buildPlan(store, project.id);
+	await runs.wait((await runs.start(project.id)).id);
+	const plan = await buildPlan(store, project.id);
 	expect(plan.steps.map((step) => step.id)).toEqual(["facts", "questions", "profiles", "sources", "identity"]);
 	expect(plan.done).toBe(0);
 
@@ -44,19 +44,19 @@ test("a brand that is not named gets a plan built from its own results", async (
 
 test("steps can be marked done and undone, and that survives rebuilding the plan", async () => {
 	const { store, project, runs } = world([{ n: 1, knows: "yes", summary: "A CRM.", confusedWith: [], concerns: [] }]);
-	await runs.wait(runs.start(project.id).id);
-	setStepDone(store, project.id, "questions", true);
-	setStepDone(store, project.id, "questions", true);
-	const plan = buildPlan(store, project.id);
+	await runs.wait((await runs.start(project.id)).id);
+	await setStepDone(store, project.id, "questions", true);
+	await setStepDone(store, project.id, "questions", true);
+	const plan = await buildPlan(store, project.id);
 	expect(plan.steps.find((step) => step.id === "questions")?.done).toBe(true);
 	expect(plan.done).toBe(1);
-	setStepDone(store, project.id, "questions", false);
-	expect(buildPlan(store, project.id).done).toBe(0);
+	await setStepDone(store, project.id, "questions", false);
+	expect((await buildPlan(store, project.id)).done).toBe(0);
 });
 
 test("an engine that does not know the brand comes first, and audit findings become a step", async () => {
 	const { store, project, runs } = world([{ n: 1, knows: "no", summary: null, confusedWith: [], concerns: [] }]);
-	await runs.wait(runs.start(project.id).id);
+	await runs.wait((await runs.start(project.id)).id);
 	const audit = store.audits.create(project.id, "https://pipedrive.com", true);
 	store.audits.finish(audit.id, "done", {
 		origin: "https://pipedrive.com",
@@ -75,7 +75,7 @@ test("an engine that does not know the brand comes first, and audit findings bec
 		score: 80,
 		skipped: [],
 	});
-	const ids = buildPlan(store, project.id).steps.map((step) => step.id);
+	const ids = (await buildPlan(store, project.id)).steps.map((step) => step.id);
 	expect(ids[0]).toBe("unknown");
 	expect(ids).toContain("website");
 });
@@ -85,7 +85,7 @@ test("a brand that is named everywhere, and a brand with no run, have nothing to
 		[{ n: 1, knows: "yes", summary: "A CRM.", confusedWith: [], concerns: [] }],
 		"Pipedrive is best.",
 	);
-	await runs.wait(runs.start(project.id).id);
-	expect(buildPlan(store, project.id).steps.map((step) => step.id)).toEqual(["profiles"]);
-	expect(buildPlan(store, seed(freshStore()).id)).toEqual({ steps: [], done: 0 });
+	await runs.wait((await runs.start(project.id)).id);
+	expect((await buildPlan(store, project.id)).steps.map((step) => step.id)).toEqual(["profiles"]);
+	expect(await buildPlan(store, seed(freshStore()).id)).toEqual({ steps: [], done: 0 });
 });

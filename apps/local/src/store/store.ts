@@ -12,66 +12,34 @@ import type {
 } from "@openaeo/engine";
 import type { BrandCheck } from "../brand-check";
 import { cleanLocation } from "../location";
+import type {
+	AuditStatus,
+	Competitor,
+	EntityInput,
+	Project,
+	ProjectInput,
+	Prompt,
+	Run,
+	RunStatus,
+	Store,
+	StoredAnswer,
+	StoredAudit,
+} from "./types";
 
-export type EntityInput = { name: string; aliases: string[]; domains: string[] };
-export type ProjectInput = EntityInput & { location?: string };
-export type Project = EntityInput & { id: string; location: string; createdAt: number };
-export type Competitor = EntityInput & { id: string; projectId: string };
-export type Prompt = {
-	id: string;
-	projectId: string;
-	text: string;
-	active: boolean;
-	tags: string[];
-	createdAt: number;
-};
-export type RunStatus = "running" | "done" | "interrupted";
-export type Run = {
-	id: string;
-	projectId: string;
-	status: RunStatus;
-	startedAt: number;
-	finishedAt: number | null;
-	total: number;
-	completed: number;
-};
-export type StoredAnswer = {
-	id: string;
-	runId: string;
-	promptId: string;
-	engine: EngineId;
-	model: string | null;
-	text: string;
-	searched: boolean;
-	durationMs: number;
-	inputTokens: number | null;
-	outputTokens: number | null;
-	searches: number | null;
-	errorCode: ProviderErrorCode | null;
-	errorMessage: string | null;
-	createdAt: number;
-	mentions: Mention[];
-	brandRank: number | null;
-	brandCited: boolean;
-	brandSourced: boolean;
-	citations: Source[];
-	sources: Source[];
-	sentiment: "positive" | "neutral" | "negative" | null;
-};
-
-export type AuditStatus = "running" | "done" | "interrupted";
-export type StoredAudit = {
-	id: string;
-	projectId: string;
-	origin: string;
-	status: AuditStatus;
-	startedAt: number;
-	finishedAt: number | null;
-	score: number | null;
-	pages: AuditPage[];
-	skipped: number;
-	own: boolean;
-};
+export type {
+	AuditStatus,
+	Awaitable,
+	Competitor,
+	EntityInput,
+	Project,
+	ProjectInput,
+	Prompt,
+	Run,
+	RunStatus,
+	Store,
+	StoredAnswer,
+	StoredAudit,
+} from "./types";
 
 type AuditRow = {
 	id: string;
@@ -614,7 +582,7 @@ export function createStore(db: Database) {
 				})),
 	};
 
-	return { projects, competitors, prompts, runs, answers, settings, audits, brandChecks };
+	return { projects, competitors, prompts, runs, answers, settings, audits, brandChecks } satisfies Store;
 }
 
-export type Store = ReturnType<typeof createStore>;
+export type SqliteStore = ReturnType<typeof createStore>;

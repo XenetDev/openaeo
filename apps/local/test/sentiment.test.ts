@@ -65,7 +65,7 @@ test("a run stores sentiment for answers that mention the brand", async () => {
 		return prompt === "q1" ? "Pipedrive is great." : "HubSpot only.";
 	});
 	const runs = createRunService({ store, providers: () => [provider.provider], sentiment: true });
-	const run = await runs.wait(runs.start(project.id).id);
+	const run = await runs.wait((await runs.start(project.id)).id);
 	expect(run.status).toBe("done");
 	const answers = store.answers.listByRun(run.id);
 	expect(answers.find((a) => a.brandRank !== null)?.sentiment).toBe("positive");
@@ -86,7 +86,7 @@ test("a sentiment failure does not fail the run", async () => {
 		retries: 0,
 		log: recordLog().log,
 	});
-	const run = await runs.wait(runs.start(project.id).id);
+	const run = await runs.wait((await runs.start(project.id)).id);
 	expect(run.status).toBe("done");
 	expect(store.answers.listByRun(run.id)[0]?.sentiment).toBeNull();
 });

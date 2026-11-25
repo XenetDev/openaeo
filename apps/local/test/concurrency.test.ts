@@ -26,7 +26,7 @@ test("a second process cannot interrupt or duplicate a live run", async () => {
 		const project = seed(first, ["a", "b", "c"]);
 		const slowA = fakeProvider("claude-cli", () => "Pipedrive", 40);
 		const runsA = createRunService({ store: first, providers: () => [slowA.provider], concurrency: 1 });
-		const live = runsA.start(project.id);
+		const live = await runsA.start(project.id);
 
 		const second = createStore(openDb(path));
 		expect(second.runs.interruptStale()).toBe(0);
@@ -34,7 +34,7 @@ test("a second process cannot interrupt or duplicate a live run", async () => {
 		const runsB = createRunService({ store: second, providers: () => [fastB.provider] });
 		let code: string | null = null;
 		try {
-			runsB.start(project.id);
+			await runsB.start(project.id);
 		} catch (error) {
 			code = error instanceof RunError ? error.code : "other";
 		}
@@ -71,8 +71,8 @@ test("a run that got no answers reports why", async () => {
 	const loggedOut = fakeProvider("claude-cli", () => "not_logged_in");
 	const outdated = fakeProvider("codex-cli", () => "cli_outdated");
 	const runs = createRunService({ store, providers: () => [loggedOut.provider, outdated.provider], retries: 0 });
-	await runs.wait(runs.start(project.id).id);
-	const report = buildReport(store, project.id);
+	await runs.wait((await runs.start(project.id)).id);
+	const report = await buildReport(store, project.id);
 	expect(report.overall.metrics.answers).toBe(0);
 	expect(report.problems).toEqual([
 		{ engine: "claude-cli", message: "claude-cli not_logged_in", count: 2 },
@@ -84,9 +84,9 @@ test("a clean run reports no problems", async () => {
 	const store = freshStore();
 	const project = seed(store, ["q1"]);
 	const runs = createRunService({ store, providers: () => [fakeProvider("claude-cli", () => "Pipedrive").provider] });
-	await runs.wait(runs.start(project.id).id);
-	expect(buildReport(store, project.id).problems).toEqual([]);
-	expect(buildReport(store, seed(freshStore()).id).problems).toEqual([]);
+	await runs.wait((await runs.start(project.id)).id);
+	expect((await buildReport(store, project.id)).problems).toEqual([]);
+	expect((await buildReport(store, seed(freshStore()).id)).problems).toEqual([]);
 });
 
 test("deleting a project during its run does not throw", async () => {
@@ -94,7 +94,7 @@ test("deleting a project during its run does not throw", async () => {
 	const project = seed(store, ["a", "b", "c"]);
 	const slow = fakeProvider("claude-cli", () => "Pipedrive", 20);
 	const runs = createRunService({ store, providers: () => [slow.provider], concurrency: 1, log: recordLog().log });
-	const run = runs.start(project.id);
+	const run = await runs.start(project.id);
 	await new Promise((resolve) => setTimeout(resolve, 30));
 	store.projects.remove(project.id);
 	const finished = await runs.wait(run.id);

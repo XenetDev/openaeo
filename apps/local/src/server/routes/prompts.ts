@@ -1,11 +1,11 @@
 import type { Ok, PromptStatView, PromptView } from "../../api-types";
 import { promptStats } from "../../report";
-import type { HandlerDeps } from "../handler";
+import type { ApiDeps } from "../api";
 import { json, notFound, read, requireProject } from "../http";
 import { type Route, route } from "../router";
 import { AddPromptsSchema, PatchPromptSchema } from "../schemas";
 
-export function promptRoutes({ store }: HandlerDeps): Route[] {
+export function promptRoutes({ store }: ApiDeps): Route[] {
 	const requirePrompt = async (id: string) => {
 		const found = await store.prompts.get(id);
 		if (!found) throw notFound("That prompt");

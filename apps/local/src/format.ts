@@ -1,5 +1,5 @@
 import type { AuditResult, Finding } from "@openaeo/engine";
-import { ENGINE_LABELS } from "./engines";
+import { ENGINE_LABELS } from "./engine-catalog";
 import type { Report } from "./report";
 
 const percent = (value: number) => `${Math.round(value * 100)}%`;

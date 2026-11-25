@@ -1,5 +1,5 @@
 import type { AskAction, AskTurn } from "./api-types";
-import { API_ENGINES } from "./engines";
+import { API_ENGINES } from "./engine-catalog";
 import { buildOpportunities } from "./opportunities";
 import { buildReport, promptStats } from "./report";
 import type { Project, Store } from "./store/store";

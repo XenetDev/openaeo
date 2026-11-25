@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { API_ENGINES, ENGINE_IDS } from "../engines";
+import { API_ENGINES, ENGINE_IDS } from "../engine-catalog";
 import { MAX_LOCATION } from "../location";
 
 const names = z.array(z.string().max(200)).max(50).default([]);

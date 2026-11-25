@@ -1,10 +1,10 @@
 import type { SettingsResponse } from "../../api-types";
-import type { HandlerDeps } from "../handler";
+import type { ApiDeps } from "../api";
 import { json, read } from "../http";
 import { type Route, route } from "../router";
 import { MASK, SECRET_SETTINGS, SettingsSchema } from "../schemas";
 
-export function settingsRoutes({ store }: HandlerDeps): Route[] {
+export function settingsRoutes({ store }: ApiDeps): Route[] {
 	const masked = async (): Promise<SettingsResponse> => {
 		const settings = await store.settings.all();
 		for (const key of SECRET_SETTINGS) {

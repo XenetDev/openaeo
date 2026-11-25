@@ -2,14 +2,14 @@ import { artefacts } from "@openaeo/engine";
 import type { AuditView, LatestAudit, Ok } from "../../api-types";
 import { AuditError, resultOf } from "../../audits";
 import { buildBrief } from "../../brief";
-import type { HandlerDeps } from "../handler";
+import type { ApiDeps } from "../api";
 import { HttpError, json, notFound, read, requireProject } from "../http";
 import { type Route, route } from "../router";
 import { StartAuditSchema } from "../schemas";
 
 const STATUS: Record<string, number> = { already_running: 409, no_url: 400, bad_url: 400, not_found: 404 };
 
-export function auditRoutes({ store, audits }: HandlerDeps): Route[] {
+export function auditRoutes({ store, audits }: ApiDeps): Route[] {
 	if (!audits) return [];
 	const requireAudit = async (id: string) => {
 		const found = await store.audits.get(id);

@@ -122,6 +122,20 @@ test("Perplexity: key, credit and rate problems are told apart", async () => {
 	expect(await codeOf(p(429))).toBe("rate_limited");
 });
 
+test("Perplexity: an account without paid credits is not reported as a bad key", async () => {
+	const ask = createPerplexity({
+		apiKey: "k",
+		fetch: fake(403, {
+			error: { message: "The Agent API requires paid credits.", type: "restricted_api_key", code: 403 },
+		}).fetcher,
+	}).ask("q");
+	const error = await ask.catch((caught: unknown) => caught);
+	expect(error).toBeInstanceOf(ProviderError);
+	expect((error as ProviderError).code).toBe("rate_limited");
+	expect((error as ProviderError).message).toContain("paid credits");
+	expect((error as ProviderError).message).not.toContain("rejected the API key");
+});
+
 test("Anthropic: text fragments are joined and citations and search results are collected", async () => {
 	const f = fake(200, {
 		model: "claude-sonnet-5-5",

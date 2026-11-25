@@ -23,6 +23,12 @@ export function createPerplexity(o: ApiOptions): Provider {
 			const body = rec(res.json);
 			if (!res.ok) {
 				const detail = res.redact(str(rec(body.error).message));
+				if (res.status === 403 && (str(rec(body.error).type) === "restricted_api_key" || /credit/i.test(detail)))
+					failWith(
+						"perplexity",
+						"rate_limited",
+						`Perplexity needs paid credits on this account before it answers. ${detail}`.trim(),
+					);
 				if (res.status === 401 || res.status === 403)
 					failWith("perplexity", "not_logged_in", "Perplexity rejected the API key. Check the key and try again.");
 				if (res.status === 429 || res.status === 402)

@@ -1306,7 +1306,13 @@ body,
 	opacity: 0.6;
 }
 
-.ui-as-rev__actions > .ui-bdgc,
+.ui-as-rev__actions > .ui-bdgc {
+	--h: 24px;
+	--pad: 8px;
+	border-radius: var(--aui-radius, 6px);
+	font-size: 12px;
+}
+
 .oa-step > .ui-crdc__head > .ui-crdc__action > .ui-bdgc {
 	--h: 32px;
 	--pad: 8px;
@@ -1418,5 +1424,24 @@ body,
 @media (pointer: coarse) {
 	.ui-buttonc.ui-buttonc[data-size] {
 		--h: 38px;
+	}
+}
+
+:is(.ui-as-rev__head, .ui-as-bar) .ui-buttonc.ui-buttonc[data-size] {
+	--h: 24px;
+	--px: 8px;
+	--gap: 4px;
+	--fs: 12px;
+	--lh: 16px;
+	--icon: 14px;
+}
+
+.ui-as-rev__head .oa-tag-filter .ui-selc[data-size="sm"] {
+	--h: 24px;
+}
+
+@media (pointer: coarse) {
+	:is(.ui-as-rev__head, .ui-as-bar) .ui-buttonc.ui-buttonc[data-size] {
+		--h: 32px;
 	}
 }

@@ -512,6 +512,59 @@ body,
 	margin-bottom: 0;
 }
 
+.oa-next {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 12px;
+}
+
+.oa-next > button {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	min-width: 0;
+	padding: 14px 16px;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--chip) 30%, transparent);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition: background-color 140ms ease;
+}
+
+.oa-next > button:hover {
+	background: color-mix(in srgb, var(--chip) 70%, transparent);
+}
+
+.oa-next > button:focus-visible {
+	outline: 2px solid var(--aui-blue, #0190fe);
+	outline-offset: 2px;
+}
+
+.oa-next > button > span {
+	display: grid;
+	gap: 2px;
+	min-width: 0;
+}
+
+.oa-next b {
+	font-size: 13px;
+	line-height: 20px;
+	font-weight: 500;
+	color: var(--ink);
+}
+
+.oa-next small {
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	font-size: 12px;
+	line-height: 18px;
+	color: var(--muted);
+}
+
 .oa-actions {
 	display: flex;
 	flex-wrap: wrap;

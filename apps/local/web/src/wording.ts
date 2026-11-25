@@ -12,6 +12,7 @@ type Words = {
 	askSource: string;
 	askBy: (engine: string) => string;
 	schedule: string;
+	firstRun: string;
 };
 
 const LOCAL: Words = {
@@ -27,6 +28,8 @@ const LOCAL: Words = {
 	askSource: "Written by your own Claude or Codex from your runs and site audit, not from the web.",
 	askBy: (engine) => `Written by ${engine} on your own subscription,`,
 	schedule: "Automatic runs only happen while OpenAEO is open on this computer.",
+	firstRun:
+		"This runs on your own engines and takes a few minutes. You can open the dashboard at any time; it keeps going.",
 };
 
 const CLOUD: Words = {
@@ -41,6 +44,7 @@ const CLOUD: Words = {
 	askSource: "Written from your runs and site audit, not from the web.",
 	askBy: (engine) => `Written by ${engine},`,
 	schedule: "Scheduled runs are not available on OpenAEO Cloud yet.",
+	firstRun: "This takes a few minutes. You can open the dashboard at any time; it keeps going.",
 };
 
 export const words: Words = runtime.cloud ? CLOUD : LOCAL;

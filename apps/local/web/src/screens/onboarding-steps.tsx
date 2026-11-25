@@ -7,10 +7,13 @@ import { Badge } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
 import { TextField } from "@/components/ui/text-field-clean";
+import { runtime } from "../runtime";
 import { words } from "../wording";
 import { EngineLogo } from "./shared";
 
 type Frame = { product: string; email: string; steps: number; logo: ReactNode };
+
+export const SETUP_STEPS = runtime.cloud ? 5 : 6;
 
 const isSubscription = (id: string) => id.endsWith("-cli");
 const HOW: Record<string, string> = {
@@ -210,11 +213,7 @@ export function FirstRunStep({
 		<OnboardingFrame {...frame} preview={preview}>
 			<Steps step={step} steps={frame.steps} />
 			<h1 className="ui-obw-title">{finished ? `${brand} is ready` : `Setting up ${brand}`}</h1>
-			<p className="ui-obw-sub">
-				{finished
-					? "Your dashboard is filled in with the first answers."
-					: "This runs on your own engines and takes a few minutes. You can open the dashboard at any time; it keeps going."}
-			</p>
+			<p className="ui-obw-sub">{finished ? "Your dashboard is filled in with the first answers." : words.firstRun}</p>
 
 			<div className="oa-ob-list" aria-live="polite">
 				{tasks.map((task) => (

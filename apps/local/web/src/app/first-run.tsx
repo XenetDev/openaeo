@@ -1,7 +1,7 @@
 import type { EngineView, ProjectView } from "@api";
 import { Mark } from "@/components/mark";
 import { SetupPreview } from "../screens/onboarding";
-import { FirstRunStep } from "../screens/onboarding-steps";
+import { FirstRunStep, SETUP_STEPS } from "../screens/onboarding-steps";
 import { words } from "../wording";
 import { NAV, NAV_GROUPS } from "./pages";
 import type { Setup } from "./use-setup";
@@ -56,8 +56,8 @@ export function FirstRun({ setup, project, data, engines, onOpen }: Props) {
 
 	return (
 		<FirstRunStep
-			frame={{ product: "OpenAEO", email: words.host, steps: 6, logo: <Mark size={20} /> }}
-			step={6}
+			frame={{ product: "OpenAEO", email: words.host, steps: SETUP_STEPS, logo: <Mark size={20} /> }}
+			step={SETUP_STEPS}
 			brand={project.name}
 			finished={finished}
 			preview={

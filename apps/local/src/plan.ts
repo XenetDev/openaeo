@@ -1,7 +1,7 @@
 import type { PlanStepView, PlanView } from "./api-types";
 import { buildOpportunities } from "./opportunities";
 import { buildReport, promptStats } from "./report";
-import type { Store } from "./store/store";
+import type { Store } from "./store/types";
 
 type Step = Omit<PlanStepView, "done">;
 

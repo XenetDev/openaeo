@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { Store } from "../store/store";
+import type { Store } from "../store/types";
 
 export class HttpError extends Error {
 	readonly status: number;

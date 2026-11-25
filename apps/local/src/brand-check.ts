@@ -2,7 +2,7 @@ import { type Provider, sameSite, toDomain } from "@openaeo/engine";
 import type { BrandCheckView } from "./api-types";
 import { withLocation } from "./location";
 import { type Log, logError } from "./log";
-import type { Project } from "./store/store";
+import type { Project } from "./store/types";
 
 export type BrandCheck = BrandCheckView & { text: string };
 type Analysis = Pick<BrandCheck, "knows" | "summary" | "confusedWith" | "concerns">;

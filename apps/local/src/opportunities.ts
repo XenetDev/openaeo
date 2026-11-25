@@ -1,5 +1,5 @@
 import { sameSite, toDomain } from "@openaeo/engine";
-import type { Store } from "./store/store";
+import type { Store } from "./store/types";
 
 export type Opportunities = {
 	runId: string | null;

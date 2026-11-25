@@ -1,7 +1,7 @@
 import { type AuditResult, type Fetched, type Finding, runAudit, sameSite, toDomain } from "@openaeo/engine";
 import { type Log, logError } from "./log";
 import { createSerial } from "./serial";
-import type { Store, StoredAudit } from "./store/store";
+import type { Store, StoredAudit } from "./store/types";
 
 export type AuditErrorCode = "already_running" | "no_url" | "bad_url" | "not_found";
 

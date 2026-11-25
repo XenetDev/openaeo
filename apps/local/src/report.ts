@@ -8,7 +8,7 @@ import {
 	visibility,
 } from "@openaeo/engine";
 import type { BrandCheckView, PromptStatView } from "./api-types";
-import type { Project, Run, Store, StoredAnswer } from "./store/store";
+import type { Project, Run, Store, StoredAnswer } from "./store/types";
 
 export type Sentiment = { score: number | null; positive: number; neutral: number; negative: number };
 export type EngineReport = {

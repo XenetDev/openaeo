@@ -1,6 +1,6 @@
 import { type Log, logError } from "./log";
 import { RunError, type RunService } from "./runs";
-import type { Store } from "./store/store";
+import type { Store } from "./store/types";
 
 const DAY = 24 * 60 * 60 * 1000;
 const PERIODS: Record<string, number> = { daily: DAY, weekly: 7 * DAY };

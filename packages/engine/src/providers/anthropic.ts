@@ -21,7 +21,7 @@ export function createAnthropic(o: ApiOptions): Provider {
 					model,
 					max_tokens: 4096,
 					messages: [{ role: "user", content: prompt }],
-					tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
+					tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }],
 				},
 				apiKey: o.apiKey,
 				opts,

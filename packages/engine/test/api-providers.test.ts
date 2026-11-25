@@ -54,6 +54,7 @@ test("xAI: asks the Responses API with web search and reads text, citations and 
 	expect(f.calls[0]?.body).toMatchObject({
 		model: "grok-4.7",
 		tools: [{ type: "web_search" }],
+		max_turns: 1,
 		stream: false,
 		store: false,
 	});
@@ -146,7 +147,7 @@ test("Anthropic: text fragments are joined and citations and search results are 
 	expect(f.calls[0]?.headers["x-api-key"]).toBe("sk-ant");
 	expect(f.calls[0]?.body).toMatchObject({
 		model: "claude-sonnet-5-5",
-		tools: [{ type: "web_search_20250305", name: "web_search" }],
+		tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }],
 	});
 	expect(answer.text).toBe("I'll look that up. Pipedrive is strong for small teams.");
 	expect(answer.citations.map((c) => c.domain)).toEqual(["pipedrive.com"]);

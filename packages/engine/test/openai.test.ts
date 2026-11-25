@@ -44,7 +44,8 @@ test("sends a web search request to the Responses API", async () => {
 	expect(JSON.parse(String(calls[0]?.init.body))).toEqual({
 		model: "m1",
 		input: "best crm?",
-		tools: [{ type: "web_search" }],
+		tools: [{ type: "web_search", search_context_size: "low" }],
+		max_tool_calls: 2,
 		include: ["web_search_call.action.sources"],
 	});
 });

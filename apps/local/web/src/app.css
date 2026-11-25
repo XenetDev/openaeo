@@ -1392,3 +1392,16 @@ body,
 	border-radius: 3px;
 	background: var(--aui-green, #5fc88a);
 }
+
+.oa-steps,
+.oa-step-body ol {
+	list-style: decimal;
+}
+
+.oa-flagged ul,
+.oa-step-body ul,
+.oa-doubts ul,
+.oa-reasons ul,
+.oa-brand ul {
+	list-style: disc;
+}

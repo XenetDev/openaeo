@@ -7,6 +7,8 @@ import { brandFrom, OnboardingWebsiteScreen } from "@/components/onboarding-webs
 import { Badge } from "@/components/ui/badge-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
+import { runtime } from "../runtime";
+import { words } from "../wording";
 import { EnginesStep, LocationStep } from "./onboarding-steps";
 import { Page, ShareList } from "./shared";
 
@@ -42,8 +44,8 @@ export function SetupPreview({
 			<AppShell
 				active="Overview"
 				workspace={name}
-				workspaceMeta="Local"
-				user={{ name: "This computer" }}
+				workspaceMeta={runtime.account.plan}
+				user={{ name: runtime.account.name }}
 				nav={nav}
 				groups={groups}
 				sideCards={false}
@@ -85,7 +87,7 @@ export function SetupPreview({
 							</CardContent>
 						</Card>
 						<Card>
-							<CardHeader title="AI engines" description="The tools signed in on this computer" />
+							<CardHeader title="AI engines" description={words.previewEngines} />
 							<CardContent>
 								<div className="oa-stack" style={{ gap: 8 }}>
 									{engines
@@ -123,7 +125,7 @@ export function OnboardingFlow({
 	const [names, setNames] = useState<string[]>([]);
 	const [rivals, setRivals] = useState<string[]>([]);
 	const [location, setLocation] = useState("");
-	const frame = { product: "OpenAEO", email: "Runs on this computer", steps: 6, logo: <Mark size={20} /> };
+	const frame = { product: "OpenAEO", email: words.host, steps: 6, logo: <Mark size={20} /> };
 	const brand = names[0] ?? brandFrom(domains[0]);
 	const [found, setFound] = useState<CompetitorIdea[] | null>(null);
 	const [looking, setLooking] = useState(false);

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { Select } from "@/components/ui/select-clean";
 import { type TraceSpan, TraceWaterfall } from "@/components/ui/trace-waterfall-clean";
 import { api } from "../api";
+import { words } from "../wording";
 import { runTree } from "./run-tree";
 import { EngineLogo, engineLabel, Facts, Page, percent, span, when } from "./shared";
 
@@ -209,10 +210,7 @@ export function RunsScreen({
 							</Card>
 						) : null}
 						<Card>
-							<CardHeader
-								title="Schedule"
-								description="Automatic runs only happen while OpenAEO is open on this computer."
-							/>
+							<CardHeader title="Schedule" description={words.schedule} />
 							<CardContent>
 								<Select
 									aria-label="Run schedule"

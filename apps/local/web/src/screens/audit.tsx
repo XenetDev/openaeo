@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { CodeBlock } from "@/components/ui/code-block-clean";
 import { SegmentedControl } from "@/components/ui/segmented-control-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
+import { runtime } from "../runtime";
 import { AgentMark, FilesMark, HighMark, LowMark, MediumMark, SkippedMark } from "./command-icons";
 import { EngineLogo, Page, when } from "./shared";
 
@@ -121,17 +122,19 @@ function FixCard({ count, own, onCopyBrief }: { count: number; own: boolean; onC
 			/>
 			<CardContent>
 				<div className="oa-stack">
-					<SegmentedControl
-						aria-label="How to hand over the fixes"
-						size="sm"
-						value={way}
-						onChange={setWay}
-						options={[
-							{ value: "paste", label: "Copy and paste" },
-							{ value: "connect", label: "Connect once" },
-						]}
-					/>
-					{way === "paste" ? (
+					{!runtime.cloud && (
+						<SegmentedControl
+							aria-label="How to hand over the fixes"
+							size="sm"
+							value={way}
+							onChange={setWay}
+							options={[
+								{ value: "paste", label: "Copy and paste" },
+								{ value: "connect", label: "Connect once" },
+							]}
+						/>
+					)}
+					{runtime.cloud || way === "paste" ? (
 						<>
 							<ol className="oa-steps">
 								<li>Copy the fix brief. It lists every finding, the pages affected and how to fix each one.</li>

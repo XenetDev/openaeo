@@ -13,6 +13,7 @@ import type {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "@/components/ui/toaster-clean";
 import { ApiError, api } from "../api";
+import { words } from "../wording";
 
 export type ProjectData = {
 	competitors: EntityView[];
@@ -27,7 +28,6 @@ export type ProjectData = {
 
 const STORED_PROJECT = "openaeo.project";
 const POLL_MS = 2000;
-const LOST = "OpenAEO stopped responding. Check that it is still running in your terminal, then reload this page.";
 
 export const messageOf = (error: unknown) =>
 	error instanceof ApiError ? error.message : "Something went wrong. Try again.";
@@ -129,7 +129,7 @@ export function useWorkspace() {
 					},
 					() => {
 						misses += 1;
-						if (misses === 3) setError(LOST);
+						if (misses === 3) setError(words.lost);
 					},
 				);
 		}, POLL_MS);

@@ -20,6 +20,10 @@ body,
 	margin: 0;
 }
 
+.oa-settings-tabs {
+	margin-top: 16px;
+}
+
 .oa-stack {
 	display: flex;
 	flex-direction: column;

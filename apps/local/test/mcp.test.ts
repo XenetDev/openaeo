@@ -49,23 +49,40 @@ test("the server lists its tools with descriptions", async () => {
 	expect(tools.map((t) => t.name).sort()).toEqual([
 		"add_competitors",
 		"add_questions",
+		"cancel_run",
+		"create_brand",
+		"get_answer",
 		"get_audit",
+		"get_brand",
 		"get_fix_brief",
+		"get_opportunities",
 		"get_plan",
 		"get_report",
+		"get_schedule",
 		"list_answers",
 		"list_competitors",
 		"list_projects",
 		"list_questions",
+		"list_runs",
+		"list_sources",
 		"mark_plan_step",
 		"remove_competitor",
+		"remove_question",
 		"run_audit",
 		"run_prompts",
 		"set_question_active",
+		"set_question_tags",
+		"set_schedule",
+		"update_brand",
 	]);
 	expect(tools.every((t) => (t.description ?? "").length > 30)).toBe(true);
 	expect(tools.find((t) => t.name === "get_report")?.annotations?.readOnlyHint).toBe(true);
 	expect(tools.find((t) => t.name === "run_prompts")?.annotations?.readOnlyHint).toBe(false);
+	const readOnly = tools.filter((t) => t.annotations?.readOnlyHint).map((t) => t.name);
+	const reads = tools.map((t) => t.name).filter((name) => /^(get|list)_/.test(name));
+	expect(readOnly.sort()).toEqual(reads.sort());
+	const destructive = tools.filter((t) => t.annotations?.destructiveHint).map((t) => t.name);
+	expect(destructive.sort()).toEqual(["remove_competitor", "remove_question"]);
 });
 
 test("list_projects describes each project, or says how to create one", async () => {

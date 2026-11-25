@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { StatCard } from "@/components/ui/stat-card-clean";
 import { runtime } from "../runtime";
 import { words } from "../wording";
-import { EnginesStep, LocationStep } from "./onboarding-steps";
+import { EnginesStep, LocationStep, SETUP_STEPS } from "./onboarding-steps";
 import { Page, ShareList } from "./shared";
 
 type Props = {
@@ -125,7 +125,7 @@ export function OnboardingFlow({
 	const [names, setNames] = useState<string[]>([]);
 	const [rivals, setRivals] = useState<string[]>([]);
 	const [location, setLocation] = useState("");
-	const frame = { product: "OpenAEO", email: words.host, steps: 6, logo: <Mark size={20} /> };
+	const frame = { product: "OpenAEO", email: words.host, steps: SETUP_STEPS, logo: <Mark size={20} /> };
 	const brand = names[0] ?? brandFrom(domains[0]);
 	const [found, setFound] = useState<CompetitorIdea[] | null>(null);
 	const [looking, setLooking] = useState(false);
@@ -145,6 +145,22 @@ export function OnboardingFlow({
 		onFindCompetitors(name, domain, place || undefined).then(settle, () => settle([]));
 	};
 	const prefill = found && found.length > 0 && !touched.current ? found.map((c) => c.name) : [];
+
+	const create = (competitors: string[]) => {
+		if (busy) return;
+		const sites = new Map((found ?? []).map((c) => [c.name.toLowerCase(), c.domain]));
+		onCreate({
+			name: brand || "My brand",
+			aliases: names.slice(1),
+			domains,
+			location,
+			competitors: competitors.slice(0, 50).map((name) => {
+				const site = sites.get(name.toLowerCase());
+				return { name, aliases: [], domains: site ? [site] : [] };
+			}),
+			prompts: [],
+		});
+	};
 
 	if (step === 1) {
 		return (
@@ -223,7 +239,6 @@ export function OnboardingFlow({
 		);
 	}
 	if (step === 5) {
-		const sites = new Map((found ?? []).map((c) => [c.name.toLowerCase(), c.domain]));
 		return (
 			<EnginesStep
 				frame={frame}
@@ -241,21 +256,7 @@ export function OnboardingFlow({
 						groups={groups}
 					/>
 				}
-				onContinue={() =>
-					!busy &&
-					onCreate({
-						name: brand || "My brand",
-						aliases: names.slice(1),
-						domains,
-						location,
-						competitors: rivals.slice(0, 50).map((name) => ({
-							name,
-							aliases: [],
-							domains: sites.get(name.toLowerCase()) ? [sites.get(name.toLowerCase()) as string] : [],
-						})),
-						prompts: [],
-					})
-				}
+				onContinue={() => create(rivals)}
 			/>
 		);
 	}
@@ -300,7 +301,8 @@ export function OnboardingFlow({
 			}}
 			onContinue={(competitors) => {
 				setRivals(competitors);
-				setStep(5);
+				if (runtime.cloud) create(competitors);
+				else setStep(5);
 			}}
 		/>
 	);

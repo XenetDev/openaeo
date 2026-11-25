@@ -111,7 +111,7 @@ export function SettingsScreen({ engines, settings, project, onSave, onSaveProje
 				/>
 			) : null}
 			{hosted ? (
-				hosted.render()
+				hosted.render({ open: setTab })
 			) : (
 				<>
 					<header className="ui-sg-head">

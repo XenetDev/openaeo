@@ -10,7 +10,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control-clean";
 import { Switch } from "@/components/ui/switch-clean";
 import { TagInput } from "@/components/ui/tag-input-clean";
 import { TextField } from "@/components/ui/text-field-clean";
-import { HOST_TABS } from "../host";
+import { HOST_TABS, openingTab } from "../host";
 import { runtime } from "../runtime";
 import { words } from "../wording";
 
@@ -78,7 +78,7 @@ function ApiRow({
 }
 
 export function SettingsScreen({ engines, settings, project, onSave, onSaveProject, onDeleteProject }: Props) {
-	const [tab, setTab] = useState(BRAND_TAB);
+	const [tab, setTab] = useState(() => openingTab() ?? BRAND_TAB);
 	const hosted = HOST_TABS.find((t) => t.id === tab);
 	const [name, setName] = useState(project.name);
 	const [location, setLocation] = useState(project.location);

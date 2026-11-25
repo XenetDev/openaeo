@@ -26,9 +26,9 @@ type Props = {
 
 const SCHEDULES = [
 	{ value: "off", label: "Only when I press Run now", description: "Nothing runs on its own" },
-	{ value: "daily", label: "Once a day", description: "While OpenAEO is open" },
-	{ value: "weekly", label: "Once a week", description: "While OpenAEO is open" },
-];
+	{ value: "daily", label: "Once a day", description: words.scheduleNote },
+	{ value: "weekly", label: "Once a week", description: words.scheduleNote },
+].filter((option) => runtime.schedules.includes(option.value));
 const PERIOD: Record<string, number> = { daily: 86_400_000, weekly: 7 * 86_400_000 };
 const STATUS: Record<RunView["status"], { label: string; tone: BadgeTone }> = {
 	running: { label: "Running", tone: "info" },
@@ -210,28 +210,26 @@ export function RunsScreen({
 								</CardContent>
 							</Card>
 						) : null}
-						{runtime.cloud ? null : (
-							<Card>
-								<CardHeader title="Schedule" description={words.schedule} />
-								<CardContent>
-									<Select
-										aria-label="Run schedule"
-										options={SCHEDULES}
-										value={schedule}
-										onChange={(value, option) => onSchedule(value, String(option.label))}
-									/>
-									<p className="oa-quiet" style={{ marginTop: 10 }}>
-										{next
-											? next <= Date.now()
-												? "The next run starts within a minute."
-												: `Next run: ${when(next)}.`
-											: period
-												? "The schedule starts after your first run."
-												: "Nothing runs on its own."}
-									</p>
-								</CardContent>
-							</Card>
-						)}
+						<Card>
+							<CardHeader title="Schedule" description={words.schedule} />
+							<CardContent>
+								<Select
+									aria-label="Run schedule"
+									options={SCHEDULES}
+									value={schedule}
+									onChange={(value, option) => onSchedule(value, String(option.label))}
+								/>
+								<p className="oa-quiet" style={{ marginTop: 10 }}>
+									{next
+										? next <= Date.now()
+											? "The next run starts within a minute."
+											: `Next run: ${when(next)}.`
+										: period
+											? "The schedule starts after your first run."
+											: "Nothing runs on its own."}
+								</p>
+							</CardContent>
+						</Card>
 					</aside>
 				</div>
 			)}

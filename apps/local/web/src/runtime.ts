@@ -1,5 +1,13 @@
 import { tokenIn } from "./session";
 
+export type AccountLink = {
+	label: string;
+	href: string;
+	description?: string;
+	checked?: boolean;
+	divider?: boolean;
+};
+
 export const runtime = {
 	cloud: false,
 	url: (path: string): string => path,
@@ -8,6 +16,6 @@ export const runtime = {
 	account: {
 		name: "This computer",
 		plan: "Local",
-		links: [] as { label: string; href: string }[],
+		links: [] as AccountLink[],
 	},
 };

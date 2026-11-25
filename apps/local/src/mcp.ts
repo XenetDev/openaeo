@@ -3,8 +3,7 @@ import { type AuditResult, groupFindings, QUOTE_NOTICE } from "@openaeo/engine";
 import { z } from "zod";
 import { AuditError, type AuditService, resultOf } from "./audits";
 import { buildBrief } from "./brief";
-import { ENGINE_LABELS } from "./engine-catalog";
-import { formatReport } from "./format";
+import { engineLabel, formatReport } from "./format";
 import { type CompetitorDeps, registerCompetitorTools } from "./mcp/competitors";
 import { type McpLimits, registerQuestionTools } from "./mcp/questions";
 import { fail, isReply, oneLine, projectArg, quoted, type Reply, say } from "./mcp/shared";
@@ -73,11 +72,13 @@ export type McpDeps = CompetitorDeps & {
 	version: string;
 	words?: Partial<McpWords>;
 	limits?: McpLimits;
+	engineLabel?: (engine: string) => string;
 };
 
 export function createMcpServer(deps: McpDeps): McpServer {
 	const { store } = deps;
 	const words = { ...LOCAL_WORDS, ...deps.words };
+	const label = deps.engineLabel ?? engineLabel;
 	const server = new McpServer({ name: "openaeo", version: deps.version });
 
 	async function resolve(name: string | undefined): Promise<Project | Reply> {
@@ -136,13 +137,9 @@ export function createMcpServer(deps: McpDeps): McpServer {
 					`A run is in progress (${report.run.completed} of ${report.run.total} answers so far). Results below are partial.`,
 					"",
 				);
-			lines.push(formatReport(found.name, report));
+			lines.push(formatReport(found.name, report, label));
 			if (report.problems.length)
-				lines.push(
-					"",
-					"Problems in this run",
-					...report.problems.map((p) => `  ${ENGINE_LABELS[p.engine] ?? p.engine}: ${p.message}`),
-				);
+				lines.push("", "Problems in this run", ...report.problems.map((p) => `  ${label(p.engine)}: ${p.message}`));
 			return say(lines.join("\n"));
 		},
 	);
@@ -175,7 +172,7 @@ export function createMcpServer(deps: McpDeps): McpServer {
 					.join(" · ");
 				const cited = [...new Set(a.citations.map((c) => c.domain))].slice(0, 8).join(", ");
 				return [
-					`[${ENGINE_LABELS[a.engine] ?? a.engine}] ${prompts.get(a.promptId) ?? "(deleted question)"}`,
+					`[${label(a.engine)}] ${prompts.get(a.promptId) ?? "(deleted question)"}`,
 					`  ${verdict}`,
 					`> cited sites: ${oneLine(cited) || "none"}`,
 					quoted(a.text, 1500),

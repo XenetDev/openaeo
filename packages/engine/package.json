@@ -1,6 +1,6 @@
 {
 	"name": "@openaeo/engine",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "OpenAEO engine: ask AI engines, match brand mentions, score visibility and audit websites.",
 	"license": "MIT",
 	"repository": {

@@ -208,13 +208,15 @@ export function OverviewScreen({
 					/>
 					<CardContent>
 						<span className="oa-inline">
-							<Button
-								size="sm"
-								onClick={() => onNavigate("plan")}
-								iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
-							>
-								Open your plan
-							</Button>
+							{plan && todo.length > 0 ? null : (
+								<Button
+									size="sm"
+									onClick={() => onNavigate("plan")}
+									iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
+								>
+									Open your plan
+								</Button>
+							)}
 							<Button variant="secondary" size="sm" onClick={() => onNavigate("opportunities")}>
 								See who was named instead
 							</Button>
@@ -252,6 +254,12 @@ export function OverviewScreen({
 		);
 	}
 
+	const more = (page: PageId, label = "View all") => (
+		<Button variant="ghost" size="sm" onClick={() => onNavigate(page)}>
+			{label}
+		</Button>
+	);
+
 	const changes: MetricChange[] = previous
 		? [
 				moved("Visibility score", overall.visibility, previous.visibility, (n) => n.toFixed(1)),
@@ -281,29 +289,39 @@ export function OverviewScreen({
 				))}
 			</div>
 
-			<div className="ui-as-rev__row ui-as-rev__row--main">
-				{neverNamed ? (
-					<Card className="oa-card-fill oa-chart-empty">
-						<CardHeader title="Visibility over time" description="Your score after each run" />
-						<CardContent>
-							<EmptyState
-								bare
-								icon={ChartIncreaseIcon}
-								title={`AI is not naming ${project.name} yet`}
-								text={`Across ${trend.length} ${trend.length === 1 ? "run" : "runs"}, no engine named you for the questions you track, so there is no line to draw. Your plan lists what to change, in order.`}
-								action={
-									<Button
-										size="sm"
-										onClick={() => onNavigate("plan")}
-										iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
-									>
-										Open your plan
-									</Button>
-								}
-							/>
-						</CardContent>
-					</Card>
-				) : (
+			{plan && todo.length > 0 ? (
+				<Card>
+					<CardHeader
+						title="What to do next"
+						description={`${plan.done} of ${plan.steps.length} steps in your plan are done.`}
+						action={
+							<Button
+								size="sm"
+								onClick={() => onNavigate("plan")}
+								iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
+							>
+								Open your plan
+							</Button>
+						}
+					/>
+					<CardContent>
+						<div className="oa-next">
+							{todo.slice(0, 3).map((step) => (
+								<button key={step.id} type="button" onClick={() => onNavigate("plan")}>
+									{step.severity === "high" ? <HighMark /> : step.severity === "medium" ? <MediumMark /> : <LowMark />}
+									<span>
+										<b>{step.title}</b>
+										<small>{step.why}</small>
+									</span>
+								</button>
+							))}
+						</div>
+					</CardContent>
+				</Card>
+			) : null}
+
+			{neverNamed ? null : (
+				<div className="ui-as-rev__row ui-as-rev__row--main">
 					<ChartCard
 						tall
 						title="Visibility over time"
@@ -320,80 +338,57 @@ export function OverviewScreen({
 								: `${trend.length} runs · latest ${run ? when(run.startedAt) : ""}`
 						}
 					/>
-				)}
-				<Card>
-					<CardHeader title="By engine" description="Visibility score from each engine's answers" />
-					<CardContent>
-						<ShareList
-							items={report.engines.map((e) => ({
-								label: engineLabel(engines, e.engine),
-								value: `${e.visibility}`,
-								share: e.visibility,
-								badge: e.errors > 0 ? <Badge tone="danger">{e.errors} failed</Badge> : undefined,
-							}))}
+					<Card>
+						<CardHeader
+							title="By engine"
+							description="Visibility score from each engine's answers"
+							action={more("answers", "View answers")}
 						/>
-						{labelled > 0 ? (
-							<div className="oa-tone">
-								<span className="oa-tone-head">
-									<b>Tone when you are named</b>
-									<small>
-										{tone.positive} positive · {tone.neutral} neutral · {tone.negative} negative
-									</small>
-								</span>
-								<span
-									className="oa-tone-bar"
-									role="img"
-									aria-label={`${tone.positive} positive, ${tone.neutral} neutral, ${tone.negative} negative answers`}
-								>
-									<i data-tone="positive" style={{ flexGrow: tone.positive }} />
-									<i data-tone="neutral" style={{ flexGrow: tone.neutral }} />
-									<i data-tone="negative" style={{ flexGrow: tone.negative }} />
-								</span>
-							</div>
-						) : null}
-						<p className="oa-quiet" style={{ marginTop: 12 }}>
-							{words.engineNote}
-						</p>
-					</CardContent>
-				</Card>
-			</div>
-
-			{plan && todo.length > 0 ? (
-				<Card>
-					<CardHeader
-						title="What to do next"
-						description={`${plan.done} of ${plan.steps.length} steps in your plan are done.`}
-						action={
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={() => onNavigate("plan")}
-								iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
-							>
-								Open your plan
-							</Button>
-						}
-					/>
-					<CardContent>
-						<div className="oa-missed">
-							{todo.slice(0, 3).map((step) => (
-								<div key={step.id}>
-									{step.severity === "high" ? <HighMark /> : step.severity === "medium" ? <MediumMark /> : <LowMark />}
-									<span className="oa-grow">
-										<b>{step.title}</b>
+						<CardContent>
+							<ShareList
+								items={report.engines.map((e) => ({
+									label: engineLabel(engines, e.engine),
+									value: `${e.visibility}`,
+									share: e.visibility,
+									badge: e.errors > 0 ? <Badge tone="danger">{e.errors} failed</Badge> : undefined,
+								}))}
+							/>
+							{labelled > 0 ? (
+								<div className="oa-tone">
+									<span className="oa-tone-head">
+										<b>Tone when you are named</b>
+										<small>
+											{tone.positive} positive · {tone.neutral} neutral · {tone.negative} negative
+										</small>
+									</span>
+									<span
+										className="oa-tone-bar"
+										role="img"
+										aria-label={`${tone.positive} positive, ${tone.neutral} neutral, ${tone.negative} negative answers`}
+									>
+										<i data-tone="positive" style={{ flexGrow: tone.positive }} />
+										<i data-tone="neutral" style={{ flexGrow: tone.neutral }} />
+										<i data-tone="negative" style={{ flexGrow: tone.negative }} />
 									</span>
 								</div>
-							))}
-						</div>
-					</CardContent>
-				</Card>
-			) : null}
+							) : null}
+							<p className="oa-quiet" style={{ marginTop: 12 }}>
+								{words.engineNote}
+							</p>
+						</CardContent>
+					</Card>
+				</div>
+			)}
 
 			{report.brand.length > 0 ? <BrandChecks brand={project.name} checks={report.brand} engines={engines} /> : null}
 
 			<div className="ui-as-rev__row ui-as-rev__row--3">
 				<Card>
-					<CardHeader title="Who gets mentioned" description="Share of answers naming each brand" />
+					<CardHeader
+						title="Who gets mentioned"
+						description="Share of answers naming each brand"
+						action={more("competitors")}
+					/>
 					<CardContent>
 						<ShareList
 							items={report.competitors.slice(0, 6).map((c) => ({
@@ -406,7 +401,7 @@ export function OverviewScreen({
 					</CardContent>
 				</Card>
 				<Card className="oa-card-fill">
-					<CardHeader title="Most cited sites" description="Links in the latest answers" />
+					<CardHeader title="Most cited sites" description="Links in the latest answers" action={more("sources")} />
 					<CardContent>
 						<ShareList
 							items={report.topDomains.slice(0, 6).map((d) => ({

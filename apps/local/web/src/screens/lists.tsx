@@ -1,5 +1,5 @@
 import type { CompetitorIdea, EntityView, ProjectView, ReportView } from "@api";
-import { Add01Icon, News01Icon, SparklesIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Delete02Icon, News01Icon, SparklesIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { type ReactNode, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { Avatar } from "@/components/ui/avatar-clean";
@@ -98,10 +98,17 @@ export function CompetitorsScreen({
 			project.name.toLowerCase() === clean.toLowerCase());
 	const stats = new Map(report.competitors.map((c) => [c.name.toLowerCase(), c]));
 	const brand = report.competitors.find((c) => c.isBrand);
+	const own = brand?.name ?? project.name;
 	const rows = [
-		...(brand ? [{ name: brand.name, isBrand: true }] : [{ name: project.name, isBrand: true }]),
-		...competitors.map((c) => ({ name: c.name, isBrand: false })),
+		{ name: own, isBrand: true, detail: project.domains[0] ?? "" },
+		...competitors.map((c) => ({
+			name: c.name,
+			isBrand: false,
+			detail: [c.domains[0], c.aliases.length ? `also: ${c.aliases.join(", ")}` : ""].filter(Boolean).join(" · "),
+		})),
 	];
+	const [picked, setPicked] = useState<string[]>([]);
+	const chosen = competitors.filter((c) => picked.includes(c.name));
 	const reset = () => {
 		setName("");
 		setSite("");
@@ -135,6 +142,19 @@ export function CompetitorsScreen({
 			actions={
 				<>
 					{filter}
+					{chosen.length > 0 ? (
+						<Button
+							variant="destructive"
+							size="sm"
+							icon={<Icon icon={Delete02Icon} size={14} />}
+							onClick={() => {
+								onSave(competitors.filter((c) => !picked.includes(c.name)));
+								setPicked([]);
+							}}
+						>
+							{`Remove ${chosen.length}`}
+						</Button>
+					) : null}
 					{canFind ? (
 						<Button
 							variant="ghost"
@@ -153,10 +173,11 @@ export function CompetitorsScreen({
 			}
 		>
 			<DataTable
-				title="Who gets named in the latest answers"
+				title="You and your competitors in the latest answers"
 				editable={false}
 				columns={[
 					{ key: "brand", label: "Brand", type: "title" },
+					{ key: "site", label: "Website", type: "text" },
 					{ key: "share", label: "Share of answers", type: "text", width: "160px" },
 					{ key: "position", label: "Average position", type: "text", width: "160px" },
 					{ key: "who", label: "Whose", type: "tag", width: "140px" },
@@ -167,12 +188,14 @@ export function CompetitorsScreen({
 						id: row.name,
 						logo: <Avatar name={row.name} size={20} shape="square" />,
 						brand: row.name,
+						site: row.detail,
 						share: stat ? `${Math.round(stat.mentionRate * 100)}%` : "Not run yet",
 						position: !stat ? "Not run yet" : stat.averageRank === null ? "Not named" : stat.averageRank.toFixed(1),
 						who: row.isBrand ? "You" : "Competitor",
 					};
 				})}
 				tagTones={{ You: "green", Competitor: "gray" }}
+				onSelectionChange={setPicked}
 			/>
 
 			{finding ? (
@@ -265,38 +288,7 @@ export function CompetitorsScreen({
 						}
 					/>
 				</div>
-			) : (
-				<Card>
-					<CardHeader title="Tracked competitors" description="Changes apply from the next run." />
-					<CardContent>
-						<div className="oa-missed">
-							{competitors.map((c) => (
-								<div key={c.name}>
-									<Avatar name={c.name} size={20} shape="square" />
-									<span className="oa-grow">
-										<b>{c.name}</b>
-										{c.domains[0] || c.aliases.length ? (
-											<span>
-												{[c.domains[0], c.aliases.length ? `also: ${c.aliases.join(", ")}` : ""]
-													.filter(Boolean)
-													.join(" · ")}
-											</span>
-										) : null}
-									</span>
-									<Button
-										variant="ghost"
-										size="sm"
-										aria-label={`Remove ${c.name}`}
-										onClick={() => onSave(competitors.filter((x) => x.name !== c.name))}
-									>
-										Remove
-									</Button>
-								</div>
-							))}
-						</div>
-					</CardContent>
-				</Card>
-			)}
+			) : null}
 
 			<Dialog
 				open={open}

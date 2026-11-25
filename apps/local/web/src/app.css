@@ -542,6 +542,10 @@ body,
 	outline-offset: 2px;
 }
 
+.oa-next > button > :first-child {
+	flex: none;
+}
+
 .oa-next > button > span {
 	display: grid;
 	gap: 2px;

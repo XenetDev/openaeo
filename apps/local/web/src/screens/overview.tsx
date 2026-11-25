@@ -294,15 +294,7 @@ export function OverviewScreen({
 					<CardHeader
 						title="What to do next"
 						description={`${plan.done} of ${plan.steps.length} steps in your plan are done.`}
-						action={
-							<Button
-								size="sm"
-								onClick={() => onNavigate("plan")}
-								iconRight={<Icon icon={ArrowRight02Icon} size={14} />}
-							>
-								Open your plan
-							</Button>
-						}
+						action={more("plan", "Open your plan")}
 					/>
 					<CardContent>
 						<div className="oa-next">

@@ -241,3 +241,18 @@ test("a direct answer is expected on articles and question pages, not on product
 	expect(ids(checkPage(page(question, head, "https://acme.com/product/calendar"), NOW))).toContain("no-direct-answer");
 	expect(ids(checkPage(page(product, head, "https://acme.com/blog/calendar"), NOW))).toContain("no-direct-answer");
 });
+
+test("question headings that only link to other pages are a list of articles, not an FAQ", () => {
+	const titles = ["What is AEO?", "How do I track AI answers?", "Which tools are free?"];
+	const index = titles
+		.map((title, i) => `<article><h2><a href="/blog/post-${i}">${title}</a></h2><p>${"word ".repeat(30)}</p></article>`)
+		.join("");
+	const head = '<title>Blog</title><script type="application/ld+json">{"@type":"Blog"}</script>';
+	expect(ids(checkPage(page(`<h1>Blog</h1>${index}`, head, "https://example.com/blog"), NOW))).not.toContain(
+		"faq-without-schema",
+	);
+	const plain = titles.map((title) => `<h2>${title}</h2><p>${"word ".repeat(30)}</p>`).join("");
+	expect(ids(checkPage(page(`<h1>Blog</h1>${plain}`, head, "https://example.com/blog"), NOW))).toContain(
+		"faq-without-schema",
+	);
+});

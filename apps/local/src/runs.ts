@@ -4,7 +4,7 @@ import { withLocation } from "./location";
 import { type Log, logError } from "./log";
 import { labelSentiment } from "./sentiment";
 import { createSerial } from "./serial";
-import type { Awaitable, Run, Store } from "./store/store";
+import type { Awaitable, Run, Store } from "./store/types";
 
 export type RunErrorCode = "already_running" | "no_prompts" | "no_engines" | "not_found";
 

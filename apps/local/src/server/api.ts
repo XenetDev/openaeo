@@ -4,7 +4,7 @@ import type { CompetitorContext, CompetitorIdea } from "../competitor-ideas";
 import type { EngineStatus } from "../engine-catalog";
 import { type Log, logError } from "../log";
 import type { RunService } from "../runs";
-import type { Awaitable, Store } from "../store/store";
+import type { Awaitable, Store } from "../store/types";
 import type { SuggestContext } from "../suggest";
 import { HttpError, json } from "./http";
 import { createRouter } from "./router";

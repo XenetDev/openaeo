@@ -1,4 +1,4 @@
-import type { Store } from "./store/store";
+import type { Store } from "./store/types";
 
 type Cell = string | number | null;
 

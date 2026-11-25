@@ -10,6 +10,7 @@ First public release.
 - A plan of concrete steps to get recommended, built from your results, with progress
 - Sentiment score, overall and per engine, with a trend
 - A location per brand, so every question is asked as a buyer there would ask it
+- An anonymous, optional install count, described in the README and off until its address is set
 - Tags on questions, with filtering, and a CSV export of answers
 - Answers, Sources, Competitors and Opportunities pages
 - Website audit with fixes and a brief for your AI agent

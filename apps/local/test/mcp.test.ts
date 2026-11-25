@@ -45,15 +45,21 @@ test("the server lists its tools with descriptions", async () => {
 	const { client } = await setup();
 	const { tools } = await client.listTools();
 	expect(tools.map((t) => t.name).sort()).toEqual([
+		"add_competitors",
+		"add_questions",
 		"get_audit",
 		"get_fix_brief",
 		"get_plan",
 		"get_report",
 		"list_answers",
+		"list_competitors",
 		"list_projects",
+		"list_questions",
 		"mark_plan_step",
+		"remove_competitor",
 		"run_audit",
 		"run_prompts",
+		"set_question_active",
 	]);
 	expect(tools.every((t) => (t.description ?? "").length > 30)).toBe(true);
 	expect(tools.find((t) => t.name === "get_report")?.annotations?.readOnlyHint).toBe(true);

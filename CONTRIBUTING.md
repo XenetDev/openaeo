@@ -35,3 +35,7 @@ Files that start with the affectUI Pro notice are not MIT and must keep that not
 ## Reporting bugs
 
 Open an issue with what you did, what you expected and what happened. Include your operating system and the output of `openaeo --version`. Remove API keys and private data from anything you paste.
+
+## Conduct
+
+By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).

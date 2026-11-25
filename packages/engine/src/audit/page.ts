@@ -1,7 +1,7 @@
 import { type HTMLElement, parse } from "node-html-parser";
 import { sameSite, toDomain } from "../url";
 
-export type Heading = { level: number; text: string; following: string };
+export type Heading = { level: number; text: string; following: string; linked: boolean };
 
 export type PageModel = {
 	url: string;
@@ -128,7 +128,13 @@ export function parsePage(url: string, html: string): PageModel {
 			const last = headings.at(-1);
 			if (last && !last.following && text) last.following = text;
 		} else if (text) {
-			headings.push({ level: Number(tag.slice(1)), text, following: "" });
+			const link = node.querySelector("a[href]") ?? node.closest("a[href]");
+			headings.push({
+				level: Number(tag.slice(1)),
+				text,
+				following: "",
+				linked: link !== null && clean(link.text).includes(text),
+			});
 		}
 	}
 

@@ -227,7 +227,7 @@ export function checkPage(page: PageModel, now: number = Date.now()): Finding[] 
 
 	const sub = page.headings.filter((h) => h.level === 2 || h.level === 3);
 	const questions = sub.filter((h) => QUESTION.test(h.text));
-	const explicit = sub.filter((h) => /\?\s*$/.test(h.text));
+	const explicit = sub.filter((h) => !h.linked && /\?\s*$/.test(h.text));
 	const long = page.words > 300;
 	if (long && article && sub.length > 0 && questions.length === 0) {
 		add(

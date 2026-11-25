@@ -69,8 +69,8 @@ export function createMcpServer(deps: {
 	const { store } = deps;
 	const server = new McpServer({ name: "openaeo", version: deps.version });
 
-	function resolve(name: string | undefined): Project | Reply {
-		const projects = store.projects.list();
+	async function resolve(name: string | undefined): Promise<Project | Reply> {
+		const projects = await store.projects.list();
 		if (projects.length === 0)
 			return fail(
 				"There is no project yet. Ask the user to run `openaeo` and set up their brand in the dashboard first.",
@@ -89,29 +89,26 @@ export function createMcpServer(deps: {
 			annotations: { readOnlyHint: true },
 		},
 		async () => {
-			const projects = store.projects.list();
+			const projects = await store.projects.list();
 			if (projects.length === 0)
 				return say("There is no project yet. The user sets one up by running `openaeo` and filling in the dashboard.");
-			return say(
-				projects
-					.map((p) => {
-						const active = store.prompts.list(p.id).filter((q) => q.active).length;
-						const run = store.runs.latest(p.id);
-						const audit = store.audits.latest(p.id);
-						return [
-							`${p.name}${p.domains.length ? ` (${p.domains.join(", ")})` : ""}`,
-							`  ${active} active ${active === 1 ? "question" : "questions"}; competitors: ${
-								store.competitors
-									.list(p.id)
-									.map((c) => c.name)
-									.join(", ") || "none"
-							}`,
-							`  Latest run: ${run ? `${run.status}, ${new Date(run.startedAt).toISOString().slice(0, 16)}` : "no runs yet"}`,
-							`  Latest audit: ${audit ? `${audit.status}${audit.score === null ? "" : `, score ${audit.score}/100`}` : "no audit yet"}`,
-						].join("\n");
-					})
-					.join("\n\n"),
+			const blocks = await Promise.all(
+				projects.map(async (p) => {
+					const active = (await store.prompts.list(p.id)).filter((q) => q.active).length;
+					const run = await store.runs.latest(p.id);
+					const audit = await store.audits.latest(p.id);
+					const competitors = await store.competitors.list(p.id);
+					return [
+						`${p.name}${p.domains.length ? ` (${p.domains.join(", ")})` : ""}`,
+						`  ${active} active ${active === 1 ? "question" : "questions"}; competitors: ${
+							competitors.map((c) => c.name).join(", ") || "none"
+						}`,
+						`  Latest run: ${run ? `${run.status}, ${new Date(run.startedAt).toISOString().slice(0, 16)}` : "no runs yet"}`,
+						`  Latest audit: ${audit ? `${audit.status}${audit.score === null ? "" : `, score ${audit.score}/100`}` : "no audit yet"}`,
+					].join("\n");
+				}),
 			);
+			return say(blocks.join("\n\n"));
 		},
 	);
 
@@ -124,9 +121,9 @@ export function createMcpServer(deps: {
 			annotations: { readOnlyHint: true },
 		},
 		async ({ project }) => {
-			const found = resolve(project);
+			const found = await resolve(project);
 			if (isReply(found)) return found;
-			const report = buildReport(store, found.id);
+			const report = await buildReport(store, found.id);
 			if (!report.run) return say(`No runs yet for ${found.name}. Use run_prompts to start one.`);
 			const lines: string[] = [];
 			if (report.run.status === "running")
@@ -157,12 +154,12 @@ export function createMcpServer(deps: {
 			annotations: { readOnlyHint: true },
 		},
 		async ({ project, limit }) => {
-			const found = resolve(project);
+			const found = await resolve(project);
 			if (isReply(found)) return found;
-			const run = store.runs.latest(found.id);
-			const answers = run ? store.answers.listByRun(run.id).filter((a) => a.errorCode === null) : [];
+			const run = await store.runs.latest(found.id);
+			const answers = run ? (await store.answers.listByRun(run.id)).filter((a) => a.errorCode === null) : [];
 			if (answers.length === 0) return say(`No answers yet for ${found.name}. Use run_prompts to start a run.`);
-			const prompts = new Map(store.prompts.list(found.id).map((p) => [p.id, p.text]));
+			const prompts = new Map((await store.prompts.list(found.id)).map((p) => [p.id, p.text]));
 			const blocks = answers.slice(0, limit ?? 10).map((a) => {
 				const verdict = [
 					a.brandRank === null ? `${found.name} not mentioned` : `mentioned ${ordinal(a.brandRank)}`,
@@ -196,13 +193,13 @@ export function createMcpServer(deps: {
 			annotations: { readOnlyHint: true },
 		},
 		async ({ project }) => {
-			const found = resolve(project);
+			const found = await resolve(project);
 			if (isReply(found)) return found;
-			const audit = store.audits.latest(found.id, { ownOnly: true });
+			const audit = await store.audits.latest(found.id, { ownOnly: true });
 			if (!audit) return say(`No audit yet for ${found.name}. Use run_audit to run one.`);
 			if (audit.status !== "done")
 				return say(`The latest audit of ${audit.origin} is ${audit.status}. Use run_audit to run it again.`);
-			return say(auditForAgent(resultOf(audit, store.audits.findings(audit.id))));
+			return say(auditForAgent(resultOf(audit, await store.audits.findings(audit.id))));
 		},
 	);
 
@@ -215,11 +212,11 @@ export function createMcpServer(deps: {
 			annotations: { readOnlyHint: true },
 		},
 		async ({ project }) => {
-			const found = resolve(project);
+			const found = await resolve(project);
 			if (isReply(found)) return found;
-			const audit = store.audits.latest(found.id, { ownOnly: true });
+			const audit = await store.audits.latest(found.id, { ownOnly: true });
 			if (audit?.status !== "done") return say(`No audit yet for ${found.name}. Use run_audit to run one.`);
-			return say(buildBrief(store, audit));
+			return say(await buildBrief(store, audit));
 		},
 	);
 
@@ -232,10 +229,10 @@ export function createMcpServer(deps: {
 			annotations: { readOnlyHint: false, openWorldHint: true },
 		},
 		async ({ project }) => {
-			const found = resolve(project);
+			const found = await resolve(project);
 			if (isReply(found)) return found;
 			try {
-				const run = deps.runs.start(found.id);
+				const run = await deps.runs.start(found.id);
 				return say(
 					`Started a run for ${found.name}: ${run.total} answers to collect. Call get_report in a few minutes to see the results.`,
 				);
@@ -264,15 +261,15 @@ export function createMcpServer(deps: {
 			annotations: { readOnlyHint: false, openWorldHint: true },
 		},
 		async ({ project, url }) => {
-			const found = resolve(project);
+			const found = await resolve(project);
 			if (isReply(found)) return found;
 			try {
-				const audit = await deps.audits.wait(deps.audits.start(found.id, url).id);
+				const audit = await deps.audits.wait((await deps.audits.start(found.id, url)).id);
 				if (audit.status !== "done") return fail("The audit was interrupted before it finished.");
 				const note = audit.own
 					? "Use get_fix_brief for full fixing instructions."
 					: "This address is not the project's own website, so it was not saved as the project's audit.";
-				return say(`${note}\n\n${auditForAgent(resultOf(audit, store.audits.findings(audit.id)))}`);
+				return say(`${note}\n\n${auditForAgent(resultOf(audit, await store.audits.findings(audit.id)))}`);
 			} catch (error) {
 				if (error instanceof AuditError) return fail(error.message);
 				throw error;

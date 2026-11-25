@@ -34,8 +34,8 @@ export async function read<S extends z.ZodType>(request: Request, schema: S): Pr
 	return parsed.data;
 }
 
-export function requireProject(store: Store, id: string) {
-	const found = store.projects.get(id);
+export async function requireProject(store: Store, id: string) {
+	const found = await store.projects.get(id);
 	if (!found) throw notFound("That project");
 	return found;
 }

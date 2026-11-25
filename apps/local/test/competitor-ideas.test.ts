@@ -73,7 +73,7 @@ test("the project route sends tracked questions and answers, and leaves out comp
 	const project = seed(store, ["best crm?"]);
 	const engine = fakeProvider("claude-cli", () => "HubSpot and Zoho lead.");
 	const runs = createRunService({ store, providers: () => [engine.provider] });
-	await runs.wait(runs.start(project.id).id);
+	await runs.wait((await runs.start(project.id)).id);
 	let seen: unknown = null;
 	const handler = createHandler({
 		store,

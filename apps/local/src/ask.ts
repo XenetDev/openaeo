@@ -74,15 +74,15 @@ const oneLine = (text: string, max: number) => {
 	return flat.length > max ? `${flat.slice(0, max)}…` : flat;
 };
 
-export function askContext(store: Store, project: Project): AskContext {
+export async function askContext(store: Store, project: Project): Promise<AskContext> {
 	const facts: string[] = [`Brand: ${project.name}${project.domains.length ? ` (${project.domains.join(", ")})` : ""}`];
 	const quoted: string[] = [];
 	if (project.location) facts.push(`Location of the brand's buyers: ${project.location}`);
-	const competitors = store.competitors.list(project.id).map((c) => c.name);
+	const competitors = (await store.competitors.list(project.id)).map((c) => c.name);
 	if (competitors.length) facts.push(`Competitors being tracked: ${competitors.join(", ")}`);
 
-	const finished = store.runs.list(project.id, 10).find((r) => r.status !== "running");
-	const report = buildReport(store, project.id, { runId: finished?.id });
+	const finished = (await store.runs.list(project.id, 10)).find((r) => r.status !== "running");
+	const report = await buildReport(store, project.id, { runId: finished?.id });
 	const run = finished && report.run ? report.run : null;
 	if (!run) {
 		facts.push("No run has finished yet, so there are no answers or figures to analyse.");
@@ -104,7 +104,7 @@ export function askContext(store: Store, project: Project): AskContext {
 			facts.push(
 				`Share of answers naming each brand: ${report.competitors.map((c) => `${c.name}${c.isBrand ? " (the user's brand)" : ""} ${pct(c.mentionRate)}`).join("; ")}`,
 			);
-		for (const stat of promptStats(store, project.id)) {
+		for (const stat of await promptStats(store, project.id)) {
 			if (stat.latest !== null)
 				quoted.push(
 					`Tracked question "${oneLine(stat.text, 160)}": the brand is named in ${pct(stat.latest)} of latest answers${stat.previous === null ? "" : ` (was ${pct(stat.previous)})`}.`,
@@ -115,7 +115,7 @@ export function askContext(store: Store, project: Project): AskContext {
 			quoted.push(
 				`Asked about the brand by name, ${check.engine} ${check.knows ? KNOWS[check.knows] : "answered"}${check.summary ? `: ${oneLine(check.summary, 200)}` : ""}. Own website used as a source: ${check.ownSiteUsed ? "yes" : "no"}. Sources: ${check.sources.slice(0, 6).join(", ") || "none"}.${check.concerns.length ? ` Doubts raised: ${oneLine(check.concerns.join(" "), 300)}` : ""}`,
 			);
-		const found = buildOpportunities(store, project.id);
+		const found = await buildOpportunities(store, project.id);
 		for (const miss of found.missed.slice(0, 10))
 			quoted.push(
 				`Missed question "${oneLine(miss.question, 160)}": the brand is not named by ${miss.engines.join(", ")}, but these are: ${miss.named.join(", ")}.`,
@@ -141,21 +141,18 @@ export function askContext(store: Store, project: Project): AskContext {
 					.map((d) => `${d.domain} (${d.citations}${d.isBrand ? ", the user's own" : ""})`)
 					.join(", ")}`,
 			);
-		const texts = new Map(store.prompts.list(project.id).map((p) => [p.id, p.text]));
-		for (const answer of store.answers
-			.listByRun(run.id)
-			.filter((a) => a.errorCode === null)
-			.slice(0, 12)) {
+		const texts = new Map((await store.prompts.list(project.id)).map((p) => [p.id, p.text]));
+		for (const answer of (await store.answers.listByRun(run.id)).filter((a) => a.errorCode === null).slice(0, 12)) {
 			quoted.push(
 				`[${answer.engine}] asked "${oneLine(texts.get(answer.promptId) ?? "", 120)}" answered: ${oneLine(answer.text, 500)}`,
 			);
 		}
 	}
 
-	const audit = store.audits.latest(project.id);
+	const audit = await store.audits.latest(project.id);
 	if (audit && audit.status === "done") {
 		const counts = new Map<string, { severity: string; pages: number }>();
-		for (const finding of store.audits.findings(audit.id))
+		for (const finding of await store.audits.findings(audit.id))
 			counts.set(finding.title, { severity: finding.severity, pages: (counts.get(finding.title)?.pages ?? 0) + 1 });
 		facts.push(`Site audit: score ${audit.score ?? 0} of 100, ${audit.pages.length} pages read.`);
 		for (const [title, info] of counts)

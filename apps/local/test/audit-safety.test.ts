@@ -126,10 +126,10 @@ test("a project with no website treats whatever it audits as its own", async () 
 	const store = freshStore();
 	const project = store.projects.create({ name: "NoSite", aliases: [], domains: [] });
 	const audits = createAuditService({ store, get });
-	const done = await audits.wait(audits.start(project.id, "pipedrive.com").id);
+	const done = await audits.wait((await audits.start(project.id, "pipedrive.com")).id);
 	expect(done.own).toBe(true);
 	const sub = store.projects.create({ name: "Sub", aliases: [], domains: ["https://www.pipedrive.com/"] });
-	expect((await audits.wait(audits.start(sub.id, "pipedrive.com").id)).own).toBe(true);
+	expect((await audits.wait((await audits.start(sub.id, "pipedrive.com")).id)).own).toBe(true);
 });
 
 test("the brief for an unfinished audit is refused, not reported as clean", async () => {

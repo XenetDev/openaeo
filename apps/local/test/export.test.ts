@@ -21,10 +21,10 @@ test("the answers export has one row per answer with what each engine said about
 		citations: [src("https://pipedrive.com/pricing"), src("https://g2.com/x")],
 	}));
 	const runs = createRunService({ store, providers: () => [claude.provider] });
-	const run = await runs.wait(runs.start(project.id).id);
+	const run = await runs.wait((await runs.start(project.id)).id);
 	store.answers.setSentiment(store.answers.listByRun(run.id)[0]?.id as string, "positive");
 
-	const [header, row, tail] = answersCsv(store, project.id).split("\r\n");
+	const [header, row, tail] = (await answersCsv(store, project.id)).split("\r\n");
 	expect(header).toBe(
 		"run_started,engine,model,question,tags,mentioned,position,own_site_cited,sentiment,brands_named,cited_sites,error,answer",
 	);
@@ -36,5 +36,5 @@ test("the answers export has one row per answer with what each engine said about
 	expect(row).toContain("HubSpot; Pipedrive");
 	expect(row).toContain("pipedrive.com; g2.com");
 	expect(tail).toBe("");
-	expect(answersCsv(store, seed(freshStore()).id)).toBe(`${header}\r\n`);
+	expect(await answersCsv(store, seed(freshStore()).id)).toBe(`${header}\r\n`);
 });

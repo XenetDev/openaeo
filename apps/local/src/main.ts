@@ -72,7 +72,7 @@ if (args.command === "status") {
 			? `Projects: ${projects.map((p) => p.name).join(", ")}`
 			: "No project yet. Run `openaeo` to set one up.",
 	);
-	for (const engine of detectEngines(engineDeps)) {
+	for (const engine of await detectEngines(engineDeps)) {
 		out(
 			`${engine.label.padEnd(18)}${engine.available ? (engine.enabled ? "ready" : "turned off") : `unavailable: ${engine.reason}`}`,
 		);
@@ -99,7 +99,7 @@ if (args.command === "run") {
 
 const token = randomBytes(24).toString("hex");
 const assets = Object.keys(embedded).length > 0 ? embeddedAssets(embedded) : diskAssets();
-const firstProvider = () => buildProviders(engineDeps)[0] ?? null;
+const firstProvider = async () => (await buildProviders(engineDeps))[0] ?? null;
 const first = args.port ?? 4747;
 const server = listen({
 	first,
@@ -113,10 +113,11 @@ const server = listen({
 			token,
 			port,
 			assets,
-			suggest: (context) => suggestPrompts(firstProvider(), context),
+			suggest: async (context) => suggestPrompts(await firstProvider(), context),
 			describeSite: createSiteDescriber(get),
-			competitorIdeas: (context) => suggestCompetitors(firstProvider(), context),
-			askProvider: (engine) => buildProviders(engineDeps).find((p) => p.id === engine) ?? firstProvider(),
+			competitorIdeas: async (context) => suggestCompetitors(await firstProvider(), context),
+			askProvider: async (engine) =>
+				(await buildProviders(engineDeps)).find((p) => p.id === engine) ?? (await firstProvider()),
 		}),
 });
 if (!server) {

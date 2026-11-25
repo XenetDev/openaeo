@@ -27,9 +27,9 @@ function site(delayMs = 0) {
 	return { get, calls };
 }
 
-function codeOf(run: () => unknown) {
+async function codeOf(run: () => unknown) {
 	try {
-		run();
+		await run();
 	} catch (error) {
 		if (error instanceof AuditError) return error.code;
 		throw error;
@@ -41,7 +41,7 @@ test("an audit of the project's site is stored with its findings", async () => {
 	const store = freshStore();
 	const project = seed(store);
 	const audits = createAuditService({ store, get: site().get });
-	const started = audits.start(project.id);
+	const started = await audits.start(project.id);
 	expect(started.status).toBe("running");
 	expect(started.origin).toBe("https://pipedrive.com");
 	const done = await audits.wait(started.id);
@@ -59,21 +59,21 @@ test("a different address can be audited, and a bare domain is accepted", async 
 	const store = freshStore();
 	const project = seed(store);
 	const audits = createAuditService({ store, get: site().get });
-	const done = await audits.wait(audits.start(project.id, "other.example").id);
+	const done = await audits.wait((await audits.start(project.id, "other.example")).id);
 	expect(done.origin).toBe("https://other.example");
 	expect(done.status).toBe("done");
 });
 
-test("start refuses when it cannot audit", () => {
+test("start refuses when it cannot audit", async () => {
 	const store = freshStore();
 	const project = seed(store);
 	const audits = createAuditService({ store, get: site(100).get });
-	expect(codeOf(() => audits.start("missing"))).toBe("not_found");
-	expect(codeOf(() => audits.start(project.id, "not a url at all"))).toBe("bad_url");
+	expect(await codeOf(() => audits.start("missing"))).toBe("not_found");
+	expect(await codeOf(() => audits.start(project.id, "not a url at all"))).toBe("bad_url");
 	const noSite = store.projects.create({ name: "NoSite", aliases: [], domains: [] });
-	expect(codeOf(() => audits.start(noSite.id))).toBe("no_url");
-	const first = audits.start(project.id);
-	expect(codeOf(() => audits.start(project.id))).toBe("already_running");
+	expect(await codeOf(() => audits.start(noSite.id))).toBe("no_url");
+	const first = await audits.start(project.id);
+	expect(await codeOf(() => audits.start(project.id))).toBe("already_running");
 	audits.cancel(first.id);
 });
 
@@ -81,10 +81,10 @@ test("a cancelled audit is marked interrupted and a new one can start", async ()
 	const store = freshStore();
 	const project = seed(store);
 	const audits = createAuditService({ store, get: site(40).get });
-	const first = audits.start(project.id);
+	const first = await audits.start(project.id);
 	audits.cancel(first.id);
 	expect((await audits.wait(first.id)).status).toBe("interrupted");
-	const second = audits.start(project.id);
+	const second = await audits.start(project.id);
 	audits.cancel(second.id);
 	await audits.wait(second.id);
 });
@@ -98,7 +98,7 @@ test("an unreachable site finishes as done with the reason as a finding", async 
 			throw new Error("Could not reach pipedrive.com");
 		},
 	});
-	const done = await audits.wait(audits.start(project.id).id);
+	const done = await audits.wait((await audits.start(project.id)).id);
 	expect(done.status).toBe("done");
 	expect(done.score).toBe(0);
 	expect(store.audits.findings(done.id)[0]?.checkId).toBe("site-unreachable");
@@ -117,7 +117,7 @@ test("deleting a project removes its audits and findings", async () => {
 	const store = freshStore();
 	const project = seed(store);
 	const audits = createAuditService({ store, get: site().get });
-	const done = await audits.wait(audits.start(project.id).id);
+	const done = await audits.wait((await audits.start(project.id)).id);
 	store.projects.remove(project.id);
 	expect(store.audits.get(done.id)).toBeNull();
 	expect(store.audits.findings(done.id)).toEqual([]);
@@ -137,7 +137,7 @@ test("deleting a project stops its running audit", async () => {
 	};
 	const runs = createRunService({ store, providers: () => [] });
 	const handler = createHandler({ store, runs, audits, engines: () => [], token: "t", port: 4747, assets: () => null });
-	const started = audits.start(project.id);
+	const started = await audits.start(project.id);
 	const response = await handler(
 		new Request(`http://127.0.0.1:4747/api/projects/${project.id}`, {
 			method: "DELETE",
@@ -306,6 +306,6 @@ test("the stored audit records the address the site redirected to", async () => 
 			: { url: final, status: 404, contentType: "text/html", text: "", redirects: [] };
 	};
 	const audits = createAuditService({ store, get });
-	const done = await audits.wait(audits.start(project.id).id);
+	const done = await audits.wait((await audits.start(project.id)).id);
 	expect(done.origin).toBe("https://www.pipedrive.com");
 });

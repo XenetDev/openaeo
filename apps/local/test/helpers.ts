@@ -8,9 +8,9 @@ import {
 } from "@openaeo/engine";
 import type { Log } from "../src/log";
 import { openDb } from "../src/store/db";
-import { createStore } from "../src/store/store";
+import { createStore, type SqliteStore } from "../src/store/store";
 
-export const freshStore = () => createStore(openDb(":memory:"));
+export const freshStore = (): SqliteStore => createStore(openDb(":memory:"));
 
 export const src = (url: string): Source => ({ url, domain: new URL(url).hostname.replace(/^www\./, "") });
 
@@ -54,7 +54,7 @@ export function fakeProvider(
 	return { provider, calls };
 }
 
-export function seed(store: ReturnType<typeof freshStore>, prompts = ["best crm?", "cheapest crm?"]) {
+export function seed(store: SqliteStore, prompts = ["best crm?", "cheapest crm?"]) {
 	const project = store.projects.create({ name: "Pipedrive", aliases: [], domains: ["pipedrive.com"] });
 	store.competitors.replace(project.id, [
 		{ name: "HubSpot", aliases: [], domains: ["hubspot.com"] },

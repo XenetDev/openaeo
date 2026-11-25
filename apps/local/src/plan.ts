@@ -11,33 +11,33 @@ const engines = (count: number) => (count === 1 ? "1 engine" : `${count} engines
 const link = (domain: string) => ({ label: domain, url: `https://${domain}` });
 const doneKey = (projectId: string) => `plan.done.${projectId}`;
 
-function doneSteps(store: Store, projectId: string): string[] {
+async function doneSteps(store: Store, projectId: string): Promise<string[]> {
 	try {
-		const parsed: unknown = JSON.parse(store.settings.get(doneKey(projectId)) ?? "[]");
+		const parsed: unknown = JSON.parse((await store.settings.get(doneKey(projectId))) ?? "[]");
 		return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
 	} catch {
 		return [];
 	}
 }
 
-export function setStepDone(store: Store, projectId: string, stepId: string, done: boolean): void {
-	const current = doneSteps(store, projectId).filter((id) => id !== stepId);
-	store.settings.set(doneKey(projectId), JSON.stringify(done ? [...current, stepId] : current));
+export async function setStepDone(store: Store, projectId: string, stepId: string, done: boolean): Promise<void> {
+	const current = (await doneSteps(store, projectId)).filter((id) => id !== stepId);
+	await store.settings.set(doneKey(projectId), JSON.stringify(done ? [...current, stepId] : current));
 }
 
-export function forgetPlan(store: Store, projectId: string): void {
-	store.settings.remove(doneKey(projectId));
+export async function forgetPlan(store: Store, projectId: string): Promise<void> {
+	await store.settings.remove(doneKey(projectId));
 }
 
-function buildSteps(store: Store, projectId: string): Step[] {
-	const project = store.projects.get(projectId);
-	const finished = store.runs.list(projectId, 10).find((run) => run.status !== "running");
+async function buildSteps(store: Store, projectId: string): Promise<Step[]> {
+	const project = await store.projects.get(projectId);
+	const finished = (await store.runs.list(projectId, 10)).find((run) => run.status !== "running");
 	if (!project || !finished) return [];
 	const name = project.name;
-	const report = buildReport(store, projectId, { runId: finished.id });
+	const report = await buildReport(store, projectId, { runId: finished.id });
 	const { metrics } = report.overall;
 	const checks = report.brand;
-	const found = buildOpportunities(store, projectId);
+	const found = await buildOpportunities(store, projectId);
 	const steps: Step[] = [];
 
 	const strangers = checks.filter((check) => check.knows === "no");
@@ -78,7 +78,7 @@ function buildSteps(store: Store, projectId: string): Step[] {
 			page: null,
 		});
 
-	const unnamed = promptStats(store, projectId)
+	const unnamed = (await promptStats(store, projectId))
 		.filter((stat) => stat.active && stat.latest === 0)
 		.map((stat) => stat.text);
 	if (unnamed.length > 0) {
@@ -176,8 +176,8 @@ function buildSteps(store: Store, projectId: string): Step[] {
 	return steps;
 }
 
-export function buildPlan(store: Store, projectId: string): PlanView {
-	const done = new Set(doneSteps(store, projectId));
-	const steps = buildSteps(store, projectId).map((step) => ({ ...step, done: done.has(step.id) }));
+export async function buildPlan(store: Store, projectId: string): Promise<PlanView> {
+	const done = new Set(await doneSteps(store, projectId));
+	const steps = (await buildSteps(store, projectId)).map((step) => ({ ...step, done: done.has(step.id) }));
 	return { steps, done: steps.filter((step) => step.done).length };
 }

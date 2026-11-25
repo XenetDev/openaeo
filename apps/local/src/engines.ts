@@ -13,7 +13,7 @@ import {
 	XAI_DEFAULT_MODEL,
 } from "@openaeo/engine";
 import { createClaudeCli, createCodexCli } from "@openaeo/engine/cli";
-import type { Store } from "./store/store";
+import type { Awaitable, Store } from "./store/store";
 
 export type EngineStatus = {
 	id: EngineId;
@@ -46,31 +46,36 @@ export const API_ENGINES = [
 
 export const ENGINE_IDS = ["claude-cli", "codex-cli", ...API_ENGINES.map((api) => api.id)] as const;
 
-type Definition = { id: EngineId; reason: (deps: EngineDeps) => string | null; build: (deps: EngineDeps) => Provider };
+type Definition = {
+	id: EngineId;
+	reason: (deps: EngineDeps) => Awaitable<string | null>;
+	build: (deps: EngineDeps) => Promise<Provider>;
+};
 
-const setting = (deps: EngineDeps, key: string) => deps.store.settings.get(key)?.trim() || undefined;
+const setting = async (deps: EngineDeps, key: string) => (await deps.store.settings.get(key))?.trim() || undefined;
 
 const DEFINITIONS: Definition[] = [
 	{
 		id: "claude-cli",
 		reason: (deps) =>
 			deps.which("claude") ? null : "Claude Code is not installed. Install it and log in, then reopen OpenAEO.",
-		build: (deps) => createClaudeCli({ model: setting(deps, "claude.model") }),
+		build: async (deps) => createClaudeCli({ model: await setting(deps, "claude.model") }),
 	},
 	{
 		id: "codex-cli",
 		reason: (deps) =>
 			deps.which("codex") ? null : "The Codex CLI is not installed. Install it and log in, then reopen OpenAEO.",
-		build: (deps) => createCodexCli({ model: setting(deps, "codex.model") }),
+		build: async (deps) => createCodexCli({ model: await setting(deps, "codex.model") }),
 	},
 	...API_ENGINES.map(
 		(api): Definition => ({
 			id: api.id,
-			reason: (deps) => (setting(deps, `${api.id}.apiKey`) ? null : `Add your ${api.name} API key to use this engine.`),
-			build: (deps) => {
+			reason: async (deps) =>
+				(await setting(deps, `${api.id}.apiKey`)) ? null : `Add your ${api.name} API key to use this engine.`,
+			build: async (deps) => {
 				const options = {
-					apiKey: setting(deps, `${api.id}.apiKey`) ?? "",
-					model: setting(deps, `${api.id}.model`) ?? api.model,
+					apiKey: (await setting(deps, `${api.id}.apiKey`)) ?? "",
+					model: (await setting(deps, `${api.id}.model`)) ?? api.model,
 				};
 				if (api.id === "openai") return createOpenAI(options);
 				if (api.id === "anthropic") return createAnthropic(options);
@@ -87,22 +92,30 @@ function apiOf(id: EngineId): EngineStatus["api"] {
 	return found ? { name: found.name, defaultModel: found.model } : null;
 }
 
-const enabled = (deps: EngineDeps, id: EngineId) => deps.store.settings.get(`engine.${id}.enabled`) !== "false";
+const enabled = async (deps: EngineDeps, id: EngineId) =>
+	(await deps.store.settings.get(`engine.${id}.enabled`)) !== "false";
 
-export function detectEngines(deps: EngineDeps): EngineStatus[] {
-	return DEFINITIONS.map((definition) => {
-		const reason = definition.reason(deps);
-		return {
-			id: definition.id,
-			label: ENGINE_LABELS[definition.id] ?? definition.id,
-			available: reason === null,
-			reason,
-			enabled: enabled(deps, definition.id),
-			api: apiOf(definition.id),
-		};
-	});
+export function detectEngines(deps: EngineDeps): Promise<EngineStatus[]> {
+	return Promise.all(
+		DEFINITIONS.map(async (definition) => {
+			const reason = await definition.reason(deps);
+			return {
+				id: definition.id,
+				label: ENGINE_LABELS[definition.id] ?? definition.id,
+				available: reason === null,
+				reason,
+				enabled: await enabled(deps, definition.id),
+				api: apiOf(definition.id),
+			};
+		}),
+	);
 }
 
-export function buildProviders(deps: EngineDeps): Provider[] {
-	return DEFINITIONS.filter((d) => d.reason(deps) === null && enabled(deps, d.id)).map((d) => d.build(deps));
+export async function buildProviders(deps: EngineDeps): Promise<Provider[]> {
+	const providers: Provider[] = [];
+	for (const definition of DEFINITIONS) {
+		if ((await definition.reason(deps)) !== null || !(await enabled(deps, definition.id))) continue;
+		providers.push(await definition.build(deps));
+	}
+	return providers;
 }

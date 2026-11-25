@@ -1087,7 +1087,7 @@ body,
 }
 
 .oa-tag-filter .ui-selc[data-size="sm"] {
-	--h: 24px;
+	--h: 32px;
 	--radius: var(--aui-radius, 6px);
 	font-size: 12px;
 	line-height: 16px;
@@ -1308,7 +1308,7 @@ body,
 
 .ui-as-rev__actions > .ui-bdgc,
 .oa-step > .ui-crdc__head > .ui-crdc__action > .ui-bdgc {
-	--h: 24px;
+	--h: 32px;
 	--pad: 8px;
 	border-radius: var(--aui-radius, 6px);
 	font-size: 12px;
@@ -1404,4 +1404,19 @@ body,
 .oa-reasons ul,
 .oa-brand ul {
 	list-style: disc;
+}
+
+.ui-buttonc.ui-buttonc[data-size] {
+	--h: 32px;
+	--px: 12px;
+	--gap: 6px;
+	--fs: 13px;
+	--lh: 20px;
+	--icon: 16px;
+}
+
+@media (pointer: coarse) {
+	.ui-buttonc.ui-buttonc[data-size] {
+		--h: 38px;
+	}
 }

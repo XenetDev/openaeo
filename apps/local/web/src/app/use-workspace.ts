@@ -13,6 +13,7 @@ import type {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "@/components/ui/toaster-clean";
 import { ApiError, api } from "../api";
+import { runtime } from "../runtime";
 import { words } from "../wording";
 
 export type ProjectData = {
@@ -86,7 +87,13 @@ export function useWorkspace() {
 			await work();
 		} catch (caught) {
 			setError(messageOf(caught));
-			toast.error("That didn't work", { description: messageOf(caught) });
+			const upgrade = caught instanceof ApiError && caught.status === 402 ? runtime.upgrade : null;
+			if (upgrade)
+				toast.error("Your plan does not cover that", {
+					description: messageOf(caught),
+					action: { label: "See plans", onClick: upgrade },
+				});
+			else toast.error("That didn't work", { description: messageOf(caught) });
 		}
 	}, []);
 

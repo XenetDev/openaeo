@@ -32,7 +32,14 @@ const send = (path: string, init: RequestInit = {}) =>
 		fetch(runtime.url(path), { ...init, headers: { ...init.headers, "x-openaeo-token": token } }),
 	);
 
-export class ApiError extends Error {}
+export class ApiError extends Error {
+	readonly status: number;
+
+	constructor(message: string, status = 0) {
+		super(message);
+		this.status = status;
+	}
+}
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
 	let response: Response;
@@ -46,7 +53,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 		throw new ApiError("OpenAEO is not responding. Check that it is still running in your terminal.");
 	}
 	const data = (await response.json().catch(() => null)) as (T & { error?: string }) | null;
-	if (!response.ok || data === null) throw new ApiError(data?.error ?? "Something went wrong. Try again.");
+	if (!response.ok || data === null)
+		throw new ApiError(data?.error ?? "Something went wrong. Try again.", response.status);
 	return data;
 }
 

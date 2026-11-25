@@ -15,6 +15,7 @@ type Words = {
 	firstRun: string;
 	settingsSub: string;
 	engineNote: string;
+	scheduleNote: string;
 };
 
 const LOCAL: Words = {
@@ -30,6 +31,7 @@ const LOCAL: Words = {
 	askSource: "Written by your own Claude or Codex from your runs and site audit, not from the web.",
 	askBy: (engine) => `Written by ${engine} on your own subscription,`,
 	schedule: "Automatic runs only happen while OpenAEO is open on this computer.",
+	scheduleNote: "While OpenAEO is open",
 	firstRun:
 		"This runs on your own engines and takes a few minutes. You can open the dashboard at any time; it keeps going.",
 	settingsSub: "Engines, your agent connection and the brand you track.",
@@ -48,7 +50,8 @@ const CLOUD: Words = {
 	askNoEngine: "Aeo needs an engine. Switch one on in Settings.",
 	askSource: "Written from your runs and site audit, not from the web.",
 	askBy: (engine) => `Written by ${engine},`,
-	schedule: "Scheduled runs are not available on OpenAEO Cloud yet.",
+	schedule: "Runs happen on their own, even when OpenAEO is closed.",
+	scheduleNote: "Even when OpenAEO is closed",
 	firstRun: "This takes a few minutes. You can open the dashboard at any time; it keeps going.",
 	settingsSub: "Your brand, account, workspace and billing.",
 	engineNote: "Each engine is asked through its API with web search on. Results can differ from the consumer apps.",

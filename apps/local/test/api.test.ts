@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { EngineStatus } from "../src/engines";
+import type { EngineStatus } from "../src/engine-catalog";
 import type { Log } from "../src/log";
 import { createRunService } from "../src/runs";
 import { createHandler } from "../src/server/handler";

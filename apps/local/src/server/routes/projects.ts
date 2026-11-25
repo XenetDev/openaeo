@@ -1,11 +1,11 @@
 import type { Ok, ProjectDetail, ProjectView, StateResponse } from "../../api-types";
 import { forgetPlan } from "../../plan";
-import type { HandlerDeps } from "../handler";
+import type { ApiDeps } from "../api";
 import { json, notFound, read, requireProject } from "../http";
 import { type Route, route } from "../router";
 import { CompetitorsSchema, CreateProjectSchema, ProjectSchema } from "../schemas";
 
-export function projectRoutes({ store, runs, audits, engines }: HandlerDeps): Route[] {
+export function projectRoutes({ store, runs, audits, engines }: ApiDeps): Route[] {
 	const detail = async (id: string): Promise<ProjectDetail> => ({
 		project: await requireProject(store, id),
 		competitors: await store.competitors.list(id),

@@ -4,14 +4,14 @@ import { buildOpportunities } from "../../opportunities";
 import { buildPlan, setStepDone } from "../../plan";
 import { buildReport } from "../../report";
 import { RunError } from "../../runs";
-import type { HandlerDeps } from "../handler";
+import type { ApiDeps } from "../api";
 import { HttpError, json, notFound, read, requireProject } from "../http";
 import { type Route, route } from "../router";
 import { PlanStepSchema } from "../schemas";
 
 const STATUS: Record<string, number> = { already_running: 409, no_prompts: 400, no_engines: 400, not_found: 404 };
 
-export function runRoutes({ store, runs }: HandlerDeps): Route[] {
+export function runRoutes({ store, runs }: ApiDeps): Route[] {
 	const requireRun = async (id: string) => {
 		const found = await store.runs.get(id);
 		if (!found) throw notFound("That run");

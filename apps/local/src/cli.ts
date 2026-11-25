@@ -1,6 +1,6 @@
 import { type AuditResult, type Fetched, runAudit } from "@openaeo/engine";
 import { AuditError, type AuditService, toOrigin } from "./audits";
-import { ENGINE_LABELS } from "./engines";
+import { ENGINE_LABELS } from "./engine-catalog";
 import { formatAudit, formatReport } from "./format";
 import { buildReport } from "./report";
 import { RunError, type RunService } from "./runs";

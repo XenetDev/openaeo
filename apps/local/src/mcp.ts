@@ -3,7 +3,7 @@ import { type AuditResult, groupFindings, QUOTE_NOTICE } from "@openaeo/engine";
 import { z } from "zod";
 import { AuditError, type AuditService, resultOf } from "./audits";
 import { buildBrief } from "./brief";
-import { ENGINE_LABELS } from "./engines";
+import { ENGINE_LABELS } from "./engine-catalog";
 import { formatReport } from "./format";
 import { buildReport } from "./report";
 import { RunError, type RunService } from "./runs";

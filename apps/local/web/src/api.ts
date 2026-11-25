@@ -22,15 +22,15 @@ import type {
 	StateResponse,
 	Suggestions,
 } from "@api";
-import { createSession, tokenIn } from "./session";
+import { runtime } from "./runtime";
+import { createSession } from "./session";
 
-const session = createSession(
-	document.querySelector<HTMLMetaElement>('meta[name="openaeo-token"]')?.content ?? "",
-	async () => tokenIn(await (await fetch("/", { cache: "no-store" })).text()),
-);
+const session = createSession(runtime.token(), runtime.freshToken);
 
 const send = (path: string, init: RequestInit = {}) =>
-	session.send((token) => fetch(path, { ...init, headers: { ...init.headers, "x-openaeo-token": token } }));
+	session.send((token) =>
+		fetch(runtime.url(path), { ...init, headers: { ...init.headers, "x-openaeo-token": token } }),
+	);
 
 export class ApiError extends Error {}
 

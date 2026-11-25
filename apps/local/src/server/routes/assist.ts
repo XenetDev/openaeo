@@ -1,12 +1,12 @@
 import type { AskReply, CompetitorIdea, Suggestions } from "../../api-types";
 import { askContext, buildAskPrompt, splitActions } from "../../ask";
 import { fallbackPrompts } from "../../suggest";
-import type { HandlerDeps } from "../handler";
+import type { ApiDeps } from "../api";
 import { HttpError, json, read, requireProject } from "../http";
 import { type Route, route } from "../router";
 import { AskSchema, CompetitorIdeasSchema } from "../schemas";
 
-export function assistRoutes(deps: HandlerDeps): Route[] {
+export function assistRoutes(deps: ApiDeps): Route[] {
 	const { store } = deps;
 	const describe = async (domain: string | undefined) =>
 		domain && deps.describeSite ? await deps.describeSite(domain).catch(() => null) : null;

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { askContext } from "../src/ask";
 import { brandQuestion } from "../src/brand-check";
 import { buildCompetitorPrompt } from "../src/competitor-ideas";
-import type { EngineStatus } from "../src/engines";
+import type { EngineStatus } from "../src/engine-catalog";
 import { cleanLocation, withLocation } from "../src/location";
 import { createRunService } from "../src/runs";
 import { createHandler } from "../src/server/handler";

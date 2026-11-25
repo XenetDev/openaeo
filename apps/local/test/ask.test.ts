@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { ASK_NOTICE, askContext, buildAskPrompt, splitActions } from "../src/ask";
-import type { EngineStatus } from "../src/engines";
+import type { EngineStatus } from "../src/engine-catalog";
 import { createRunService } from "../src/runs";
 import { createHandler } from "../src/server/handler";
 import { fakeProvider, freshStore, seed, src } from "./helpers";

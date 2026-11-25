@@ -20,6 +20,7 @@ export function createXai(o: ApiOptions): Provider {
 					model,
 					input: [{ role: "user", content: prompt }],
 					tools: [{ type: "web_search" }],
+					max_turns: 1,
 					include: ["no_inline_citations"],
 					stream: false,
 					store: false,

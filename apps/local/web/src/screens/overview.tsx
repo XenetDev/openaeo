@@ -289,6 +289,66 @@ export function OverviewScreen({
 				))}
 			</div>
 
+			<div className="ui-as-rev__row ui-as-rev__row--main">
+				<ChartCard
+					tall
+					title="Visibility over time"
+					ceiling={100}
+					value={overall.visibility}
+					delta={previous ? overall.visibility - previous.visibility : undefined}
+					format={(n) => n.toFixed(1)}
+					labels={labels}
+					tooltipLabels={trend.map((t) => when(t.startedAt))}
+					series={[{ label: "Visibility", values: trend.map((t) => t.visibility) }]}
+					footer={
+						neverNamed
+							? "No engine has named you yet. The line rises when one does."
+							: trend.length === 1
+								? "One run so far. Each run adds a point."
+								: `${trend.length} runs · latest ${run ? when(run.startedAt) : ""}`
+					}
+				/>
+				<Card>
+					<CardHeader
+						title="By engine"
+						description="Visibility score from each engine's answers"
+						action={more("answers", "View answers")}
+					/>
+					<CardContent>
+						<ShareList
+							items={report.engines.map((e) => ({
+								label: engineLabel(engines, e.engine),
+								value: `${e.visibility}`,
+								share: e.visibility,
+								badge: e.errors > 0 ? <Badge tone="danger">{e.errors} failed</Badge> : undefined,
+							}))}
+						/>
+						{labelled > 0 ? (
+							<div className="oa-tone">
+								<span className="oa-tone-head">
+									<b>Tone when you are named</b>
+									<small>
+										{tone.positive} positive · {tone.neutral} neutral · {tone.negative} negative
+									</small>
+								</span>
+								<span
+									className="oa-tone-bar"
+									role="img"
+									aria-label={`${tone.positive} positive, ${tone.neutral} neutral, ${tone.negative} negative answers`}
+								>
+									<i data-tone="positive" style={{ flexGrow: tone.positive }} />
+									<i data-tone="neutral" style={{ flexGrow: tone.neutral }} />
+									<i data-tone="negative" style={{ flexGrow: tone.negative }} />
+								</span>
+							</div>
+						) : null}
+						<p className="oa-quiet" style={{ marginTop: 12 }}>
+							{words.engineNote}
+						</p>
+					</CardContent>
+				</Card>
+			</div>
+
 			{plan && todo.length > 0 ? (
 				<Card>
 					<CardHeader
@@ -311,66 +371,6 @@ export function OverviewScreen({
 					</CardContent>
 				</Card>
 			) : null}
-
-			{neverNamed ? null : (
-				<div className="ui-as-rev__row ui-as-rev__row--main">
-					<ChartCard
-						tall
-						title="Visibility over time"
-						ceiling={100}
-						value={overall.visibility}
-						delta={previous ? overall.visibility - previous.visibility : undefined}
-						format={(n) => n.toFixed(1)}
-						labels={labels}
-						tooltipLabels={trend.map((t) => when(t.startedAt))}
-						series={[{ label: "Visibility", values: trend.map((t) => t.visibility) }]}
-						footer={
-							trend.length === 1
-								? "One run so far. Each run adds a point."
-								: `${trend.length} runs · latest ${run ? when(run.startedAt) : ""}`
-						}
-					/>
-					<Card>
-						<CardHeader
-							title="By engine"
-							description="Visibility score from each engine's answers"
-							action={more("answers", "View answers")}
-						/>
-						<CardContent>
-							<ShareList
-								items={report.engines.map((e) => ({
-									label: engineLabel(engines, e.engine),
-									value: `${e.visibility}`,
-									share: e.visibility,
-									badge: e.errors > 0 ? <Badge tone="danger">{e.errors} failed</Badge> : undefined,
-								}))}
-							/>
-							{labelled > 0 ? (
-								<div className="oa-tone">
-									<span className="oa-tone-head">
-										<b>Tone when you are named</b>
-										<small>
-											{tone.positive} positive · {tone.neutral} neutral · {tone.negative} negative
-										</small>
-									</span>
-									<span
-										className="oa-tone-bar"
-										role="img"
-										aria-label={`${tone.positive} positive, ${tone.neutral} neutral, ${tone.negative} negative answers`}
-									>
-										<i data-tone="positive" style={{ flexGrow: tone.positive }} />
-										<i data-tone="neutral" style={{ flexGrow: tone.neutral }} />
-										<i data-tone="negative" style={{ flexGrow: tone.negative }} />
-									</span>
-								</div>
-							) : null}
-							<p className="oa-quiet" style={{ marginTop: 12 }}>
-								{words.engineNote}
-							</p>
-						</CardContent>
-					</Card>
-				</div>
-			)}
 
 			{report.brand.length > 0 ? <BrandChecks brand={project.name} checks={report.brand} engines={engines} /> : null}
 

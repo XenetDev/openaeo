@@ -157,9 +157,9 @@ export function Shell({ projects, project, page, children, onPage, onBrand, onNe
 							{ label: "Settings", icon: Settings01Icon, onSelect: () => onPage("settings") },
 						]
 					: []),
-				...runtime.account.links.map((link) => ({
-					label: link.label,
-					onSelect: () => window.location.assign(link.href),
+				...runtime.account.links.map(({ href, ...item }) => ({
+					...item,
+					onSelect: () => window.location.assign(href),
 				})),
 			]}
 			commands={project ? COMMANDS : []}

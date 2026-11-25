@@ -1,5 +1,6 @@
 import type { PageId } from "@api";
 import { useEffect, useState } from "react";
+import { Spinner } from "@/components/ui/spinner-clean";
 import { Toaster, toast } from "@/components/ui/toaster-clean";
 import { api } from "./api";
 import { FirstRun } from "./app/first-run";
@@ -10,7 +11,8 @@ import { useAsk } from "./app/use-ask";
 import { useCompetitorIdeas } from "./app/use-competitor-ideas";
 import { useSetup } from "./app/use-setup";
 import { useSuggestions } from "./app/use-suggestions";
-import { messageOf, useWorkspace } from "./app/use-workspace";
+import { messageOf, rememberedBrand, useWorkspace } from "./app/use-workspace";
+import { LoadingScreen } from "./screens/loading";
 import { OnboardingFlow } from "./screens/onboarding";
 
 const BRIEF_COPIED = "Paste it into Claude Code or Codex in your website's code.";
@@ -53,20 +55,35 @@ export function App() {
 		workspace.select(id);
 	};
 
-	if (projects === null)
+	if (projects === null) {
+		const brand = workspace.error ? null : rememberedBrand();
+		if (!brand && !workspace.error)
+			return (
+				<div className="oa-boot" role="status" aria-label="Loading OpenAEO">
+					<Spinner size={20} />
+				</div>
+			);
 		return (
 			<Shell
 				projects={[]}
 				project={null}
-				page={null}
+				brand={brand ?? undefined}
+				page={brand ? page : null}
 				onPage={navigate}
 				onBrand={openBrand}
 				onNewBrand={() => setCreating(true)}
 				onCommand={() => {}}
 			>
-				<div className="ui-as-page">{workspace.error ? <p className="ui-as-page-sub">{workspace.error}</p> : null}</div>
+				{brand ? (
+					<LoadingScreen brand={brand} page={page} />
+				) : (
+					<div className="ui-as-page">
+						<p className="ui-as-page-sub">{workspace.error}</p>
+					</div>
+				)}
 			</Shell>
 		);
+	}
 
 	if (setup && project && setup.id === project.id && !creating)
 		return (

@@ -86,6 +86,7 @@ const COMMANDS = [
 type Props = {
 	projects: ProjectView[];
 	project: ProjectView | null;
+	brand?: string;
 	page: PageId | null;
 	children: ReactNode;
 	onPage: (page: PageId) => void;
@@ -94,7 +95,7 @@ type Props = {
 	onCommand: (id: string, text?: string) => void;
 };
 
-export function Shell({ projects, project, page, children, onPage, onBrand, onNewBrand, onCommand }: Props) {
+export function Shell({ projects, project, brand, page, children, onPage, onBrand, onNewBrand, onCommand }: Props) {
 	const [theme, setTheme] = useState<Theme>(storedTheme);
 
 	const navigate = (key: string) => {
@@ -107,23 +108,25 @@ export function Shell({ projects, project, page, children, onPage, onBrand, onNe
 	return (
 		<AppShell
 			active={page ? pageKey(page) : ""}
-			workspace={project?.name ?? "OpenAEO"}
+			workspace={project?.name ?? brand ?? "OpenAEO"}
 			workspaceMeta={runtime.account.plan}
 			user={{ name: runtime.account.name }}
-			nav={project ? NAV : []}
+			nav={project || brand ? NAV : []}
 			groups={
-				projects.length > 0
-					? [
-							...(project ? NAV_GROUPS : []),
-							{
-								label: "Brands",
-								items: [
-									...projects.map((p) => ({ id: brandKey(p.id), label: p.name, icon: Globe02Icon })),
-									{ id: NEW_BRAND_KEY, label: NEW_BRAND, icon: PlusSignIcon },
-								],
-							},
-						]
-					: []
+				brand && !project
+					? NAV_GROUPS
+					: projects.length > 0
+						? [
+								...(project ? NAV_GROUPS : []),
+								{
+									label: "Brands",
+									items: [
+										...projects.map((p) => ({ id: brandKey(p.id), label: p.name, icon: Globe02Icon })),
+										{ id: NEW_BRAND_KEY, label: NEW_BRAND, icon: PlusSignIcon },
+									],
+								},
+							]
+						: []
 			}
 			sideCards={false}
 			workspaceItems={[

@@ -1525,7 +1525,7 @@ body,
 	}
 }
 
-:is(.ui-as-rev__head, .ui-as-bar) .ui-buttonc.ui-buttonc[data-size] {
+:is(.ui-as-rev__head, .ui-as-bar, .ui-crdc__action) .ui-buttonc.ui-buttonc[data-size] {
 	--h: 24px;
 	--px: 8px;
 	--gap: 4px;
@@ -1539,7 +1539,7 @@ body,
 }
 
 @media (pointer: coarse) {
-	:is(.ui-as-rev__head, .ui-as-bar) .ui-buttonc.ui-buttonc[data-size] {
+	:is(.ui-as-rev__head, .ui-as-bar, .ui-crdc__action) .ui-buttonc.ui-buttonc[data-size] {
 		--h: 32px;
 	}
 }

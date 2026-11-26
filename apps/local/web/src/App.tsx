@@ -12,6 +12,7 @@ import { useCompetitorIdeas } from "./app/use-competitor-ideas";
 import { useSetup } from "./app/use-setup";
 import { useSuggestions } from "./app/use-suggestions";
 import { messageOf, rememberedBrand, useWorkspace } from "./app/use-workspace";
+import { runtime } from "./runtime";
 import { LoadingScreen } from "./screens/loading";
 import { OnboardingFlow } from "./screens/onboarding";
 
@@ -110,7 +111,7 @@ export function App() {
 					nav={NAV}
 					groups={NAV_GROUPS}
 					busy={busy}
-					onCancel={project ? () => setCreating(false) : undefined}
+					onCancel={project ? () => setCreating(false) : (runtime.leave ?? undefined)}
 					onFindCompetitors={
 						workspace.engineReady
 							? async (name, domain, location) => (await api.competitorIdeasFor(name, domain, location)).competitors

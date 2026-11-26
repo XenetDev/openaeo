@@ -15,6 +15,8 @@ export const runtime = {
 	freshToken: async (): Promise<string | null> => tokenIn(await (await fetch("/", { cache: "no-store" })).text()),
 	upgrade: null as (() => void) | null,
 	schedules: ["off", "daily", "weekly"],
+	scope: "",
+	leave: null as (() => void) | null,
 	account: {
 		name: "This computer",
 		plan: "Local",

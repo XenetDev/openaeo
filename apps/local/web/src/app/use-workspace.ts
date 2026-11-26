@@ -27,10 +27,9 @@ export type ProjectData = {
 	plan: PlanView;
 };
 
-const STORED_PROJECT = "openaeo.project";
-const STORED_BRAND = "openaeo.brand";
+const stored = (key: string) => (runtime.scope ? `openaeo.${key}.${runtime.scope}` : `openaeo.${key}`);
 
-export const rememberedBrand = (): string | null => window.localStorage.getItem(STORED_BRAND);
+export const rememberedBrand = (): string | null => window.localStorage.getItem(stored("brand"));
 const POLL_MS = 2000;
 
 export const messageOf = (error: unknown) =>
@@ -40,7 +39,7 @@ export function useWorkspace() {
 	const [projects, setProjects] = useState<ProjectView[] | null>(null);
 	const [engines, setEngines] = useState<EngineView[]>([]);
 	const [settings, setSettings] = useState<Record<string, string>>({});
-	const [projectId, setProjectId] = useState<string | null>(() => window.localStorage.getItem(STORED_PROJECT));
+	const [projectId, setProjectId] = useState<string | null>(() => window.localStorage.getItem(stored("project")));
 	const [data, setData] = useState<ProjectData | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [pickedTag, setTag] = useState("");
@@ -54,8 +53,8 @@ export function useWorkspace() {
 	const brand = project?.name ?? null;
 
 	useEffect(() => {
-		if (brand) window.localStorage.setItem(STORED_BRAND, brand);
-		else if (projects) window.localStorage.removeItem(STORED_BRAND);
+		if (brand) window.localStorage.setItem(stored("brand"), brand);
+		else if (projects) window.localStorage.removeItem(stored("brand"));
 	}, [brand, projects]);
 
 	const loadState = useCallback(async () => {
@@ -153,12 +152,12 @@ export function useWorkspace() {
 	}, [running, currentId, loadProject]);
 
 	const select = useCallback((id: string) => {
-		window.localStorage.setItem(STORED_PROJECT, id);
+		window.localStorage.setItem(stored("project"), id);
 		setProjectId(id);
 	}, []);
 
 	const forget = useCallback(() => {
-		window.localStorage.removeItem(STORED_PROJECT);
+		window.localStorage.removeItem(stored("project"));
 		setProjectId(null);
 	}, []);
 

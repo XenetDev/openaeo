@@ -130,6 +130,7 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 		<AnswersScreen
 			answers={data.answers}
 			prompts={data.prompts}
+			report={data.report}
 			tag={workspace.tag}
 			tagControl={tagFilter(workspace)}
 			project={project}

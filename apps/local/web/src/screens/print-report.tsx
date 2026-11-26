@@ -35,25 +35,27 @@ export function PrintReport({ project, report, answers, prompts, engines, tag, o
 	useEffect(() => {
 		const root = document.documentElement;
 		const title = document.title;
-		let finished = false;
-		const finish = () => {
-			if (finished) return;
-			finished = true;
+		let cancelled = false;
+		let frame = 0;
+		const restore = () => {
 			root.classList.remove("oa-printing");
 			document.title = title;
 			window.removeEventListener("afterprint", finish);
+		};
+		const finish = () => {
+			restore();
 			done.current();
 		};
 		root.classList.add("oa-printing");
 		document.title = reportFileName(project.name, report.run?.startedAt ?? null, tag);
 		window.addEventListener("afterprint", finish);
-		let frame = 0;
 		void document.fonts.ready.then(() => {
-			if (!finished) frame = requestAnimationFrame(() => window.print());
+			if (!cancelled) frame = requestAnimationFrame(() => window.print());
 		});
 		return () => {
+			cancelled = true;
 			cancelAnimationFrame(frame);
-			finish();
+			restore();
 		};
 	}, []);
 

@@ -59,7 +59,7 @@ const GUIDE = [
 	"Overview: visibility score (0 to 100, from how often the brand is named, how early, share against competitors and how often its own site is linked), trend and problems.",
 	"Overview also shows a sentiment score (0 to 100) with its trend and a positive, neutral and negative split.",
 	"Plan page: the steps to get recommended, built from the latest run, most important first; each can be marked done. Point users there when they ask how to improve.",
-	"Answers page: what each engine said per question, where the brand ranked, the tone, and the sources it linked. Export CSV downloads every answer from the run.",
+	"Answers page: what each engine said per question, where the brand ranked, the tone, and the sources it linked. Export CSV downloads every answer from the run; Export PDF saves a report with the run's scores, a question-by-engine grid and every answer.",
 	"Tags: on the Prompts page, Edit tags in a question's menu groups questions by topic. The tag filter at the top of Overview, Prompts, Answers, Sources and Competitors limits every figure to questions with that tag.",
 	"Opportunities page: questions where competitors are named and the brand is not, sites worth getting mentioned on, and the top website fixes.",
 	"Sources page: the sites engines cite most; getting mentioned on those is how a brand gets named. Competitors page: add rivals and compare how often each is named.",

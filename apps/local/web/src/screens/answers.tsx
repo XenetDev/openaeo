@@ -1,8 +1,9 @@
-import type { AnswerView, EngineView, PageId, ProjectView, PromptView } from "@api";
+import type { AnswerView, EngineView, PageId, ProjectView, PromptView, ReportView } from "@api";
 import {
 	ArrowRight02Icon,
 	BubbleChatIcon,
 	Download01Icon,
+	Pdf01Icon,
 	PlayIcon,
 	UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
@@ -16,11 +17,13 @@ import { SegmentedControl } from "@/components/ui/segmented-control-clean";
 import { Spinner } from "@/components/ui/spinner-clean";
 import { toast } from "@/components/ui/toaster-clean";
 import { toAnswerMarkup } from "./answer-markup";
+import { PrintReport } from "./print-report";
 import { EngineLogo, engineLabel, Facts, ordinal, Page, ShareList } from "./shared";
 
 type Props = {
 	answers: AnswerView[];
 	prompts: PromptView[];
+	report: ReportView;
 	project: ProjectView;
 	engines: EngineView[];
 	live: boolean;
@@ -117,6 +120,7 @@ function Answer({
 export function AnswersScreen({
 	answers: every,
 	prompts,
+	report,
 	project,
 	engines,
 	live,
@@ -144,6 +148,7 @@ export function AnswersScreen({
 	const question = labels.get(key) ?? "";
 	const group = answers.filter((a) => keyOf(a) === key);
 	const [picked, setPicked] = useState("");
+	const [printing, setPrinting] = useState(false);
 	const engine = ids.includes(picked) ? picked : (group[0]?.engine ?? ids[0] ?? "");
 	const answer = group.find((a) => a.engine === engine);
 	const label = engineLabel(engines, engine);
@@ -162,13 +167,35 @@ export function AnswersScreen({
 					) : null}
 					{tagControl}
 					{every.length > 0 ? (
-						<Button variant="secondary" size="sm" onClick={onExport} icon={<Icon icon={Download01Icon} size={14} />}>
-							Export CSV
-						</Button>
+						<>
+							<Button variant="secondary" size="sm" onClick={onExport} icon={<Icon icon={Download01Icon} size={14} />}>
+								Export CSV
+							</Button>
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() => setPrinting(true)}
+								disabled={printing || answers.length === 0}
+								icon={<Icon icon={Pdf01Icon} size={14} />}
+							>
+								Export PDF
+							</Button>
+						</>
 					) : null}
 				</>
 			}
 		>
+			{printing ? (
+				<PrintReport
+					project={project}
+					report={report}
+					answers={answers}
+					prompts={prompts}
+					engines={engines}
+					tag={tag}
+					onDone={() => setPrinting(false)}
+				/>
+			) : null}
 			{every.length === 0 ? (
 				<EmptyState
 					icon={BubbleChatIcon}

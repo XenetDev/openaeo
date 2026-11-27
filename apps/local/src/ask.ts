@@ -21,8 +21,34 @@ const PAGES = [
 	"settings",
 ];
 const ACTION_LINE = /^\s*\[\[action:([a-z]+)(?:\|([^\]\n]{1,300}))?\]\]\s*$/;
+const MAX_ACTIONS = 3;
 
-export function splitActions(reply: string): { text: string; actions: AskAction[] } {
+/** What the host app adds to Aeo: its own guide, extra places to open and the changes it allows. */
+export type AskOptions = {
+	guide?: string[];
+	places?: { id: string; label: string }[];
+	schedules?: string[];
+	steps?: { id: string; title: string }[];
+};
+
+function toAction(kind: string, arg: string, options: AskOptions): AskAction | null {
+	if (kind === "run" || kind === "audit") return { type: kind };
+	if (kind === "track") return arg.length >= 5 ? { type: "track", question: arg } : null;
+	if (kind === "open" || kind === "go") {
+		const known = PAGES.includes(arg) || options.places?.some((place) => place.id === arg);
+		if (!known) return null;
+		return kind === "go" ? { type: "open", page: arg, auto: true } : { type: "open", page: arg };
+	}
+	if (kind === "schedule") return options.schedules?.includes(arg) ? { type: "schedule", value: arg } : null;
+	if (kind === "competitor") return arg.length >= 2 && arg.length <= 80 ? { type: "competitor", name: arg } : null;
+	if (kind === "done") {
+		const step = options.steps?.find((candidate) => candidate.id === arg);
+		return step ? { type: "step", id: step.id, title: step.title } : null;
+	}
+	return null;
+}
+
+export function splitActions(reply: string, options: AskOptions = {}): { text: string; actions: AskAction[] } {
 	const kept: string[] = [];
 	const actions: AskAction[] = [];
 	const seen = new Set<string>();
@@ -32,22 +58,26 @@ export function splitActions(reply: string): { text: string; actions: AskAction[
 			if (!/^\s*\[\[action:/.test(line)) kept.push(line);
 			continue;
 		}
-		const [, kind, value = ""] = hit;
-		const arg = value.trim();
-		const action: AskAction | null =
-			kind === "run" || kind === "audit"
-				? { type: kind }
-				: kind === "track" && arg.length >= 5
-					? { type: "track", question: arg }
-					: kind === "open" && PAGES.includes(arg)
-						? { type: "open", page: arg }
-						: null;
+		const [, kind = "", value = ""] = hit;
+		const action = toAction(kind, value.trim(), options);
+		if (!action || actions.length === MAX_ACTIONS) continue;
+		const automatic = action.type === "open" && action.auto;
+		if (automatic && actions.some((other) => other.type === "open" && other.auto)) continue;
 		const key = JSON.stringify(action);
-		if (!action || seen.has(key) || actions.length === 3) continue;
+		if (seen.has(key)) continue;
 		seen.add(key);
 		actions.push(action);
 	}
-	return { text: kept.join("\n").trim(), actions };
+	const text = kept.join("\n").trim();
+	return { text: text || fallbackText(actions, options), actions };
+}
+
+function fallbackText(actions: AskAction[], options: AskOptions): string {
+	const first = actions[0];
+	if (first?.type !== "open") return first ? "Here is the next step." : "";
+	const label =
+		options.places?.find((place) => place.id === first.page)?.label ?? PAGE_LABELS[first.page] ?? first.page;
+	return first.auto ? `Opening ${label}.` : `You can do that on ${label}.`;
 }
 
 export type AskContext = { facts: string[]; quoted: string[] };
@@ -163,19 +193,56 @@ export async function askContext(store: Store, project: Project): Promise<AskCon
 	return { facts, quoted };
 }
 
-export function buildAskPrompt(context: AskContext, history: AskTurn[], question: string): string {
+const PAGE_LABELS: Record<string, string> = {
+	overview: "Overview",
+	plan: "Plan",
+	prompts: "Prompts",
+	answers: "Answers",
+	sources: "Sources",
+	competitors: "Competitors",
+	opportunities: "Opportunities",
+	audit: "Audit",
+	runs: "Runs",
+	settings: "Settings",
+};
+
+export function buildAskPrompt(
+	context: AskContext,
+	history: AskTurn[],
+	question: string,
+	options: AskOptions = {},
+): string {
 	const turns = history
 		.slice(-MAX_TURNS)
 		.map((turn) => (turn.role === "user" ? `User: ${oneLine(turn.text, 1500)}` : `> Aeo: ${oneLine(turn.text, 1500)}`));
+	const places = [
+		...PAGES.map((id) => `${id} (${PAGE_LABELS[id] ?? id})`),
+		...(options.places ?? []).map((place) => `${place.id} (${place.label})`),
+	].join(", ");
+	const changes = [
+		"[[action:competitor|Company name]] (track a competitor)",
+		...(options.schedules?.length
+			? [`[[action:schedule|value]] (set automatic runs; value is one of ${options.schedules.join(", ")})`]
+			: []),
+		...(options.steps?.length
+			? [
+					`[[action:done|step]] (mark a plan step done, only when the user says they finished it; step is one of ${options.steps.map((step) => step.id).join(", ")})`,
+				]
+			: []),
+	].join(", ");
 	return [
-		"You are Aeo, the analyst inside OpenAEO, a tool that tracks how AI assistants talk about a brand.",
-		"Answer the user's question using only the data below. Do not search the web and do not invent figures.",
+		"You are Aeo, the assistant inside OpenAEO, a tool that tracks how AI assistants talk about a brand. You know the brand's data and how every part of OpenAEO works.",
+		"Answer the user's question using only the data and the guide below. Do not search the web and do not invent figures, features, prices or steps.",
 		"Write for a non-technical owner: plain words, specific, under 180 words unless asked for more. Use short paragraphs or a short list. No tables, no headings.",
-		"When a next step inside OpenAEO would clearly help, end with up to three lines, each exactly one of: [[action:run]] (ask the engines now), [[action:audit]] (check the website), [[action:track|a new question to track]], [[action:open|page]] where page is one of overview, prompts, answers, sources, competitors, opportunities, audit, runs, settings. The app turns them into buttons; never mention these lines in your text.",
-		"If the data cannot answer the question, say so and say what to do in OpenAEO to find out (add questions on Prompts, press Run now, or run an Audit).",
+		"When the user asks how to do something in OpenAEO, give the steps in order, naming each page and button as the guide does, then add an [[action:open|place]] line for the page where they do it.",
+		`When a next step inside OpenAEO would clearly help, end with up to ${MAX_ACTIONS} lines, each exactly one of: [[action:run]] (ask the engines now), [[action:audit]] (check the website), [[action:track|a new question to track]], [[action:open|place]] (a button that opens a place), ${changes}. The app turns them into buttons, and asks the user to approve anything that changes their setup; never mention these lines in your text.`,
+		"Always write at least one sentence of your own, even when the answer is only a button.",
+		'If the user asks to be taken to a place ("take me to", "open", "go to"), use [[action:go|place]] in place of open: the app opens it straight away. Use it at most once, and only when they asked.',
+		`Places: ${places}.`,
+		"If the data and guide cannot answer the question, say so and say what to do in OpenAEO to find out (add questions on Prompts, press Run now, or run an Audit).",
 		"",
 		"How OpenAEO works, for when the user asks what to do or where to find something:",
-		...GUIDE.map((line) => `- ${line}`),
+		...(options.guide ?? GUIDE).map((line) => `- ${line}`),
 		"",
 		"Data:",
 		...context.facts.map((fact) => `- ${fact}`),

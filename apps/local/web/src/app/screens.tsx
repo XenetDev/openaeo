@@ -2,7 +2,7 @@ import type { PageId, ProjectView, ReportView } from "@api";
 import type { ReactNode } from "react";
 import { toast } from "@/components/ui/toaster-clean";
 import { api } from "../api";
-import { HOST_POSTS } from "../host";
+import { HOST_POSTS, openPlace } from "../host";
 import { AnswersScreen } from "../screens/answers";
 import { AskScreen } from "../screens/ask";
 import { AuditScreen } from "../screens/audit";
@@ -215,17 +215,42 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 			onOpenAnswers={() => navigate("answers")}
 		/>
 	),
-	ask: ({ workspace, project, chat, startRun, navigate, trackQuestion }) => (
+	ask: ({ workspace, project, data, chat, startRun, navigate, trackQuestion }) => (
 		<AskScreen
 			project={project}
 			engines={workspace.engines}
 			turns={chat.turns}
 			onClear={chat.clear}
 			onAction={(action) => {
-				if (action.type === "run") startRun();
-				else if (action.type === "audit") navigate("audit");
-				else if (action.type === "open") navigate(isPage(action.page) ? action.page : "overview");
-				else trackQuestion(action.question);
+				if (action.type === "run") return startRun();
+				if (action.type === "audit") return navigate("audit");
+				if (action.type === "open") {
+					const page = openPlace(action.page);
+					return navigate(isPage(page) ? page : "overview");
+				}
+				if (action.type === "track") return trackQuestion(action.question);
+				if (action.type === "schedule")
+					return workspace.guard(async () => {
+						await api.saveSettings({ schedule: action.value });
+						await workspace.loadState();
+						toast.success("Schedule updated");
+					});
+				if (action.type === "competitor")
+					return workspace.guard(async () => {
+						const known = data.competitors.some((rival) => rival.name.toLowerCase() === action.name.toLowerCase());
+						if (!known)
+							await api.saveCompetitors(project.id, [
+								...data.competitors,
+								{ name: action.name, aliases: [], domains: [] },
+							]);
+						await workspace.loadProject(project.id);
+						toast.success(`${action.name} is tracked`, { description: "Counted from the next run." });
+					});
+				return workspace.guard(async () => {
+					await api.setPlanStep(project.id, action.id, true);
+					await workspace.loadProject(project.id);
+					toast.success("Step marked done");
+				});
 			}}
 			onAsk={(question, engine) => chat.ask(project.id, question, engine)}
 		/>

@@ -16,11 +16,13 @@ import { EmptyState, Icon } from "@/components/app-shell";
 import { AssistantStart } from "@/components/assistant-start";
 import { PillButton, PillField } from "@/components/pill-field";
 import { AIAnswer } from "@/components/ui/ai-answer-clean";
+import { ApprovalCard } from "@/components/ui/approval-card-clean";
 import { Button } from "@/components/ui/button-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
 import { DropdownMenu } from "@/components/ui/dropdown-menu-clean";
 import { ThinkingState } from "@/components/ui/thinking-state-clean";
 import { toast } from "@/components/ui/toaster-clean";
+import { HOST_PLACES } from "../host";
 import { words } from "../wording";
 import { toAnswerMarkup } from "./answer-markup";
 import { EngineLogo, engineLabel, Page } from "./shared";
@@ -42,7 +44,7 @@ type Props = {
 	turns: Turn[];
 	onAsk: (question: string, engine: string) => void;
 	onClear: () => void;
-	onAction: (action: AskAction) => void;
+	onAction: (action: AskAction) => unknown;
 };
 
 const STARTERS = [
@@ -71,14 +73,42 @@ const PAGE_NAMES: Record<string, string> = {
 	runs: "Runs",
 	settings: "Settings",
 };
+const placeName = (place: string) => HOST_PLACES.find((item) => item.id === place)?.label ?? PAGE_NAMES[place] ?? place;
+
+type Change = Extract<AskAction, { type: "schedule" | "competitor" | "step" }>;
+const isChange = (action: AskAction): action is Change =>
+	action.type === "schedule" || action.type === "competitor" || action.type === "step";
+
+const SCHEDULES: Record<string, { title: string; text: string }> = {
+	off: { title: "Turn off automatic runs", text: "Runs only start when you press Run now." },
+	daily: { title: "Run every day", text: "Every engine is asked every active question once a day." },
+	weekly: { title: "Run every week", text: "Every engine is asked every active question once a week." },
+};
+
+function changeCopy(action: Change, brand: string): { title: string; text: string; value: string } {
+	if (action.type === "schedule") {
+		const copy = SCHEDULES[action.value] ?? { title: `Set runs to ${action.value}`, text: "" };
+		return { ...copy, value: action.value };
+	}
+	if (action.type === "competitor")
+		return {
+			title: `Track ${action.name} as a competitor`,
+			text: `Counted against ${brand} from the next run.`,
+			value: action.name,
+		};
+	return { title: "Mark this plan step done", text: "It moves to the done steps in your plan.", value: action.title };
+}
+
 const actionLabel = (action: AskAction) =>
 	action.type === "run"
 		? "Run now"
 		: action.type === "audit"
 			? "Check my website"
 			: action.type === "open"
-				? `Open ${PAGE_NAMES[action.page] ?? action.page}`
-				: `Track “${action.question}”`;
+				? `Open ${placeName(action.page)}`
+				: action.type === "track"
+					? `Track “${action.question}”`
+					: "";
 
 export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }: Props) {
 	const ready = engines.filter((e) => e.available && e.enabled);
@@ -92,6 +122,16 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 	const last = turns[turns.length - 1];
 	const fresh = useRef(new Set<string>());
 	for (const turn of turns) if (turn.pending) fresh.current.add(turn.id);
+
+	const opened = useRef(new Set<string>());
+	// biome-ignore lint/correctness/useExhaustiveDependencies: opens a place once, when the reply that asked for it arrives
+	useEffect(() => {
+		if (!last || last.pending || !fresh.current.has(last.id) || opened.current.has(last.id)) return;
+		const go = last.actions?.find((action) => action.type === "open" && action.auto);
+		if (!go) return;
+		opened.current.add(last.id);
+		void onAction(go);
+	}, [last?.id, last?.pending]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: scrolls when a turn is added or finishes
 	useEffect(() => {
@@ -226,31 +266,56 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 										tookSeconds={turn.took}
 										onCopy={() => toast.success("Answer copied")}
 									/>
-									{turn.actions?.length ? (
+									{turn.actions?.some((action) => !isChange(action)) ? (
 										<div className="oa-actions">
-											{turn.actions.map((action) => (
-												<Button
-													key={JSON.stringify(action)}
-													variant="secondary"
-													size="sm"
-													icon={
-														action.type === "open" ? undefined : (
-															<Icon
-																icon={
-																	action.type === "run" ? PlayIcon : action.type === "audit" ? CheckListIcon : Add01Icon
-																}
-																size={14}
-															/>
-														)
-													}
-													iconRight={action.type === "open" ? <Icon icon={ArrowRight02Icon} size={14} /> : undefined}
-													onClick={() => onAction(action)}
-												>
-													{actionLabel(action)}
-												</Button>
-											))}
+											{turn.actions
+												.filter((action) => !isChange(action))
+												.map((action) => (
+													<Button
+														key={JSON.stringify(action)}
+														variant="secondary"
+														size="sm"
+														icon={
+															action.type === "open" ? undefined : (
+																<Icon
+																	icon={
+																		action.type === "run"
+																			? PlayIcon
+																			: action.type === "audit"
+																				? CheckListIcon
+																				: Add01Icon
+																	}
+																	size={14}
+																/>
+															)
+														}
+														iconRight={action.type === "open" ? <Icon icon={ArrowRight02Icon} size={14} /> : undefined}
+														onClick={() => void onAction(action)}
+													>
+														{actionLabel(action)}
+													</Button>
+												))}
 										</div>
 									) : null}
+									{turn.actions?.filter(isChange).map((action) => {
+										const copy = changeCopy(action, project.name);
+										return (
+											<ApprovalCard
+												key={JSON.stringify(action)}
+												className="oa-ask-approval"
+												title={copy.title}
+												description={copy.text}
+												details={[{ label: action.type === "step" ? "Step" : "Change", value: copy.value }]}
+												allowAlways={false}
+												shortcuts={false}
+												approveLabel="Approve"
+												denyLabel="Not now"
+												onApprove={async () => {
+													await onAction(action);
+												}}
+											/>
+										);
+									})}
 								</Fragment>
 							),
 						)}

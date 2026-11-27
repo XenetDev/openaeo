@@ -1808,3 +1808,8 @@ body,
 	font-size: 8.5pt;
 	color: #6b7079;
 }
+
+.oa-ask-approval {
+	max-width: 520px;
+	margin-top: 8px;
+}

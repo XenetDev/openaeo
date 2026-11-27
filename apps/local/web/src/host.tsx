@@ -1,4 +1,4 @@
-import type { ProjectView } from "@api";
+import type { PageId, ProjectView } from "@api";
 import type { ReactNode } from "react";
 
 export type HostNav = { open: (tab: string) => void };
@@ -9,3 +9,5 @@ export const HOST_TABS: HostTab[] = [];
 export const openingTab = (): string | null => null;
 
 export const HOST_POSTS: ((project: ProjectView) => ReactNode) | null = null;
+
+export const HOST_LOADING: Partial<Record<PageId, (brand: string) => ReactNode>> = {};

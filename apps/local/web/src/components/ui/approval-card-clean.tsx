@@ -127,7 +127,7 @@ export function ApprovalCard({
       setLeaving(prev === "pending");
       setEntering(false);
       setDecidedAt(Date.now());
-      setAnnounce(`${status === "approved" ? "Approved" : reason === "timeout" ? "Expired" : "Denied"}: ${title}`);
+      setAnnounce(`${status === "approved" ? "Approved" : reason === "timeout" ? "Expired" : "Declined"}: ${title}`);
     }
   }
 
@@ -284,7 +284,7 @@ export function ApprovalCard({
   const timerId = `${id}-timer`;
   const body = preview ?? children;
   const resolvedLabel =
-    status === "approved" ? "Approved" : reason === "timeout" ? "Expired" : "Denied";
+    status === "approved" ? "Approved" : reason === "timeout" ? "Expired" : "Declined";
   const describedBy = [description ? descId : null, total && !resolved ? timerId : null].filter(Boolean).join(" ");
 
   const alwaysBox = allowAlways && (

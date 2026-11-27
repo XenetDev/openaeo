@@ -39,6 +39,8 @@ export type Turn = {
 	failed?: boolean;
 	took?: number;
 	actions?: AskAction[];
+	/** A short status line from the app itself, not an engine answer */
+	note?: boolean;
 };
 
 type Props = {
@@ -48,6 +50,7 @@ type Props = {
 	onAsk: (question: string, engine: string) => void;
 	onClear: () => void;
 	onAction: (action: AskAction) => unknown;
+	onDecline: (action: AskAction) => void;
 };
 
 const STARTERS = [
@@ -119,7 +122,7 @@ const actionLabel = (action: AskAction) =>
 					? `Track “${action.question}”`
 					: "";
 
-export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }: Props) {
+export function AskScreen({ project, engines, turns, onAsk, onClear, onAction, onDecline }: Props) {
 	const ready = engines.filter((e) => e.available && e.enabled);
 	const brand = useMemo(() => [project.name, ...project.aliases], [project]);
 	const busy = turns.some((t) => t.pending);
@@ -268,7 +271,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 							) : (
 								<Fragment key={turn.id}>
 									<AIAnswer
-										className="oa-reply"
+										className={turn.note ? "oa-reply oa-reply-note" : "oa-reply"}
 										sources={[]}
 										answer={toAnswerMarkup(turn.text, [], brand).answer}
 										animate={turn === last && fresh.current.has(turn.id)}
@@ -306,26 +309,31 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 												))}
 										</div>
 									) : null}
-									{turn.actions?.filter(isChange).map((action) => {
-										const copy = changeCopy(action, project.name);
-										return (
-											<ApprovalCard
-												key={JSON.stringify(action)}
-												className="oa-ask-approval"
-												actions="card"
-												icon={<Icon icon={CHANGE_ICONS[action.type]} size={16} />}
-												title={copy.title}
-												description={copy.text}
-												allowAlways={false}
-												shortcuts={false}
-												approveLabel="Approve"
-												denyLabel="Not now"
-												onApprove={async () => {
-													await onAction(action);
-												}}
-											/>
-										);
-									})}
+									{turn.actions?.some(isChange) ? (
+										<div className="oa-ask-approvals">
+											{turn.actions.filter(isChange).map((action) => {
+												const copy = changeCopy(action, project.name);
+												return (
+													<ApprovalCard
+														key={JSON.stringify(action)}
+														className="oa-ask-approval"
+														actions="card"
+														icon={<Icon icon={CHANGE_ICONS[action.type]} size={16} />}
+														title={copy.title}
+														description={copy.text}
+														allowAlways={false}
+														shortcuts={false}
+														approveLabel="Approve"
+														denyLabel="Not now"
+														onApprove={async () => {
+															await onAction(action);
+														}}
+														onDeny={() => onDecline(action)}
+													/>
+												);
+											})}
+										</div>
+									) : null}
 								</Fragment>
 							),
 						)}

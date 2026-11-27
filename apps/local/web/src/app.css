@@ -1810,18 +1810,26 @@ body,
 }
 
 .oa-ask-approval {
-	--ui-apc-bg: color-mix(in srgb, var(--chip) 30%, transparent);
+	--ui-apc-bg: transparent;
 	--ui-apc-line: var(--line);
 	--ui-apc-ink: var(--ink);
 	--ui-apc-text: var(--muted);
 	--ui-apc-muted: var(--muted);
 	max-width: 560px;
-	margin-top: 8px;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--chip) 30%, transparent);
 }
 
-.oa-ask-approval .ui-apc__card {
-	border-radius: 12px;
-	box-shadow: inset 0 0 0 1px var(--line);
+.oa-ask-approval.oa-ask-approval .ui-apc__card {
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.oa-ask-approvals {
+	display: grid;
+	gap: 8px;
+	margin-top: 8px;
 }
 
 .oa-ask-approval .ui-apc__pending > .ui-apc__card {
@@ -1875,4 +1883,8 @@ body,
 	min-height: 0;
 	padding: 10px 14px;
 	font-size: 13px;
+}
+
+.oa-reply-note .ui-ansc__status {
+	display: none;
 }

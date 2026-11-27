@@ -1,0 +1,7 @@
+{
+	"mcpServers": {
+		"openaeo": {
+			"url": "https://openaeo.io/api/mcp"
+		}
+	}
+}

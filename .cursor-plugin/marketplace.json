@@ -1,0 +1,11 @@
+{
+	"name": "openaeo",
+	"owner": { "name": "Xenet" },
+	"plugins": [
+		{
+			"name": "openaeo",
+			"source": "plugins/openaeo",
+			"description": "AI visibility data and workflows from OpenAEO."
+		}
+	]
+}

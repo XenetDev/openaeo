@@ -63,13 +63,55 @@ This folder is also a plugin for agents that install plugins, such as Cursor and
 
 ## Skills
 
-Copy a folder from `skills/` into your agent's skills directory (for Claude Code, `~/.claude/skills/`):
+The tools above let an agent read and change your OpenAEO data. A skill tells it how to do a whole job with them. Without the skills an agent can still answer questions; with them it knows the steps, the order and where to stop for you.
 
-- `aeo-audit-fix`: fix audit findings in the site's source.
-- `aeo-visibility-review`: explain where the brand stands and what to do.
-- `aeo-content-brief`: plan a page for a question the brand is missing from.
-- `aeo-work-the-plan`: start here. Works through the whole plan and uses the other skills for each step.
-- `aeo-profiles`: make the facts about the brand consistent across its site and profiles.
-- `aeo-outreach`: prepare replies, listings and posts for the sites the engines cite. It never publishes for you.
+| Skill                   | Use it when you want to                                                   | Needs                                  |
+| ----------------------- | ------------------------------------------------------------------------- | -------------------------------------- |
+| `aeo-work-the-plan`     | Work through the whole plan. Start here; it uses the others for each step | Any agent                              |
+| `aeo-visibility-review` | Understand where the brand stands and why                                 | Any agent                              |
+| `aeo-audit-fix`         | Fix the website problems the audit found                                  | Your site's code, or its CMS           |
+| `aeo-content-brief`     | Plan a page for a question the brand is missing from                      | Any agent                              |
+| `aeo-profiles`          | Make the facts about the brand match across its site and profiles         | An agent with a browser                |
+| `aeo-outreach`          | Prepare replies, listing requests and posts for the sites engines cite    | A browser; OpenAEO Cloud for the board |
+
+Every skill works with the local app and with OpenAEO Cloud. The Posts board, and the tools that draft and schedule posts, exist only in OpenAEO Cloud; with the local app the outreach skill gives you the text to post yourself.
+
+No skill publishes for you. Posts, replies, emails, profile changes and form submissions all stop for your yes.
+
+### Add the skills to your agent
+
+**Any agent with web access** (Grok Bot, ChatGPT, Claude and others): connect OpenAEO first, then paste this into a chat.
+
+```
+Read each of these and save it as a skill with the same name. Follow them exactly, including the rules at the end.
+https://raw.githubusercontent.com/xenetdev/openaeo/main/plugins/openaeo/skills/aeo-work-the-plan/SKILL.md
+https://raw.githubusercontent.com/xenetdev/openaeo/main/plugins/openaeo/skills/aeo-visibility-review/SKILL.md
+https://raw.githubusercontent.com/xenetdev/openaeo/main/plugins/openaeo/skills/aeo-audit-fix/SKILL.md
+https://raw.githubusercontent.com/xenetdev/openaeo/main/plugins/openaeo/skills/aeo-content-brief/SKILL.md
+https://raw.githubusercontent.com/xenetdev/openaeo/main/plugins/openaeo/skills/aeo-profiles/SKILL.md
+https://raw.githubusercontent.com/xenetdev/openaeo/main/plugins/openaeo/skills/aeo-outreach/SKILL.md
+```
+
+If your agent cannot save skills, paste the same message at the start of a chat and it will follow them for that chat.
+
+**Claude Code and Codex**: copy the folders into your skills directory.
+
+```
+git clone --depth 1 https://github.com/xenetdev/openaeo /tmp/openaeo
+cp -R /tmp/openaeo/plugins/openaeo/skills/* ~/.claude/skills/
+```
+
+For Codex, copy them to `~/.agents/skills/` instead.
+
+**Cursor and Grok Bot plugin**: this folder is a plugin (see above), so installing it adds the skills and the OpenAEO Cloud connection together.
+
+### Use them
+
+Then ask for the job in plain words. For example:
+
+- "Use the aeo-work-the-plan skill for my brand."
+- "Why does ChatGPT not recommend us?"
+- "Fix the audit findings in this repo."
+- "Write this week's posts and show me before scheduling."
 
 Text that comes from websites and from AI answers is passed to your agent as quoted data, with a notice to treat it as data and not as instructions.

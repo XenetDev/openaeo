@@ -1,4 +1,14 @@
-import type { Ok, OpportunitiesView, PlanView, Progress, ReportView, RunDetail, RunView } from "../../api-types";
+import type {
+	CompetitorInsightView,
+	Ok,
+	OpportunitiesView,
+	PlanView,
+	Progress,
+	ReportView,
+	RunDetail,
+	RunView,
+} from "../../api-types";
+import { buildCompetitorInsight } from "../../competitor-insight";
 import { answersCsv, questionsCsv } from "../../export";
 import { buildOpportunities } from "../../opportunities";
 import { buildPlan, setStepDone } from "../../plan";
@@ -86,6 +96,13 @@ export function runRoutes({ store, runs }: ApiDeps): Route[] {
 			if (!(await buildPlan(store, id)).steps.some((candidate) => candidate.id === step)) throw notFound("That step");
 			await setStepDone(store, id, step, (await read(request, PlanStepSchema)).done);
 			return json<PlanView>(await buildPlan(store, id));
+		}),
+		route("GET", "/api/projects/:id/competitors/:name/insight", async ({ params }) => {
+			const id = params.id as string;
+			await requireProject(store, id);
+			const insight = await buildCompetitorInsight(store, id, decodeURIComponent(params.name as string));
+			if (!insight) throw notFound("That competitor");
+			return json<CompetitorInsightView>(insight);
 		}),
 		route("GET", "/api/projects/:id/opportunities", async ({ params }) => {
 			const id = params.id as string;

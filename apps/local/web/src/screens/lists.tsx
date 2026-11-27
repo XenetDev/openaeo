@@ -1,4 +1,4 @@
-import type { CompetitorIdea, EntityView, ProjectView, ReportView } from "@api";
+import type { CompetitorIdea, EngineView, EntityView, ProjectView, ReportView } from "@api";
 import { Add01Icon, Delete02Icon, News01Icon, SparklesIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { type ReactNode, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
@@ -11,6 +11,7 @@ import { Spinner } from "@/components/ui/spinner-clean";
 import { TagInput } from "@/components/ui/tag-input-clean";
 import { TextField } from "@/components/ui/text-field-clean";
 import { SuggestMark } from "./command-icons";
+import { CompetitorInsight } from "./competitor-insight";
 import { Page } from "./shared";
 
 export function SourcesScreen({
@@ -56,6 +57,7 @@ export function SourcesScreen({
 }
 
 type CompetitorsProps = {
+	engines: EngineView[];
 	filter?: ReactNode;
 	project: ProjectView;
 	report: ReportView;
@@ -69,6 +71,7 @@ type CompetitorsProps = {
 };
 
 export function CompetitorsScreen({
+	engines,
 	project,
 	report,
 	competitors,
@@ -173,6 +176,7 @@ export function CompetitorsScreen({
 			}
 		>
 			<DataTable
+				key={`${report.basedOnRunId ?? "none"}:${report.run?.status ?? "none"}:${report.competitors.length}`}
 				title="You and your competitors in the latest answers"
 				editable={false}
 				columns={[
@@ -196,6 +200,18 @@ export function CompetitorsScreen({
 				})}
 				tagTones={{ You: "green", Competitor: "gray" }}
 				onSelectionChange={setPicked}
+			/>
+			<CompetitorInsight
+				projectId={project.id}
+				brand={project.name}
+				engines={engines}
+				runId={report.run?.status === "running" ? null : (report.run?.id ?? null)}
+				names={[...competitors]
+					.sort(
+						(x, y) =>
+							(stats.get(y.name.toLowerCase())?.mentionRate ?? 0) - (stats.get(x.name.toLowerCase())?.mentionRate ?? 0),
+					)
+					.map((c) => c.name)}
 			/>
 
 			{finding ? (

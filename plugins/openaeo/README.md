@@ -39,6 +39,7 @@ This folder is also a plugin for agents that install plugins, such as Cursor and
 | `get_plan`            | The plan for getting recommended, step by step                           |
 | `mark_plan_step`      | Mark a step of the plan done or not done                                 |
 | `list_competitors`    | Tracked competitors, their websites and share of answers                 |
+| `get_competitor`      | Why one competitor gets named: questions, quotes, sites and pages        |
 | `find_competitors`    | Ask your AI engine for likely competitors (saves nothing)                |
 | `add_competitors`     | Track more competitors, counted from the next run                        |
 | `remove_competitor`   | Stop tracking a competitor                                               |

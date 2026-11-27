@@ -3,6 +3,7 @@ import type {
 	AskTurn,
 	AuditView,
 	CompetitorIdea,
+	CompetitorInsightView,
 	EntityView,
 	LatestAudit,
 	NewProject,
@@ -75,6 +76,8 @@ export const api = {
 	updateProject: (id: string, input: ProjectInput) =>
 		call<{ project: ProjectView }>("PATCH", `/api/projects/${id}`, input),
 	deleteProject: (id: string) => call<Ok>("DELETE", `/api/projects/${id}`),
+	competitorInsight: (id: string, name: string) =>
+		call<CompetitorInsightView>("GET", `/api/projects/${id}/competitors/${encodeURIComponent(name)}/insight`),
 	saveCompetitors: (id: string, competitors: EntityView[]) =>
 		call<{ competitors: EntityView[] }>("PUT", `/api/projects/${id}/competitors`, { competitors }),
 	addPrompts: (id: string, texts: string[]) =>

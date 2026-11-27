@@ -153,6 +153,7 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 			project={project}
 			report={data.report}
 			competitors={data.competitors}
+			engines={workspace.engines}
 			filter={tagFilter(workspace)}
 			onSave={(next) =>
 				act(async () => {

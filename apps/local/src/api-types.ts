@@ -175,3 +175,15 @@ export type RunDetail = { run: RunView; answers: AnswerView[] };
 export type LatestAudit = { audit: AuditView | null; findings: FindingView[]; artefacts: ArtefactsView };
 export type AskReply = { text: string; engine: string; actions: AskAction[] };
 export type SettingsResponse = { settings: Record<string, string> };
+
+export type CompetitorInsightView = {
+	name: string;
+	runId: string | null;
+	answers: number;
+	named: number;
+	averageRank: number | null;
+	questions: { question: string; engines: string[]; brandNamed: boolean }[];
+	quotes: { engine: string; question: string; text: string }[];
+	sites: { domain: string; citations: number; namesBrand: boolean }[];
+	pages: { url: string; title: string | null; citations: number }[];
+};

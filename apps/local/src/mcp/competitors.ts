@@ -6,10 +6,22 @@ import {
 	projectCompetitorContext,
 	websiteDomain,
 } from "../competitor-ideas";
+import { buildCompetitorInsight } from "../competitor-insight";
 import { buildReport } from "../report";
 import { EntitySchema, MAX_COMPETITORS, MAX_ENTITY_TEXT } from "../server/schemas";
 import type { EntityInput } from "../store/types";
-import { count, fail, isReply, type McpContext, oneLine, percent, projectArg, sameText, say } from "./shared";
+import {
+	ANSWER_NOTICE,
+	count,
+	fail,
+	isReply,
+	type McpContext,
+	oneLine,
+	percent,
+	projectArg,
+	sameText,
+	say,
+} from "./shared";
 
 export type CompetitorDeps = {
 	competitorIdeas?: (context: CompetitorContext) => Promise<CompetitorIdea[]>;
@@ -20,11 +32,65 @@ const NEXT_RUN = "Competitors are counted from the next run; use run_prompts to 
 const label = (name: string, domain: string | null | undefined) =>
 	`${oneLine(name)}${domain ? ` (${oneLine(domain)})` : ""}`;
 
-export function registerCompetitorTools({ server, store, resolve }: McpContext, deps: CompetitorDeps): void {
+export function registerCompetitorTools(
+	{ server, store, resolve, label: engineName }: McpContext,
+	deps: CompetitorDeps,
+): void {
 	const { competitorIdeas, describeSite } = deps;
 	const howToAdd = `To track more, call add_competitors with their names and websites${
 		competitorIdeas ? ", or find_competitors to get suggestions first" : ""
 	}.`;
+
+	server.registerTool(
+		"get_competitor",
+		{
+			description:
+				"Explain why one tracked competitor gets named by AI engines in the latest run: the questions it is named for and whether the brand is named there too, what the engines said about it, the other sites cited in those answers, and its own pages that were cited.",
+			inputSchema: {
+				...projectArg,
+				name: EntitySchema.shape.name.describe("The competitor's name as shown by list_competitors."),
+			},
+			annotations: { readOnlyHint: true },
+		},
+		async ({ project, name }) => {
+			const found = await resolve(project);
+			if (isReply(found)) return found;
+			const insight = await buildCompetitorInsight(store, found.id, name);
+			if (!insight)
+				return fail(`"${name}" is not a tracked competitor of ${found.name}. Use list_competitors to see them.`);
+			if (!insight.runId) return say(`There is no finished run for ${found.name} yet. Use run_prompts first.`);
+			if (insight.named === 0)
+				return say(`${insight.name} was not named in any of the ${insight.answers} answers of the latest run.`);
+			const position = insight.averageRank === null ? "" : `, average position ${insight.averageRank.toFixed(1)}`;
+			return say(
+				[
+					`${insight.name} was named in ${insight.named} of ${insight.answers} answers${position}.`,
+					"",
+					"Questions it is named for",
+					...insight.questions.map(
+						(q) =>
+							`  [${q.brandNamed ? `${found.name} named too` : `${found.name} missing`}] ${oneLine(q.question)} (${q.engines.map(engineName).join(", ")})`,
+					),
+					"",
+					"What the engines said about it",
+					ANSWER_NOTICE,
+					...(insight.quotes.length
+						? insight.quotes.map((q) => `> [${engineName(q.engine)}] ${oneLine(q.text)}`)
+						: ["  (nothing quoted)"]),
+					"",
+					"Other sites cited in those answers",
+					...(insight.sites.length
+						? insight.sites.map(
+								(s) => `  ${s.domain}: ${s.citations}${s.namesBrand ? "" : ` (never alongside ${found.name})`}`,
+							)
+						: ["  (none)"]),
+					"",
+					"Its own pages the engines cited",
+					...(insight.pages.length ? insight.pages.map((p) => `  ${p.url}: ${p.citations}`) : ["  (none)"]),
+				].join("\n"),
+			);
+		},
+	);
 
 	server.registerTool(
 		"list_competitors",

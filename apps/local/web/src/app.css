@@ -1888,3 +1888,8 @@ body,
 .oa-reply-note .ui-ansc__status {
 	display: none;
 }
+
+.oa-quote {
+	font-weight: 400;
+	color: var(--text);
+}

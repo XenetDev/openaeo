@@ -9,7 +9,7 @@ description: Plan a page that would earn a brand a place in AI answers for a spe
 ## Steps
 
 1. Ask which question the page should win, or pick the tracked question where the brand is absent (`list_answers` shows this).
-2. From `list_answers`, note for that question: what the engines answer today, which brands they name and why, and which sites they cite.
+2. From `list_answers`, note for that question: what the engines answer today, which brands they name and why, and which sites they cite. For the competitor that wins it, `get_competitor` lists their own pages the engines cited; read those to see what the page must match.
 3. Produce a brief:
    - **Working title**, phrased as the question.
    - **Direct answer**: the 30 to 60 word paragraph that opens the page.

@@ -1,10 +1,11 @@
 import type { Provider } from "@openaeo/engine";
+import type { AskOptions } from "../ask";
 import type { AuditService } from "../audits";
 import type { CompetitorContext, CompetitorIdea } from "../competitor-ideas";
 import type { EngineStatus } from "../engine-catalog";
 import { type Log, logError } from "../log";
 import type { RunService } from "../runs";
-import type { Awaitable, Store } from "../store/types";
+import type { Awaitable, Project, Store } from "../store/types";
 import type { SuggestContext } from "../suggest";
 import { HttpError, json } from "./http";
 import { createRouter } from "./router";
@@ -24,6 +25,10 @@ export type ApiDeps = {
 	askProvider?: (engine?: string) => Awaitable<Provider | null>;
 	describeSite?: (domain: string) => Promise<string | null>;
 	competitorIdeas?: (context: CompetitorContext) => Promise<CompetitorIdea[]>;
+	/** What the host app teaches Aeo about itself, and the changes Aeo may offer there. */
+	assistant?: Pick<AskOptions, "guide" | "places" | "schedules"> & {
+		facts?: (project: Project) => Promise<string[]>;
+	};
 	log?: Log;
 };
 

@@ -1,11 +1,14 @@
 import type { AskReply, CompetitorIdea, Suggestions } from "../../api-types";
 import { askContext, buildAskPrompt, splitActions } from "../../ask";
 import { projectCompetitorContext } from "../../competitor-ideas";
+import { buildPlan } from "../../plan";
 import { fallbackPrompts, projectSuggestContext } from "../../suggest";
 import type { ApiDeps } from "../api";
 import { HttpError, json, read, requireProject } from "../http";
 import { type Route, route } from "../router";
 import { AskSchema, CompetitorIdeasSchema } from "../schemas";
+
+const LOCAL_SCHEDULES = ["off", "daily", "weekly"];
 
 export function assistRoutes(deps: ApiDeps): Route[] {
 	const { store } = deps;
@@ -51,10 +54,24 @@ export function assistRoutes(deps: ApiDeps): Route[] {
 			const input = await read(request, AskSchema);
 			const provider = (await deps.askProvider?.(input.engine)) ?? null;
 			if (!provider) throw new HttpError(503, "No AI engine is ready to answer. Connect one in Settings.");
-			const prompt = buildAskPrompt(await askContext(store, project), input.history, input.question);
+			const context = await askContext(store, project);
+			const facts = (await deps.assistant?.facts?.(project).catch(() => [])) ?? [];
+			const plan = await buildPlan(store, project.id);
+			const options = {
+				guide: deps.assistant?.guide,
+				places: deps.assistant?.places,
+				schedules: deps.assistant?.schedules ?? LOCAL_SCHEDULES,
+				steps: plan.steps.filter((step) => !step.done).map((step) => ({ id: step.id, title: step.title })),
+			};
+			const prompt = buildAskPrompt(
+				{ ...context, facts: [...facts, ...context.facts] },
+				input.history,
+				input.question,
+				options,
+			);
 			try {
 				const answer = await provider.ask(prompt, { timeoutMs: 180_000 });
-				return json<AskReply>({ ...splitActions(answer.text), engine: provider.id });
+				return json<AskReply>({ ...splitActions(answer.text, options), engine: provider.id });
 			} catch (error) {
 				throw new HttpError(
 					502,

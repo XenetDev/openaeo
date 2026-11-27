@@ -180,3 +180,105 @@ test("the assistant is told the sentiment score and what the product can do with
 	expect(prompt).toMatch(/tags/i);
 	expect(prompt).toMatch(/Export CSV/);
 });
+
+const HOST = {
+	places: [
+		{ id: "settings:mcp", label: "Settings, MCP" },
+		{ id: "posts", label: "Posts" },
+	],
+	schedules: ["off", "weekly"],
+	steps: [{ id: "profiles", title: "Check your profiles" }],
+};
+
+test("a host adds places, and a place the app does not have is dropped", () => {
+	const out = splitActions(
+		["Go here.", "[[action:open|settings:mcp]]", "[[action:open|settings:nope]]", "[[action:open|posts]]"].join("\n"),
+		HOST,
+	);
+	expect(out.text).toBe("Go here.");
+	expect(out.actions).toEqual([
+		{ type: "open", page: "settings:mcp" },
+		{ type: "open", page: "posts" },
+	]);
+	expect(splitActions("[[action:open|posts]]").actions).toEqual([]);
+});
+
+test("go opens a place straight away, and only one such action is kept", () => {
+	const out = splitActions("[[action:go|posts]]\n[[action:go|settings:mcp]]", HOST);
+	expect(out.actions).toEqual([{ type: "open", page: "posts", auto: true }]);
+	expect(out.text).toBe("Opening Posts.");
+	expect(splitActions("[[action:open|plan]]").text).toBe("You can do that on Plan.");
+});
+
+test("changes the user must approve are parsed and checked against what the host allows", () => {
+	const out = splitActions(
+		[
+			"[[action:schedule|weekly]]",
+			"[[action:schedule|daily]]",
+			"[[action:competitor|Acme Rivals]]",
+			"[[action:competitor|x]]",
+			"[[action:done|profiles]]",
+			"[[action:done|nope]]",
+		].join("\n"),
+		HOST,
+	);
+	expect(out.actions).toEqual([
+		{ type: "schedule", value: "weekly" },
+		{ type: "competitor", name: "Acme Rivals" },
+		{ type: "step", id: "profiles", title: "Check your profiles" },
+	]);
+	expect(splitActions("[[action:schedule|weekly]]\n[[action:done|profiles]]").actions).toEqual([]);
+});
+
+test("the prompt uses the host's guide and lists its places", async () => {
+	const { store, project } = await world();
+	const prompt = buildAskPrompt(await askContext(store, project), [], "How do I connect my agent?", {
+		...HOST,
+		guide: ["MCP: connect an agent under Settings, MCP."],
+	});
+	expect(prompt).toContain("MCP: connect an agent under Settings, MCP.");
+	expect(prompt).not.toContain("on the user's own subscriptions");
+	expect(prompt).toContain("settings:mcp (Settings, MCP)");
+	expect(prompt).toContain("[[action:go|place]]");
+	expect(prompt).toContain("off, weekly");
+});
+
+test("the ask route adds the host's live facts and returns approved kinds of action", async () => {
+	const { store, project, runs } = await world();
+	const seen: string[] = [];
+	const ask = fakeProvider("claude-cli", (prompt) => {
+		seen.push(prompt);
+		return { text: "Open it.\n[[action:go|settings:mcp]]\n[[action:schedule|weekly]]", citations: [] };
+	});
+	const engines: EngineStatus[] = [];
+	const handler = createHandler({
+		store,
+		runs,
+		engines: () => engines,
+		assets: () => null,
+		askProvider: () => ask.provider,
+		assistant: {
+			guide: ["Host guide line."],
+			places: HOST.places,
+			schedules: HOST.schedules,
+			facts: async () => ["Plan: Pro. Credits left: 1,200."],
+		},
+		token: TOKEN,
+		port: PORT,
+	});
+	const response = await handler(
+		new Request(`http://127.0.0.1:${PORT}/api/projects/${project.id}/ask`, {
+			method: "POST",
+			headers: { "content-type": "application/json", "x-openaeo-token": TOKEN, host: `127.0.0.1:${PORT}` },
+			body: JSON.stringify({ question: "Take me to MCP", history: [] }),
+		}),
+	);
+	expect(response.status).toBe(200);
+	const body = (await response.json()) as { actions: unknown[] };
+	expect(body.actions).toEqual([
+		{ type: "open", page: "settings:mcp", auto: true },
+		{ type: "schedule", value: "weekly" },
+	]);
+	expect(seen[0]).toContain("Plan: Pro. Credits left: 1,200.");
+	expect(seen[0]).toContain("Host guide line.");
+});

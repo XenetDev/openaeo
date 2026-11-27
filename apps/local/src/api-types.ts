@@ -159,7 +159,10 @@ export type AskAction =
 	| { type: "run" }
 	| { type: "audit" }
 	| { type: "track"; question: string }
-	| { type: "open"; page: string };
+	| { type: "open"; page: string; auto?: boolean }
+	| { type: "schedule"; value: string }
+	| { type: "competitor"; name: string }
+	| { type: "step"; id: string; title: string };
 
 export type Ok = { ok: true };
 export type Progress = {

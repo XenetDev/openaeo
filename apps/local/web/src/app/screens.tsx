@@ -14,7 +14,7 @@ import { PlanScreen } from "../screens/plan";
 import { PromptsScreen } from "../screens/prompts";
 import { RunsScreen } from "../screens/runs";
 import { SettingsScreen } from "../screens/settings";
-import { TagFilter } from "../screens/shared";
+import { engineLabel, TagFilter } from "../screens/shared";
 import { isPage } from "./pages";
 import type { useAsk } from "./use-ask";
 import type { useCompetitorIdeas } from "./use-competitor-ideas";
@@ -220,6 +220,22 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 		<AskScreen
 			project={project}
 			engines={workspace.engines}
+			facts={{
+				brand: project.name,
+				answers: data.report.overall.metrics.answers,
+				engines: data.report.engines.map((item) => engineLabel(workspace.engines, item.engine)),
+				competitors: data.competitors.map((rival) => rival.name),
+				prompts: data.prompts.filter((prompt) => prompt.active).length,
+				audit:
+					data.audit.audit?.status === "done"
+						? {
+								score: data.audit.audit.score ?? 0,
+								pages: data.audit.audit.pages.length,
+								findings: data.audit.findings.length,
+							}
+						: null,
+				openSteps: data.plan.steps.filter((step) => !step.done).length,
+			}}
 			turns={chat.turns}
 			onClear={chat.clear}
 			onAction={(action) => {

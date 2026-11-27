@@ -1,31 +1,85 @@
 import { expect, test } from "bun:test";
-import { thinkingSteps } from "../web/src/screens/ask-steps";
+import { type AskFacts, thinkingSteps } from "../web/src/screens/ask-steps";
 
-const first = (question: string) => thinkingSteps(question, "ChatGPT")[0];
+const facts: AskFacts = {
+	brand: "Xenet",
+	answers: 15,
+	engines: ["ChatGPT", "Claude", "Gemini"],
+	competitors: ["Accenture", "Deloitte"],
+	prompts: 5,
+	audit: { score: 62, pages: 14, findings: 9 },
+	openSteps: 4,
+};
+const empty: AskFacts = {
+	brand: "Xenet",
+	answers: 0,
+	engines: [],
+	competitors: [],
+	prompts: 0,
+	audit: null,
+	openSteps: 0,
+};
+const steps = (question: string, with_ = facts) => thinkingSteps(question, "Claude", with_);
 
-test("a question about setting up the agent connection looks up how OpenAEO works", () => {
-	expect(first("How do I setup the OpenAEO mcp?")).toBe("Looking up how OpenAEO works");
-	expect(first("where do I install the skills")).toBe("Looking up how OpenAEO works");
+test("a competitor question reads the run and names the tracked competitors", () => {
+	expect(steps("lets add peec ai as a competitor")).toEqual([
+		"Reading 15 answers from ChatGPT, Claude and Gemini",
+		"Comparing Xenet with Accenture and Deloitte",
+		"Writing the answer with Claude",
+	]);
 });
 
-test("a competitor request checks the competitors", () => {
-	expect(first("lets add peec ai as a competitor")).toBe("Checking the competitors you track");
+test("long lists are cut to two names and a count", () => {
+	expect(steps("who is ahead of me?", { ...facts, competitors: ["A", "B", "C", "D"] })[1]).toBe(
+		"Comparing Xenet with A, B and 2 more",
+	);
 });
 
-test("each topic gets its own first step", () => {
-	expect(first("what should I fix on my website?")).toBe("Reading your site audit");
-	expect(first("what should I do next?")).toBe("Reading your plan");
-	expect(first("write me a LinkedIn post")).toBe("Checking your posts");
-	expect(first("which sites does AI cite?")).toBe("Reading the sites AI cites");
-	expect(first("run my prompts every week")).toBe("Checking your prompts and schedule");
-	expect(first("how many credits do I have left")).toBe("Checking your workspace");
+test("a setup question reads the guide, not the run", () => {
+	expect(steps("How do I setup the OpenAEO mcp?")).toEqual([
+		"Reading the OpenAEO guide",
+		"Writing the answer with Claude",
+	]);
 });
 
-test("anything else reads the latest answers", () => {
-	expect(first("why am I not showing up?")).toBe("Reading your latest answers");
+test("a website question reads the real audit", () => {
+	expect(steps("what should I fix on my website?")).toEqual([
+		"Reading your site audit: 62 of 100 across 14 pages",
+		"Going through 9 findings",
+		"Writing the answer with Claude",
+	]);
 });
 
-test("the second step names the engine, or no engine when it is unknown", () => {
-	expect(thinkingSteps("hello", "ChatGPT")[1]).toBe("Writing the answer with ChatGPT");
-	expect(thinkingSteps("hello", "")[1]).toBe("Writing the answer");
+test("a plan question counts the open steps", () => {
+	expect(steps("what should I do next?")[1]).toBe("Checking your plan: 4 steps open");
+	expect(steps("what should I do next?", { ...facts, openSteps: 1 })[1]).toBe("Checking your plan: 1 step open");
+});
+
+test("a schedule question counts the tracked questions", () => {
+	expect(steps("run my prompts every week")).toEqual([
+		"Checking your 5 tracked questions",
+		"Checking your run schedule",
+		"Writing the answer with Claude",
+	]);
+});
+
+test("anything else reads the answers and looks for the brand", () => {
+	expect(steps("why am I not showing up?")).toEqual([
+		"Reading 15 answers from ChatGPT, Claude and Gemini",
+		"Checking where Xenet is named",
+		"Writing the answer with Claude",
+	]);
+});
+
+test("nothing is invented before the first run or audit", () => {
+	expect(steps("why am I not showing up?", empty)[0]).toBe("No finished run yet, reading your setup");
+	expect(steps("what should I fix on my website?", empty)).toEqual([
+		"No site audit yet, reading your setup",
+		"Writing the answer with Claude",
+	]);
+	expect(steps("who is ahead of me, which competitor?", empty)[1]).toBe("No competitors tracked yet");
+});
+
+test("the last step drops the engine name when it is unknown", () => {
+	expect(thinkingSteps("hello", "", facts).at(-1)).toBe("Writing the answer");
 });

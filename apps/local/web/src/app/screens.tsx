@@ -2,6 +2,7 @@ import type { PageId, ProjectView, ReportView } from "@api";
 import type { ReactNode } from "react";
 import { toast } from "@/components/ui/toaster-clean";
 import { api } from "../api";
+import { HOST_POSTS } from "../host";
 import { AnswersScreen } from "../screens/answers";
 import { AskScreen } from "../screens/ask";
 import { AuditScreen } from "../screens/audit";
@@ -229,6 +230,7 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 			onAsk={(question, engine) => chat.ask(project.id, question, engine)}
 		/>
 	),
+	posts: ({ project }) => HOST_POSTS?.(project) ?? null,
 	settings: ({ workspace, project, navigate }) => (
 		<SettingsScreen
 			key={project.id}

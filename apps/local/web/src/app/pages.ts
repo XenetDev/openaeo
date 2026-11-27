@@ -6,6 +6,7 @@ import {
 	Clock01Icon,
 	DashboardSquare01Icon,
 	Flag02Icon,
+	Megaphone01Icon,
 	News01Icon,
 	Search01Icon,
 	Settings01Icon,
@@ -13,6 +14,7 @@ import {
 	UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
 import type { ShellGroup, ShellNavItem } from "@/components/app-shell";
+import { HOST_POSTS } from "../host";
 
 type Section = "main" | "results" | "tracking" | "hidden";
 
@@ -21,6 +23,7 @@ export const PAGES: { id: PageId; label: string; icon: ShellNavItem["icon"]; sec
 	{ id: "plan", label: "Plan", icon: Flag02Icon, section: "main" },
 	{ id: "audit", label: "Audit", icon: CheckListIcon, section: "main" },
 	{ id: "ask", label: "Ask Aeo", icon: AiChat02Icon, section: "main" },
+	{ id: "posts", label: "Posts", icon: Megaphone01Icon, section: HOST_POSTS ? "main" : "hidden" },
 	{ id: "answers", label: "Answers", icon: BubbleChatIcon, section: "results" },
 	{ id: "opportunities", label: "Opportunities", icon: Target02Icon, section: "results" },
 	{ id: "sources", label: "Sources", icon: News01Icon, section: "results" },
@@ -52,5 +55,5 @@ export const NAV_GROUPS: ShellGroup[] = [
 export const isPage = (value: string): value is PageId => PAGES.some((page) => page.id === value);
 export const pageFromHash = (): PageId => {
 	const hash = window.location.hash.slice(1);
-	return isPage(hash) ? hash : "overview";
+	return isPage(hash) && (hash !== "posts" || HOST_POSTS) ? hash : "overview";
 };

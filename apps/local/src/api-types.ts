@@ -9,6 +9,7 @@ export type PageId =
 	| "audit"
 	| "runs"
 	| "ask"
+	| "posts"
 	| "settings";
 
 export type EngineView = {

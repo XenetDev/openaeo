@@ -70,7 +70,7 @@ claude mcp add openaeo --scope user -- openaeo mcp
 codex mcp add openaeo -- openaeo mcp
 ```
 
-See [plugins/openaeo](plugins/openaeo/README.md) for the tools and ready-made skills.
+See [plugins/openaeo](plugins/openaeo/README.md) for the tools, and for six ready-made skills that teach an agent to work through your plan: review visibility, fix the website, plan pages, fix profiles and prepare outreach.
 
 ## Your data
 

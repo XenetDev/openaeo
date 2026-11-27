@@ -34,7 +34,7 @@ export function thinkingSteps(question: string, engine: string, facts: AskFacts)
 	const asked = question.toLowerCase();
 	const topic = TOPICS.find(([words]) => words.test(asked))?.[1];
 	const read = facts.answers
-		? `Reading ${count(facts.answers, "answer")}${facts.engines.length ? ` from ${list(facts.engines)}` : ""}`
+		? `Reading ${count(facts.answers, "answer")}${facts.engines.length > 3 ? ` from ${facts.engines.length} engines` : facts.engines.length ? ` from ${list(facts.engines)}` : ""}`
 		: "No finished run yet, reading your setup";
 	const by: Record<Topic, (string | null)[]> = {
 		guide: ["Reading the OpenAEO guide"],

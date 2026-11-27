@@ -35,6 +35,12 @@ test("long lists are cut to two names and a count", () => {
 	);
 });
 
+test("many engines are counted, not listed", () => {
+	expect(steps("why am I not showing up?", { ...facts, engines: ["A", "B", "C", "D", "E"] })[0]).toBe(
+		"Reading 15 answers from 5 engines",
+	);
+});
+
 test("a setup question reads the guide, not the run", () => {
 	expect(steps("How do I setup the OpenAEO mcp?")).toEqual([
 		"Reading the OpenAEO guide",

@@ -26,11 +26,13 @@ export function ordinal(n: number): string {
 export function Page({
 	brand,
 	title,
+	parent,
 	actions,
 	children,
 }: {
 	brand: string;
 	title: string;
+	parent?: { label: string; onClick: () => void };
 	actions?: ReactNode;
 	children: ReactNode;
 }) {
@@ -43,6 +45,14 @@ export function Page({
 				<h1 className="ui-as-rev__path">
 					<span>{brand}</span>
 					<i>/</i>
+					{parent ? (
+						<>
+							<button type="button" className="oa-crumb" onClick={parent.onClick}>
+								{parent.label}
+							</button>
+							<i>/</i>
+						</>
+					) : null}
 					<b>{title}</b>
 				</h1>
 				{actions ? <div className="ui-as-rev__actions">{actions}</div> : null}

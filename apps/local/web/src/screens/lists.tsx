@@ -1,5 +1,12 @@
 import type { CompetitorIdea, EngineView, EntityView, ProjectView, ReportView } from "@api";
-import { Add01Icon, Delete02Icon, News01Icon, SparklesIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import {
+	Add01Icon,
+	ArrowLeft01Icon,
+	Delete02Icon,
+	News01Icon,
+	SparklesIcon,
+	UserMultipleIcon,
+} from "@hugeicons/core-free-icons";
 import { type ReactNode, useState } from "react";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { Avatar } from "@/components/ui/avatar-clean";
@@ -111,6 +118,9 @@ export function CompetitorsScreen({
 		})),
 	];
 	const [picked, setPicked] = useState<string[]>([]);
+	const [viewing, setViewing] = useState<string | null>(null);
+	const runId = report.run?.status === "running" ? null : (report.run?.id ?? null);
+	const viewed = competitors.find((c) => c.name === viewing);
 	const chosen = competitors.filter((c) => picked.includes(c.name));
 	const reset = () => {
 		setName("");
@@ -137,6 +147,35 @@ export function CompetitorsScreen({
 		setOpen(false);
 		reset();
 	};
+
+	if (viewed && runId) {
+		return (
+			<Page
+				brand={project.name}
+				title={viewed.name}
+				parent={{ label: "Competitors", onClick: () => setViewing(null) }}
+				actions={
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => setViewing(null)}
+						icon={<Icon icon={ArrowLeft01Icon} size={14} />}
+					>
+						All competitors
+					</Button>
+				}
+			>
+				<CompetitorInsight
+					projectId={project.id}
+					brand={project.name}
+					name={viewed.name}
+					site={viewed.domains[0] ?? ""}
+					engines={engines}
+					runId={runId}
+				/>
+			</Page>
+		);
+	}
 
 	return (
 		<Page
@@ -177,8 +216,15 @@ export function CompetitorsScreen({
 		>
 			<DataTable
 				key={`${report.basedOnRunId ?? "none"}:${report.run?.status ?? "none"}:${report.competitors.length}`}
-				title="You and your competitors in the latest answers"
+				className="oa-competitors"
+				title={
+					runId && competitors.length
+						? "Click a competitor to see why AI names them"
+						: "You and your competitors in the latest answers"
+				}
 				editable={false}
+				onOpenRow={runId ? setViewing : undefined}
+				canOpen={(id) => id !== own}
 				columns={[
 					{ key: "brand", label: "Brand", type: "title" },
 					{ key: "site", label: "Website", type: "text" },
@@ -200,18 +246,6 @@ export function CompetitorsScreen({
 				})}
 				tagTones={{ You: "green", Competitor: "gray" }}
 				onSelectionChange={setPicked}
-			/>
-			<CompetitorInsight
-				projectId={project.id}
-				brand={project.name}
-				engines={engines}
-				runId={report.run?.status === "running" ? null : (report.run?.id ?? null)}
-				names={[...competitors]
-					.sort(
-						(x, y) =>
-							(stats.get(y.name.toLowerCase())?.mentionRate ?? 0) - (stats.get(x.name.toLowerCase())?.mentionRate ?? 0),
-					)
-					.map((c) => c.name)}
 			/>
 
 			{finding ? (

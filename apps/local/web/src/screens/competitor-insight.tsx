@@ -3,34 +3,31 @@ import { BubbleChatIcon, News01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useState } from "react";
 import { api } from "@/api";
 import { EmptyState } from "@/components/app-shell";
+import { Avatar } from "@/components/ui/avatar-clean";
 import { Badge } from "@/components/ui/badge-clean";
 import { Card, CardContent, CardHeader } from "@/components/ui/card-clean";
-import { Select } from "@/components/ui/select-clean";
 import { Skeleton } from "@/components/ui/skeleton-clean";
 import { EngineLogo, engineLabel, ShareList } from "./shared";
 
 type Props = {
 	projectId: string;
 	brand: string;
-	/** Tracked competitors, the one named most first */
-	names: string[];
+	name: string;
+	site: string;
 	engines: EngineView[];
 	/** Changes when a new run finishes, so the picture is fetched again */
-	runId: string | null;
+	runId: string;
 };
 
 const host = (url: string) => url.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "");
 
 /** Why one competitor gets named: the questions, what the engines said, and the sites and pages behind it. */
-export function CompetitorInsight({ projectId, brand, names, engines, runId }: Props) {
-	const [picked, setPicked] = useState(names[0] ?? "");
-	const name = names.includes(picked) ? picked : (names[0] ?? "");
+export function CompetitorInsight({ projectId, brand, name, site, engines, runId }: Props) {
 	const [insight, setInsight] = useState<CompetitorInsightView | null>(null);
 	const [failed, setFailed] = useState(false);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: fetched again when a new run finishes
 	useEffect(() => {
-		if (!name) return;
 		let live = true;
 		setInsight(null);
 		setFailed(false);
@@ -43,8 +40,6 @@ export function CompetitorInsight({ projectId, brand, names, engines, runId }: P
 		};
 	}, [projectId, name, runId]);
 
-	if (!name || !runId) return null;
-
 	const position =
 		insight?.averageRank === null || !insight ? "" : ` · average position ${insight.averageRank.toFixed(1)}`;
 	const top = Math.max(1, insight?.sites[0]?.citations ?? 1);
@@ -53,27 +48,18 @@ export function CompetitorInsight({ projectId, brand, names, engines, runId }: P
 		<>
 			<Card>
 				<CardHeader
+					icon={<Avatar name={name} size={20} shape="square" />}
 					title={`Why ${name} gets named`}
 					description={
 						failed
-							? "This did not load. Pick the competitor again to retry."
+							? "This did not load. Go back and open the competitor again."
 							: insight
 								? insight.named === 0
 									? `Not named in any of the ${insight.answers} answers of the latest run.`
 									: `Named in ${insight.named} of ${insight.answers} answers in the latest run${position}.`
 								: "Reading the latest answers."
 					}
-					action={
-						names.length > 1 ? (
-							<Select
-								aria-label="Competitor"
-								size="sm"
-								value={name}
-								options={names.map((option) => ({ value: option, label: option }))}
-								onChange={setPicked}
-							/>
-						) : undefined
-					}
+					action={site ? <span className="oa-quiet">{site}</span> : undefined}
 				/>
 			</Card>
 

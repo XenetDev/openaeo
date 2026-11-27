@@ -28,6 +28,7 @@ import { toast } from "@/components/ui/toaster-clean";
 import { HOST_PLACES } from "../host";
 import { words } from "../wording";
 import { toAnswerMarkup } from "./answer-markup";
+import { thinkingSteps } from "./ask-steps";
 import { EngineLogo, engineLabel, Page } from "./shared";
 
 export type Turn = {
@@ -263,10 +264,9 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction, o
 									key={turn.id}
 									hold
 									stepMs={900}
-									steps={[
-										{ kind: "step", label: "Reading your latest run and site audit" },
-										{ kind: "step", label: `Asking ${engineLabel(engines, turn.engine ?? "")} what it makes of them` },
-									]}
+									steps={thinkingSteps(retry ?? "", turn.engine ? engineLabel(engines, turn.engine) : "").map(
+										(label) => ({ kind: "step", label }),
+									)}
 								/>
 							) : (
 								<Fragment key={turn.id}>

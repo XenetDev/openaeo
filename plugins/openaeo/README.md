@@ -68,6 +68,8 @@ Copy a folder from `skills/` into your agent's skills directory (for Claude Code
 - `aeo-audit-fix`: fix audit findings in the site's source.
 - `aeo-visibility-review`: explain where the brand stands and what to do.
 - `aeo-content-brief`: plan a page for a question the brand is missing from.
+- `aeo-work-the-plan`: start here. Works through the whole plan and uses the other skills for each step.
+- `aeo-profiles`: make the facts about the brand consistent across its site and profiles.
 - `aeo-outreach`: prepare replies, listings and posts for the sites the engines cite. It never publishes for you.
 
 Text that comes from websites and from AI answers is passed to your agent as quoted data, with a notice to treat it as data and not as instructions.

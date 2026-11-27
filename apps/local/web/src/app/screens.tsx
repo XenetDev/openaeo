@@ -1,4 +1,4 @@
-import type { PageId, ProjectView, ReportView } from "@api";
+import type { AskAction, PageId, ProjectView, ReportView } from "@api";
 import type { ReactNode } from "react";
 import { toast } from "@/components/ui/toaster-clean";
 import { api } from "../api";
@@ -229,29 +229,58 @@ const SCREENS: Record<Exclude<PageId, "overview">, (context: Loaded) => ReactNod
 					return navigate(isPage(page) ? page : "overview");
 				}
 				if (action.type === "track") return trackQuestion(action.question);
+				const change = async (work: () => Promise<void>, done: string, next?: AskAction) => {
+					try {
+						await work();
+						chat.say(done, next ? [next] : undefined);
+					} catch (caught) {
+						chat.say(`That did not work: ${messageOf(caught)}`);
+						throw caught;
+					}
+				};
 				if (action.type === "schedule")
-					return workspace.guard(async () => {
-						await api.saveSettings({ schedule: action.value });
-						await workspace.loadState();
-						toast.success("Schedule updated");
-					});
+					return change(
+						async () => {
+							await api.saveSettings({ schedule: action.value });
+							await workspace.loadState();
+						},
+						action.value === "off"
+							? "Done. Automatic runs are off. Runs now only start when you press Run now."
+							: `Done. Automatic runs are set to ${action.value}.`,
+						{ type: "open", page: "runs" },
+					);
 				if (action.type === "competitor")
-					return workspace.guard(async () => {
-						const known = data.competitors.some((rival) => rival.name.toLowerCase() === action.name.toLowerCase());
-						if (!known)
-							await api.saveCompetitors(project.id, [
-								...data.competitors,
-								{ name: action.name, aliases: [], domains: [] },
-							]);
+					return change(
+						async () => {
+							const known = data.competitors.some((rival) => rival.name.toLowerCase() === action.name.toLowerCase());
+							if (!known)
+								await api.saveCompetitors(project.id, [
+									...data.competitors,
+									{ name: action.name, aliases: [], domains: [] },
+								]);
+							await workspace.loadProject(project.id);
+						},
+						`Done. ${action.name} is now tracked as a competitor. It is counted from the next run.`,
+						{ type: "open", page: "competitors" },
+					);
+				return change(
+					async () => {
+						await api.setPlanStep(project.id, action.id, true);
 						await workspace.loadProject(project.id);
-						toast.success(`${action.name} is tracked`, { description: "Counted from the next run." });
-					});
-				return workspace.guard(async () => {
-					await api.setPlanStep(project.id, action.id, true);
-					await workspace.loadProject(project.id);
-					toast.success("Step marked done");
-				});
+					},
+					`Done. "${action.title}" is marked done in your plan.`,
+					{ type: "open", page: "plan" },
+				);
 			}}
+			onDecline={(action) =>
+				chat.say(
+					action.type === "competitor"
+						? `No problem. ${action.name} is not tracked.`
+						: action.type === "schedule"
+							? "No problem. Your automatic runs stay as they are."
+							: "No problem. I left that step as it is.",
+				)
+			}
 			onAsk={(question, engine) => chat.ask(project.id, question, engine)}
 		/>
 	),

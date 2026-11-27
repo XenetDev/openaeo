@@ -40,5 +40,19 @@ export function useAsk(projectId: string | null) {
 		);
 	};
 
-	return { turns, ask, clear: useCallback(() => setTurns([]), []) };
+	const say = useCallback((text: string, actions?: Turn["actions"]) => {
+		setTurns((now) => [
+			...now,
+			{
+				id: crypto.randomUUID(),
+				role: "assistant",
+				text,
+				engine: [...now].reverse().find((turn) => turn.role === "assistant")?.engine ?? "",
+				actions,
+				note: true,
+			},
+		]);
+	}, []);
+
+	return { turns, ask, say, clear: useCallback(() => setTurns([]), []) };
 }

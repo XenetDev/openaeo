@@ -3,12 +3,15 @@ import {
 	Add01Icon,
 	AiChat02Icon,
 	ArrowRight02Icon,
+	Calendar03Icon,
 	CheckListIcon,
+	CheckmarkCircle02Icon,
 	News01Icon,
 	PlayIcon,
 	Refresh01Icon,
 	Search01Icon,
 	Settings01Icon,
+	UserAdd01Icon,
 	UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
@@ -36,6 +39,8 @@ export type Turn = {
 	failed?: boolean;
 	took?: number;
 	actions?: AskAction[];
+	/** A short status line from the app itself, not an engine answer */
+	note?: boolean;
 };
 
 type Props = {
@@ -45,6 +50,7 @@ type Props = {
 	onAsk: (question: string, engine: string) => void;
 	onClear: () => void;
 	onAction: (action: AskAction) => unknown;
+	onDecline: (action: AskAction) => void;
 };
 
 const STARTERS = [
@@ -85,6 +91,12 @@ const SCHEDULES: Record<string, { title: string; text: string }> = {
 	weekly: { title: "Run every week", text: "Every engine is asked every active question once a week." },
 };
 
+const CHANGE_ICONS = {
+	schedule: Calendar03Icon,
+	competitor: UserAdd01Icon,
+	step: CheckmarkCircle02Icon,
+} as const;
+
 function changeCopy(action: Change, brand: string): { title: string; text: string; value: string } {
 	if (action.type === "schedule") {
 		const copy = SCHEDULES[action.value] ?? { title: `Set runs to ${action.value}`, text: "" };
@@ -96,7 +108,7 @@ function changeCopy(action: Change, brand: string): { title: string; text: strin
 			text: `Counted against ${brand} from the next run.`,
 			value: action.name,
 		};
-	return { title: "Mark this plan step done", text: "It moves to the done steps in your plan.", value: action.title };
+	return { title: "Mark this plan step done", text: action.title, value: action.title };
 }
 
 const actionLabel = (action: AskAction) =>
@@ -110,7 +122,7 @@ const actionLabel = (action: AskAction) =>
 					? `Track “${action.question}”`
 					: "";
 
-export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }: Props) {
+export function AskScreen({ project, engines, turns, onAsk, onClear, onAction, onDecline }: Props) {
 	const ready = engines.filter((e) => e.available && e.enabled);
 	const brand = useMemo(() => [project.name, ...project.aliases], [project]);
 	const busy = turns.some((t) => t.pending);
@@ -259,7 +271,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 							) : (
 								<Fragment key={turn.id}>
 									<AIAnswer
-										className="oa-reply"
+										className={turn.note ? "oa-reply oa-reply-note" : "oa-reply"}
 										sources={[]}
 										answer={toAnswerMarkup(turn.text, [], brand).answer}
 										animate={turn === last && fresh.current.has(turn.id)}
@@ -297,25 +309,31 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 												))}
 										</div>
 									) : null}
-									{turn.actions?.filter(isChange).map((action) => {
-										const copy = changeCopy(action, project.name);
-										return (
-											<ApprovalCard
-												key={JSON.stringify(action)}
-												className="oa-ask-approval"
-												title={copy.title}
-												description={copy.text}
-												details={[{ label: action.type === "step" ? "Step" : "Change", value: copy.value }]}
-												allowAlways={false}
-												shortcuts={false}
-												approveLabel="Approve"
-												denyLabel="Not now"
-												onApprove={async () => {
-													await onAction(action);
-												}}
-											/>
-										);
-									})}
+									{turn.actions?.some(isChange) ? (
+										<div className="oa-ask-approvals">
+											{turn.actions.filter(isChange).map((action) => {
+												const copy = changeCopy(action, project.name);
+												return (
+													<ApprovalCard
+														key={JSON.stringify(action)}
+														className="oa-ask-approval"
+														actions="card"
+														icon={<Icon icon={CHANGE_ICONS[action.type]} size={16} />}
+														title={copy.title}
+														description={copy.text}
+														allowAlways={false}
+														shortcuts={false}
+														approveLabel="Approve"
+														denyLabel="Not now"
+														onApprove={async () => {
+															await onAction(action);
+														}}
+														onDeny={() => onDecline(action)}
+													/>
+												);
+											})}
+										</div>
+									) : null}
 								</Fragment>
 							),
 						)}

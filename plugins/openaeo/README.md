@@ -55,7 +55,11 @@ This folder is also a plugin for agents that install plugins, such as Cursor and
 | `set_schedule`        | Turn automatic runs off, daily or weekly                                 |
 | `run_audit`           | Audit a site, including a local address                                  |
 | `list_posts`          | OpenAEO Cloud only: the Posts board, by column                           |
-| `draft_post`          | OpenAEO Cloud only: save a post to Draft for the user to publish         |
+| `draft_post`          | OpenAEO Cloud only: save a post to Draft for the user to review          |
+| `edit_post`           | OpenAEO Cloud only: change the text of a draft                           |
+| `schedule_post`       | OpenAEO Cloud only: schedule an approved draft to be published           |
+| `unschedule_post`     | OpenAEO Cloud only: move a scheduled post back to Draft                  |
+| `archive_post`        | OpenAEO Cloud only: archive a draft or scheduled post                    |
 
 ## Skills
 

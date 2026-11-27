@@ -3,12 +3,15 @@ import {
 	Add01Icon,
 	AiChat02Icon,
 	ArrowRight02Icon,
+	Calendar03Icon,
 	CheckListIcon,
+	CheckmarkCircle02Icon,
 	News01Icon,
 	PlayIcon,
 	Refresh01Icon,
 	Search01Icon,
 	Settings01Icon,
+	UserAdd01Icon,
 	UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
@@ -85,6 +88,12 @@ const SCHEDULES: Record<string, { title: string; text: string }> = {
 	weekly: { title: "Run every week", text: "Every engine is asked every active question once a week." },
 };
 
+const CHANGE_ICONS = {
+	schedule: Calendar03Icon,
+	competitor: UserAdd01Icon,
+	step: CheckmarkCircle02Icon,
+} as const;
+
 function changeCopy(action: Change, brand: string): { title: string; text: string; value: string } {
 	if (action.type === "schedule") {
 		const copy = SCHEDULES[action.value] ?? { title: `Set runs to ${action.value}`, text: "" };
@@ -96,7 +105,7 @@ function changeCopy(action: Change, brand: string): { title: string; text: strin
 			text: `Counted against ${brand} from the next run.`,
 			value: action.name,
 		};
-	return { title: "Mark this plan step done", text: "It moves to the done steps in your plan.", value: action.title };
+	return { title: "Mark this plan step done", text: action.title, value: action.title };
 }
 
 const actionLabel = (action: AskAction) =>
@@ -303,9 +312,10 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction }:
 											<ApprovalCard
 												key={JSON.stringify(action)}
 												className="oa-ask-approval"
+												actions="card"
+												icon={<Icon icon={CHANGE_ICONS[action.type]} size={16} />}
 												title={copy.title}
 												description={copy.text}
-												details={[{ label: action.type === "step" ? "Step" : "Change", value: copy.value }]}
 												allowAlways={false}
 												shortcuts={false}
 												approveLabel="Approve"

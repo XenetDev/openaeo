@@ -1888,3 +1888,32 @@ body,
 .oa-reply-note .ui-ansc__status {
 	display: none;
 }
+
+.oa-quote {
+	font-weight: 400;
+	color: var(--text);
+}
+
+.oa-competitors .ui-dtc__table td[data-cell] {
+	cursor: default;
+}
+
+.oa-crumb {
+	appearance: none;
+	border: 0;
+	padding: 0;
+	background: none;
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+	border-radius: 4px;
+}
+
+.oa-crumb:hover {
+	color: var(--aui-ink);
+}
+
+.oa-crumb:focus-visible {
+	outline: 2px solid var(--aui-ring, currentColor);
+	outline-offset: 2px;
+}

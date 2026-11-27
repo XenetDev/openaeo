@@ -54,6 +54,7 @@ test("the server lists its tools with descriptions", async () => {
 		"get_answer",
 		"get_audit",
 		"get_brand",
+		"get_competitor",
 		"get_fix_brief",
 		"get_opportunities",
 		"get_plan",

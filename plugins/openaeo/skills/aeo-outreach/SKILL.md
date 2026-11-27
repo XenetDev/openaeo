@@ -10,7 +10,7 @@ The user's own accounts and reputation are at stake. You prepare everything; the
 
 ## Steps
 
-1. Call `get_plan`, `get_opportunities` and `list_sources`. Pick up to three targets: sites or threads the engines cite for the brand's questions where the brand is not mentioned and a reply, listing or post would fit.
+1. Call `get_plan`, `get_opportunities` and `list_sources`. For the competitor named most, call `get_competitor` to see which sites are cited in the answers that name them. Pick up to three targets: sites or threads the engines cite for the brand's questions where the brand is not mentioned and a reply, listing or post would fit.
 2. Call `get_brand` and `get_report` so every claim you write is one OpenAEO already knows. Do not add results, customers or quotes that are not there.
 3. For each target, open the page and read it. Read the community's rules on self-promotion first. If promotion is not allowed, or the thread is old or closed, skip it and say why.
 4. Write the reply or post:

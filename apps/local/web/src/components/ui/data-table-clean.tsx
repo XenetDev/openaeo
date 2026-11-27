@@ -49,6 +49,9 @@ export type DataTableProps = {
   /** Called with all rows after every edit, paste, clear, delete, undo or redo */
   onRowsChange?: (rows: DataRow[]) => void;
   onSelectionChange?: (ids: string[]) => void;
+  /** Makes rows open on click instead of selecting cells – return false from canOpen to leave a row inert */
+  onOpenRow?: (id: string) => void;
+  canOpen?: (id: string) => boolean;
   className?: string;
 };
 
@@ -88,6 +91,8 @@ export function DataTable({
   editable = true,
   onRowsChange,
   onSelectionChange,
+  onOpenRow,
+  canOpen,
   className,
 }: DataTableProps) {
   const [rows, setRowsState] = useState(initialRows);
@@ -392,6 +397,7 @@ export function DataTable({
       setActive({ r, c });
     },
     edit: (r, c) => startEdit({ r, c }),
+    open: (id) => onOpenRow?.(id),
     toggle: (id) => {
       const next = new Set(checked);
       if (next.has(id)) next.delete(id);
@@ -517,6 +523,7 @@ export function DataTable({
                       columns={columns}
                       tones={tagTones}
                       editable={editable}
+                      openable={Boolean(onOpenRow) && (canOpen?.(row.id) ?? true)}
                       checked={checked.has(row.id)}
                       activeC={active?.r === r ? active.c : -1}
                       c1={inRows ? range.c1 : -1}
@@ -569,6 +576,7 @@ type RowApi = {
   down: (e: ReactPointerEvent, r: number, c: number, isEditing: boolean) => void;
   enter: (r: number, c: number) => void;
   edit: (r: number, c: number) => void;
+  open: (id: string) => void;
   toggle: (id: string) => void;
   change: (value: string) => void;
   done: (r: number, c: number, save: boolean, move?: "down" | "right", picked?: string) => void;
@@ -582,6 +590,7 @@ const Row = memo(function Row({
   columns,
   tones,
   editable,
+  openable,
   checked,
   activeC,
   c1,
@@ -595,6 +604,7 @@ const Row = memo(function Row({
   columns: DataColumn[];
   tones: Record<string, TagTone>;
   editable: boolean;
+  openable: boolean;
   checked: boolean;
   activeC: number;
   c1: number;
@@ -605,7 +615,7 @@ const Row = memo(function Row({
 }) {
   const titleKey = columns.find((x) => x.type === "title")?.key ?? columns[0].key;
   return (
-    <tr role="row" data-selected={checked || undefined}>
+    <tr role="row" data-selected={checked || undefined} data-open={openable || undefined}>
       <td className="ui-dtc__select" role="gridcell">
         <Checkbox checked={checked} label={`Select ${text(row[titleKey]) || "row"}`} onChange={() => api.current.toggle(row.id)} />
       </td>
@@ -624,9 +634,10 @@ const Row = memo(function Row({
             data-editing={isEditing || undefined}
             aria-selected={inRange}
             aria-readonly={!(editable && col.editable !== false) || undefined}
-            onPointerDown={(e) => api.current.down(e, r, c, isEditing)}
-            onPointerEnter={() => api.current.enter(r, c)}
-            onDoubleClick={() => api.current.edit(r, c)}
+            onPointerDown={openable ? undefined : (e) => api.current.down(e, r, c, isEditing)}
+            onPointerEnter={openable ? undefined : () => api.current.enter(r, c)}
+            onDoubleClick={openable ? undefined : () => api.current.edit(r, c)}
+            onClick={openable ? () => api.current.open(row.id) : undefined}
           >
             {isEditing ? (
               <Editor
@@ -638,7 +649,7 @@ const Row = memo(function Row({
                 onDone={(save, move, picked) => api.current.done(r, c, save, move, picked)}
               />
             ) : (
-              <Value column={col} row={row} tone={tones} />
+              <Value column={col} row={row} tone={tones} openable={openable} />
             )}
           </td>
         );
@@ -647,15 +658,31 @@ const Row = memo(function Row({
   );
 });
 
-function Value({ column, row, tone }: { column: DataColumn; row: DataRow; tone: Record<string, TagTone> }) {
+function Value({
+  column,
+  row,
+  tone,
+  openable,
+}: {
+  column: DataColumn;
+  row: DataRow;
+  tone: Record<string, TagTone>;
+  openable?: boolean;
+}) {
   const value = row[column.key];
   if (column.type === "title") {
     return (
       <span className="ui-dtc__name">
         {row.logo ? <span className="ui-dtc__logo">{row.logo}</span> : <span className="ui-dtc__logo ui-dtc__logo--empty" />}
-        <span className="ui-dtc__name-text" data-empty={text(value) === "" || undefined} dir="auto" title={text(value) || undefined}>
-          {text(value) || "Untitled"}
-        </span>
+        {openable ? (
+          <button type="button" className="ui-dtc__name-text ui-dtc__open" dir="auto" aria-label={`Open ${text(value)}`}>
+            {text(value) || "Untitled"}
+          </button>
+        ) : (
+          <span className="ui-dtc__name-text" data-empty={text(value) === "" || undefined} dir="auto" title={text(value) || undefined}>
+            {text(value) || "Untitled"}
+          </span>
+        )}
       </span>
     );
   }
@@ -1079,6 +1106,10 @@ const css = /* css */ `
 
 /* Cell selection: a thin blue frame on the active cell, the soft blue fill on the rest of the range */
 .ui-dtc__table td[data-cell] { cursor: cell; }
+.ui-dtc__table tr[data-open] td[data-cell] { cursor: pointer; }
+.ui-dtc__open { appearance: none; border: 0; padding: 0; background: none; font: inherit; font-weight: 500; text-align: start; cursor: pointer; border-radius: 4px; }
+.ui-dtc__table tr[data-open]:hover .ui-dtc__open { text-decoration: underline; text-underline-offset: 3px; }
+.ui-dtc__open:focus-visible { outline: 2px solid var(--ui-dtc-accent, currentColor); outline-offset: 2px; }
 .ui-dtc__table td[data-in-range] { background: var(--ui-dtc-selected); }
 .ui-dtc__table td[data-active]::after {
   content: "";

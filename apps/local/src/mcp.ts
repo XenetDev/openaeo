@@ -8,6 +8,7 @@ import { type CompetitorDeps, registerCompetitorTools } from "./mcp/competitors"
 import { registerInsightTools } from "./mcp/insights";
 import { registerOverviewTools } from "./mcp/overview";
 import { registerPlanTools } from "./mcp/plan";
+import { type PostsDeps, registerPostTools } from "./mcp/posts";
 import { type QuestionDeps, registerQuestionTools } from "./mcp/questions";
 import { type RunDeps, registerRunTools } from "./mcp/runs";
 import { fail, type McpContext, type McpLimits, type McpWords, type Reply } from "./mcp/shared";
@@ -26,6 +27,7 @@ const LOCAL_WORDS: McpWords = {
 export type { McpLimits, McpWords };
 export type McpDeps = CompetitorDeps &
 	RunDeps &
+	PostsDeps &
 	Pick<QuestionDeps, "suggest"> & {
 		store: Store;
 		audits: AuditService;
@@ -58,6 +60,7 @@ export function createMcpServer(deps: McpDeps): McpServer {
 	registerRunTools(context, deps);
 	registerCompetitorTools(context, deps);
 	registerQuestionTools(context, deps);
+	registerPostTools(context, deps);
 
 	return server;
 }

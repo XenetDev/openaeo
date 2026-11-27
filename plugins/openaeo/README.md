@@ -11,6 +11,16 @@ claude mcp add openaeo --scope user -- openaeo mcp
 codex mcp add openaeo -- openaeo mcp
 ```
 
+To use OpenAEO Cloud instead of this computer, add the hosted server and sign in when asked:
+
+```
+claude mcp add --transport http openaeo https://openaeo.io/api/mcp
+```
+
+## Plugin
+
+This folder is also a plugin for agents that install plugins, such as Cursor and Grok Bot. It bundles the skills below with the OpenAEO Cloud connection (`mcp.json`). The manifest is `.cursor-plugin/plugin.json`.
+
 ## Tools
 
 | Tool                  | What it does                                                             |
@@ -44,6 +54,8 @@ codex mcp add openaeo -- openaeo mcp
 | `get_schedule`        | Whether runs start on their own, and when the next is due                |
 | `set_schedule`        | Turn automatic runs off, daily or weekly                                 |
 | `run_audit`           | Audit a site, including a local address                                  |
+| `list_posts`          | OpenAEO Cloud only: the Posts board, by column                           |
+| `draft_post`          | OpenAEO Cloud only: save a post to Draft for the user to publish         |
 
 ## Skills
 
@@ -52,5 +64,6 @@ Copy a folder from `skills/` into your agent's skills directory (for Claude Code
 - `aeo-audit-fix`: fix audit findings in the site's source.
 - `aeo-visibility-review`: explain where the brand stands and what to do.
 - `aeo-content-brief`: plan a page for a question the brand is missing from.
+- `aeo-outreach`: prepare replies, listings and posts for the sites the engines cite. It never publishes for you.
 
 Text that comes from websites and from AI answers is passed to your agent as quoted data, with a notice to treat it as data and not as instructions.

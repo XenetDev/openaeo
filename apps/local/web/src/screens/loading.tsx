@@ -2,6 +2,7 @@ import type { PageId } from "@api";
 import { Card, CardContent } from "@/components/ui/card-clean";
 import { Skeleton } from "@/components/ui/skeleton-clean";
 import { pageLabel } from "../app/pages";
+import { HOST_LOADING } from "../host";
 import { OverviewSkeleton } from "./overview";
 import { Page } from "./shared";
 
@@ -12,6 +13,8 @@ const CARDS = [
 
 export function LoadingScreen({ brand, page }: { brand: string; page: PageId }) {
 	if (page === "overview") return <OverviewSkeleton brand={brand} />;
+	const hosted = HOST_LOADING[page];
+	if (hosted) return hosted(brand);
 	return (
 		<Page brand={brand} title={pageLabel(page)}>
 			<div className="oa-stack" role="status" aria-label={`Loading ${pageLabel(page)}`}>

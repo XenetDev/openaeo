@@ -281,6 +281,7 @@ export function Screen({ page, context }: { page: PageId; context: ScreenContext
 				onCancel={context.cancelRun}
 			/>
 		);
+	if (page === "posts" && HOST_POSTS) return HOST_POSTS(project);
 	if (!data) return <LoadingScreen brand={project.name} page={page} />;
 	return SCREENS[page]({ ...context, data });
 }

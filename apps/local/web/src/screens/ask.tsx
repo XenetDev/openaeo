@@ -28,7 +28,7 @@ import { toast } from "@/components/ui/toaster-clean";
 import { HOST_PLACES } from "../host";
 import { words } from "../wording";
 import { toAnswerMarkup } from "./answer-markup";
-import { thinkingSteps } from "./ask-steps";
+import { type AskFacts, thinkingSteps } from "./ask-steps";
 import { EngineLogo, engineLabel, Page } from "./shared";
 
 export type Turn = {
@@ -47,6 +47,7 @@ export type Turn = {
 type Props = {
 	project: ProjectView;
 	engines: EngineView[];
+	facts: AskFacts;
 	turns: Turn[];
 	onAsk: (question: string, engine: string) => void;
 	onClear: () => void;
@@ -123,7 +124,7 @@ const actionLabel = (action: AskAction) =>
 					? `Track “${action.question}”`
 					: "";
 
-export function AskScreen({ project, engines, turns, onAsk, onClear, onAction, onDecline }: Props) {
+export function AskScreen({ project, engines, facts, turns, onAsk, onClear, onAction, onDecline }: Props) {
 	const ready = engines.filter((e) => e.available && e.enabled);
 	const brand = useMemo(() => [project.name, ...project.aliases], [project]);
 	const busy = turns.some((t) => t.pending);
@@ -264,7 +265,7 @@ export function AskScreen({ project, engines, turns, onAsk, onClear, onAction, o
 									key={turn.id}
 									hold
 									stepMs={900}
-									steps={thinkingSteps(retry ?? "", turn.engine ? engineLabel(engines, turn.engine) : "").map(
+									steps={thinkingSteps(retry ?? "", turn.engine ? engineLabel(engines, turn.engine) : "", facts).map(
 										(label) => ({ kind: "step", label }),
 									)}
 								/>

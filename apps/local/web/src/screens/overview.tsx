@@ -8,6 +8,7 @@ import {
 	StopIcon,
 } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
+import { usePending } from "@/app/use-pending";
 import { ChartCard } from "@/components/analytics";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge-clean";
@@ -26,8 +27,8 @@ type Props = {
 	report: ReportView;
 	engines: EngineView[];
 	loading: boolean;
-	onRun: () => void;
-	onCancel: () => void;
+	onRun: () => unknown;
+	onCancel: () => unknown;
 	onNavigate: (page: PageId) => void;
 	plan: PlanView | null;
 	filter?: ReactNode;
@@ -142,20 +143,34 @@ export function OverviewScreen({
 		},
 	];
 
+	const [starting, start] = usePending(onRun);
+	const [stopping, stop] = usePending(onCancel);
 	const actions =
 		running && run ? (
 			<>
 				<Badge tone="info" live>
 					Asking {run.completed} of {run.total}
 				</Badge>
-				<Button variant="secondary" size="sm" onClick={onCancel} icon={<Icon icon={StopIcon} size={14} />}>
+				<Button
+					variant="secondary"
+					size="sm"
+					loading={stopping}
+					onClick={stop}
+					icon={<Icon icon={StopIcon} size={14} />}
+				>
 					Stop
 				</Button>
 			</>
 		) : (
 			<>
 				{filter}
-				<Button size="sm" onClick={onRun} disabled={usable.length === 0} icon={<Icon icon={PlayIcon} size={14} />}>
+				<Button
+					size="sm"
+					loading={starting}
+					onClick={start}
+					disabled={usable.length === 0}
+					icon={<Icon icon={PlayIcon} size={14} />}
+				>
 					Run now
 				</Button>
 			</>

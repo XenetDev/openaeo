@@ -1,6 +1,7 @@
 import type { AnswerView, EngineView, ProjectView, ReportView, RunView } from "@api";
 import { ArrowRight02Icon, Clock01Icon, PlayIcon, StopIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useState } from "react";
+import { usePending } from "@/app/use-pending";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { Badge, type BadgeTone } from "@/components/ui/badge-clean";
 import { Button } from "@/components/ui/button-clean";
@@ -19,8 +20,8 @@ type Props = {
 	report: ReportView;
 	schedule: string;
 	onSchedule: (value: string, label: string) => void;
-	onStart: () => void;
-	onCancel: () => void;
+	onStart: () => unknown;
+	onCancel: () => unknown;
 	onOpenAnswers: () => void;
 };
 
@@ -84,6 +85,8 @@ export function RunsScreen({
 	}, [selected, beat]);
 
 	const live = latest?.status === "running";
+	const [starting, start] = usePending(onStart);
+	const [stopping, stop] = usePending(onCancel);
 	const period = PERIOD[schedule];
 	const next = period && latest ? latest.startedAt + period : null;
 	const shown = detail && detail.run.id === selected ? detail : null;
@@ -97,11 +100,17 @@ export function RunsScreen({
 			title="Runs"
 			actions={
 				live ? (
-					<Button variant="secondary" size="sm" onClick={onCancel} icon={<Icon icon={StopIcon} size={14} />}>
+					<Button
+						variant="secondary"
+						size="sm"
+						loading={stopping}
+						onClick={stop}
+						icon={<Icon icon={StopIcon} size={14} />}
+					>
 						Stop run
 					</Button>
 				) : (
-					<Button size="sm" onClick={onStart} icon={<Icon icon={PlayIcon} size={14} />}>
+					<Button size="sm" loading={starting} onClick={start} icon={<Icon icon={PlayIcon} size={14} />}>
 						Run now
 					</Button>
 				)
@@ -113,7 +122,13 @@ export function RunsScreen({
 					title="No runs yet"
 					text="A run asks every AI engine each of your questions once. Every run is kept here, so you can see how the answers change over time."
 					action={
-						<Button variant="secondary" size="sm" onClick={onStart} icon={<Icon icon={PlayIcon} size={14} />}>
+						<Button
+							variant="secondary"
+							size="sm"
+							loading={starting}
+							onClick={start}
+							icon={<Icon icon={PlayIcon} size={14} />}
+						>
 							Run now
 						</Button>
 					}

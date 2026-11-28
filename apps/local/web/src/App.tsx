@@ -143,7 +143,7 @@ export function App() {
 
 	const id = project.id;
 	const act = (work: () => Promise<unknown>) =>
-		void guard(async () => {
+		guard(async () => {
 			await work();
 			await loadProject(id);
 		});

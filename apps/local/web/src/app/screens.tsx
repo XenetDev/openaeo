@@ -59,9 +59,9 @@ export type ScreenContext = {
 	answerFilter: string;
 	setAnswerFilter: (text: string) => void;
 	navigate: (page: PageId) => void;
-	act: (work: () => Promise<unknown>) => void;
-	startRun: () => void;
-	cancelRun: () => void;
+	act: (work: () => Promise<unknown>) => Promise<void>;
+	startRun: () => Promise<void>;
+	cancelRun: () => Promise<void>;
 	copyBrief: () => void;
 	trackQuestion: (text: string) => void;
 };

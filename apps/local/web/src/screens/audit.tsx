@@ -8,6 +8,7 @@ import {
 	Globe02Icon,
 } from "@hugeicons/core-free-icons";
 import { useState } from "react";
+import { usePending } from "@/app/use-pending";
 import { EmptyState, Icon } from "@/components/app-shell";
 import { PillButton, PillField } from "@/components/pill-field";
 import { AgentFindings, type Finding, type FindingAgent } from "@/components/ui/agent-findings-clean";
@@ -27,8 +28,8 @@ type Props = {
 	findings: FindingView[];
 	artefacts: ArtefactsView;
 	defaultUrl: string;
-	onRun: (url: string) => void;
-	onCancel: () => void;
+	onRun: (url: string) => unknown;
+	onCancel: () => unknown;
 	onCopyBrief: () => void;
 	flagged: PlanStepView[];
 	onPlan: () => void;
@@ -196,6 +197,8 @@ export function AuditScreen({
 	const [url, setUrl] = useState(defaultUrl);
 	const [showFlagged, setShowFlagged] = useState(false);
 	const running = audit?.status === "running";
+	const [starting, start] = usePending(onRun);
+	const [stopping, stop] = usePending(onCancel);
 	const unread = audit?.pages.filter((p) => p.error) ?? [];
 	const read = (audit?.pages.length ?? 0) - unread.length;
 	const at = audit?.finishedAt ?? audit?.startedAt ?? 0;
@@ -236,19 +239,20 @@ export function AuditScreen({
 					label="Website to check"
 					value={url}
 					onChange={setUrl}
-					onSubmit={() => !running && url.trim() !== "" && onRun(url.trim())}
+					onSubmit={() => !running && url.trim() !== "" && start(url.trim())}
 					placeholder="yourwebsite.com"
 					maxLines={1}
-					disabled={running}
+					disabled={running || starting}
 					textareaProps={{ autoCapitalize: "off", autoCorrect: "off" }}
 					action={
 						running ? (
-							<PillButton kind="stop" label="Stop the audit" onClick={onCancel} />
+							<PillButton kind="stop" label="Stop the audit" loading={stopping} onClick={stop} />
 						) : (
 							<PillButton
 								label={audit ? "Check again" : "Check my site"}
 								disabled={url.trim() === ""}
-								onClick={() => onRun(url.trim())}
+								loading={starting}
+								onClick={() => start(url.trim())}
 							/>
 						)
 					}
